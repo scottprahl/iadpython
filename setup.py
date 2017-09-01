@@ -27,8 +27,8 @@ setup(
 		'Topic :: Scientific/Engineering :: Physics',
 	],
 	keywords=['absorption', 'scattering', 'reflection', 'transmission', 'optical properties'],
-	install_requires=['numpy'],
-	test_suite='iadpython.test.test',
+	install_requires=['numpy', 'ctypes'],
+	test_suite='iadpython.test_iadpython.py',
 	long_description=
 	"""
 	A basic python interface to the inverse adding-doubling package written in C.
