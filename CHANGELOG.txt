@@ -1,9 +1,15 @@
+v0.2.3
+      fix __init__.py so "import iadpython" works
+
+v0.2.2
+      necessary because setup.py version did not get updated
+
+v0.2.1
+      remove ctypes as a requirement
+
 v0.2.0
       initial checkin
       Convert to markdown format
       update to correct contents
       add ctypes as dependancy, fix test path
       update my notes on how to cut a release
-
-v0.2.1
-      remove ctypes as a requirement
