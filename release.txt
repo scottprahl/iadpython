@@ -2,7 +2,7 @@ Releasing a new version
 
 # versioning
 update the version in setup.py
-update CHANGELOG.txt  `git log --oneline`
+update CHANGELOG.txt  `git shortlog`
 
 > git tag v0.0.0
 > git commit -m 'update recent changes' CHANGELOG.txt
@@ -17,4 +17,4 @@ update CHANGELOG.txt  `git log --oneline`
 > twine upload dist/*
 
 # install the new version locally
-> pip install --upgrade miepython
+> pip install --upgrade iadpython
