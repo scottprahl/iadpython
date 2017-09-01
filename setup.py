@@ -13,7 +13,7 @@ from setuptools import setup
 setup(
 	name='iadpython',
 	packages=['iadpython'],
-	version='0.2.2',
+	version='0.2.3',
 	description='Forward and inverse radiative transport using adding-doubling',
 	url='https://github.com/scottprahl/iadpython.git',  
 	author='Scott Prahl',
