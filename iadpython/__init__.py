@@ -1,1 +1,1 @@
-from iadpython import *
+from .iadpython import *
