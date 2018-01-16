@@ -203,7 +203,7 @@ def basic_rt_inverse(nslab, nslide, ur1, ut1, tc):
     """
     Calculates optical properties given reflection and transmission values.
     
-    basic_inverse_rt(nslab, nslide, ur1, ut1, tc) finds [a,b,g] for a slab
+    basic_rt_inverse(nslab, nslide, ur1, ut1, tc) finds [a,b,g] for a slab
     with total reflectance ur1, total transmission ut1, unscattered transmission Tc. 
     The index of refraction of the slab is nslab, the index of refraction of the 
     top and bottom slides is nslide.
@@ -555,13 +555,13 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
         len_r1 = len(ur1)
     except :
         len_r1 = 0
-        r1 = len_ur1
+        r1 = ur1
         
     try :
         len_t1 = len(ut1)
     except :
         len_t1 = 0
-        t1 = len_ut1
+        t1 = ut1
 
     try :
         len_tc = len(t_unscattered)
@@ -572,7 +572,7 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
     thelen = max(len_r1,len_t1,len_tc)
 
     if thelen==0 :
-        return basic_inverse_rt(nslab,nslide,ur1,ut1,tc)
+        return basic_rt_inverse(nslab,nslide,ur1,ut1,tc)
      
     if len_r1 and len_t1 and len_r1!=len_t1 :
         raise RuntimeError('inverse_rt: ur1 and ut1 arrays must be same length')
@@ -598,6 +598,6 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
         if len_tc>0 :
             tc = t_unscattered[i]
 
-        a[i], b[i], g[i], error[i] = basic_inverse_rt(nslab,nslide,ur1,ut1,tc)
+        a[i], b[i], g[i], error[i] = basic_rt_inverse(nslab,nslide,ur1,ut1,tc)
 
     return a, b, g, error
