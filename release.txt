@@ -5,8 +5,8 @@ update the version in setup.py
 update CHANGELOG.txt  `git shortlog`
 
 > git tag v0.0.0
-> git commit -m 'update recent changes' CHANGELOG.txt
-> git commit -m 'update version' setup.py
+> git commit CHANGELOG.txt -m 'update recent changes'
+> git commit setup.py -m 'update version'
 > git push
 
 # create release tag on github
