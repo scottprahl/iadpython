@@ -1,3 +1,6 @@
+v0.2.4
+      fix bugs found by C Regan
+      
 v0.2.3
       fix __init__.py so "import iadpython" works
 
