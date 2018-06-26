@@ -1,6 +1,9 @@
 v0.2.4
       fix bugs found by C Regan
-      
+      add doc files
+      promise only python 3 and non-zip
+      improve long description
+
 v0.2.3
       fix __init__.py so "import iadpython" works
 
