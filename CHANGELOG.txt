@@ -1,8 +1,11 @@
-v0.2.4
-      fix bugs found by C Regan
-      add doc files
+v0.2.5
+      add doc files to distribution
       promise only python 3 and non-zip
       improve long description
+
+v0.2.4
+      fix bugs found by C Regan
+      (unreleased??)
 
 v0.2.3
       fix __init__.py so "import iadpython" works
