@@ -1,15 +1,17 @@
 Releasing a new version
 
-# make sure files match up
+# make sure things are not broken and that files match up
+  nosetests iadpython/test_iadpython.py
   check-manifest
   pyroma -d .
   
 # versioning
-# edit version in setup.py */__init__.py
+# edit version in setup.py
   git commit -m 'update version' setup.py
   git push
 
-# update CHANGELOG.txt  `git shortlog`
+# update CHANGELOG.txt
+  git shortlog
   git commit -m 'update recent changes' CHANGELOG.txt
   git commit setup.py -m 'update version'
   git push
