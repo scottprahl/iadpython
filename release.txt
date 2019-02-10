@@ -25,18 +25,11 @@ Releasing a new version
   python setup.py sdist
   twine upload dist/*
 
-# create release tag on github
-  git tag v1.0.1
-  git push origin v1.0.1
-
-# upload source to pypi
-  rm -rf dist/*
-  python setup.py sdist
-  twine upload dist/*
-
 # test the install by removing local developer version
 # installing, then uninstalling, then restoring developer version
   conda develop -u .
   pip install iadpython
   pip uninstall iadpython
   conda develop .
+
+# Create a new release on github to hide previous releases
