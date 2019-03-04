@@ -3,3 +3,4 @@
 doc/.ipynb_checkpoints/*
 iadpython.egg-info/*
 iadpython/__pycache__/*
+dist/*
