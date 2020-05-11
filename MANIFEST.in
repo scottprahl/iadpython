@@ -1,2 +1,6 @@
-include *.txt
-include doc/*.ipynb
+include CHANGELOG.txt
+include LICENSE.txt
+exclude .gitignore
+exclude release.txt
+exclude Makefile
+exclude docs/*
