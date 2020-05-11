@@ -1,4 +1,5 @@
 .DS_Store
 *.pyc
 iadpython/__pycache__/*
-doc/.ipynb_checkpoints/
+docs/.ipynb_checkpoints/
+iadpython.egg-info/*
