@@ -11,6 +11,7 @@ pep257:
 	-pep257 iadpython/iadpython.py
 
 test:
+	nosetests iadpython/test_iadpython.py
 	
 clean:
 	rm -rf dist
@@ -20,4 +21,4 @@ clean:
 realclean:
 	make clean
 	
-.PHONY: clean realclean test check all ksycheck yamlcheck teste testz test4 test
+.PHONY: clean realclean test check pylint pep257
