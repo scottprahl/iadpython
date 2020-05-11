@@ -1,5 +1,5 @@
 '''
-Copyright 2018 Scott Prahl
+Copyright 2018-2020 Scott Prahl
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the 'Software'),
@@ -25,7 +25,7 @@ from setuptools import setup
 setup(
     name='iadpython',
     packages=['iadpython'],
-    version='0.2.5',
+    version='0.3.0',
     description='Forward and inverse radiative transport using adding-doubling',
     url='https://github.com/scottprahl/iadpython.git',
     author='Scott Prahl',
