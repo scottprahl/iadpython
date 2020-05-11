@@ -1,4 +1,8 @@
 # pylint: disable=invalid-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
+# pylint: disable=too-many-branches
+# pylint: disable=bare-except
 
 import ctypes
 from ctypes.util import find_library
@@ -28,7 +32,7 @@ libiad.ez_RT.argtypes = (ctypes.c_int,         # n quadrature points
 
 def basic_rt(n, nslab, ntop, nbot, a, b, g):
     """
-    Calculates the total reflection and transmission for a turbid slab.
+    Calculate the total reflection and transmission for a turbid slab.
 
     basic_rt(n,nslab,ntop,nbot,a,b,g) returns [UR1,UT1,URU,UTU] for a slab optionally
     bounded by glass slides.  The slab is characterized by an albedo a, an
@@ -71,7 +75,7 @@ libiad.ez_RT_unscattered.argtypes = (
 
 def basic_rt_unscattered(n, nslab, ntop, nbot, a, b, g):
     """
-    Calculates the unscattered reflection and transmission for a turbid slab.
+    Calculate the unscattered reflection and transmission for a turbid slab.
 
     basic_rt_unscattered(n,nslab,ntop,nbot,a,b,g) returns the unscattered
     light for normal and diffuse incidence [UR1,UT1,URU,UTU] for a slab
@@ -117,7 +121,7 @@ libiad.ez_RT_Cone.argtypes = (
 
 def basic_rt_cone(n, nslab, ntop, nbot, a, b, g, cos_cone_angle):
     """
-    Calculates reflection and transmission for a turbid slab exiting within a cone.
+    Calculate reflection and transmission for a turbid slab exiting within a cone.
 
     basic_rt_cone(n,nslab,ntop,nbot,a,b,g,cos_cone_angle) assumes normally
     incident or uniformly diffuse incident light and returns the total reflected
@@ -167,7 +171,7 @@ libiad.ez_RT_Oblique.argtypes = (
 
 def basic_rt_oblique(n, nslab, ntop, nbot, a, b, g, cos_oblique):
     """
-    Calculates reflection and transmission for light incident at a oblique angle.
+    Calculate reflection and transmission for light incident at a oblique angle.
 
     basic_rt_oblique(n,nslab,ntop,nbot,a,b,g,cos_oblique) returns the total R and T
     for light incident at an oblique angle or incident withn a cone.  The cosine
@@ -214,7 +218,7 @@ libiad.ez_Inverse_RT.argtypes = (
 
 def basic_rt_inverse(nslab, nslide, ur1, ut1, tc):
     """
-    Calculates optical properties given reflection and transmission values.
+    Calculate optical properties given reflection and transmission values.
 
     basic_rt_inverse(nslab, nslide, ur1, ut1, tc) finds [a,b,g] for a slab
     with total reflectance ur1, total transmission ut1, unscattered transmission Tc.
@@ -233,7 +237,7 @@ def basic_rt_inverse(nslab, nslide, ur1, ut1, tc):
 
 def rt(nslab, nslide, a, b, g):
     """
-    Calculates the total reflection and transmission for a turbid slab.
+    Calculate the total reflection and transmission for a turbid slab.
 
     rt(nslab,ntop,nbot,a,b,g) returns [UR1,UT1,URU,UTU] for a slab optionally
     bounded by glass slides.  The slab is characterized by an albedo a, an
@@ -305,7 +309,7 @@ def rt(nslab, nslide, a, b, g):
 
 def rt_unscattered(nslab, nslide, a, b, g):
     """
-    Calculates the unscattered reflection and transmission for a turbid slab.
+    Calculate the unscattered reflection and transmission for a turbid slab.
 
     rt_unscattered(nslab,nslide,a,b,g) returns the unscattered portion of
     light for normal and diffuse incidence [UR1,UT1,URU,UTU] for a slab
@@ -381,7 +385,7 @@ def rt_unscattered(nslab, nslide, a, b, g):
 
 def rt_cone(nslab, nslide, a, b, g, cos_cone):
     """
-    Calculates reflection and transmission for a turbid slab exiting within a cone.
+    Calculate reflection and transmission for a turbid slab exiting within a cone.
 
     rt_cone(nslab,nslide,a,b,g,cos_cone) assumes normally
     incident or uniformly diffuse incident light and returns the total reflected
@@ -475,7 +479,7 @@ def rt_cone(nslab, nslide, a, b, g, cos_cone):
 
 def rt_oblique(nslab, nslide, a, b, g, cos_oblique):
     """
-    Calculates reflection and transmission for light incident at a oblique angle.
+    Calculate reflection and transmission for light incident at a oblique angle.
 
     rt_oblique(n,nslide,a,b,g,cos_oblique) returns the total R and T
     for light incident at an oblique angle or incident withn a cone.  The cosine
@@ -568,7 +572,7 @@ def rt_oblique(nslab, nslide, a, b, g, cos_oblique):
 
 def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
     """
-    rt_inverse(nslab, nslide, ur1, ut1, t_unscattered) calculates [a,b,g] for a slab
+    rt_inverse(nslab, nslide, ur1, ut1, t_unscattered) Calculate [a,b,g] for a slab
     with total reflectance ur1, total transmission ut1, unscattered transmission t_unscattered.
     The index of refraction of the slab is nslab, the index of refraction of the
     top and bottom slides is nslide.
