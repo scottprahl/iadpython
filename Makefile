@@ -1,3 +1,8 @@
+SPHINXOPTS    ?=
+SPHINXBUILD   ?= sphinx-build
+SOURCEDIR     = docs
+BUILDDIR      = docs/_build
+
 check:
 	-pyroma -d .
 	-check-manifest
@@ -20,5 +25,8 @@ clean:
 
 realclean:
 	make clean
+
+html:
+	$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
 	
-.PHONY: clean realclean test check pylint pep257
+.PHONY: clean realclean test check pylint pep257 html
