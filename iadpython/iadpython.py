@@ -4,8 +4,9 @@
 # pylint: disable=too-many-branches
 # pylint: disable=bare-except
 
+import sys
 import ctypes
-from ctypes.util import find_library
+import ctypes.util
 import numpy as np
 
 # libiad is available on github
@@ -14,7 +15,24 @@ import numpy as np
 # library explicitly
 #libiad = ctypes.CDLL('/usr/local/lib/libiad.dylib')
 
-libiad = ctypes.CDLL(find_library('iad'))
+libiad_path = ctypes.util.find_library("libiad")
+
+if not libiad_path:
+    print("Unable to find the libiad library.")
+    print("     macOS   = 'libiad.dylib'")
+    print("     unix    = 'libiad.so'")
+    print("     Windows = 'libiad.dll'")
+    print("Paths searched:")
+    for p in sys.path:
+        print("    ", p)
+    sys.exit()
+
+try:
+    libiad = ctypes.CDLL(libiad_path)
+except OSError:
+    print("Unable to load the libiad library")
+    print("Sorry")
+    sys.exit()
 
 libiad.ez_RT.argtypes = (ctypes.c_int,         # n quadrature points
                          ctypes.c_double,      # slab index of refraction
@@ -29,6 +47,7 @@ libiad.ez_RT.argtypes = (ctypes.c_int,         # n quadrature points
                          ctypes.POINTER(ctypes.c_double)    # UTU
                          )
 
+""" Python wrapper for the C shared library mylib"""
 
 def basic_rt(n, nslab, ntop, nbot, a, b, g):
     """
