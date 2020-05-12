@@ -1,19 +1,18 @@
-Releasing a new version
+A checklist for releasing a new version
 
-# make sure things are not broken and that files match up
-  nosetests iadpython/test_iadpython.py
-  check-manifest
-  pyroma -d .
+# sanity test the release
+  make check
+  tox
   
-# versioning
-# edit version in setup.py
-  git commit -m 'update version' setup.py
+# make sure all Jupyter notebooks in the doc folder still work
+  nosetests iadpython/test_iadpython.py
+  
+# update the version in setup.cfg
+  git commit setup.cfg -m 'update version'
   git push
 
-# update CHANGELOG.txt
-  git shortlog
-  git commit -m 'update recent changes' CHANGELOG.txt
-  git commit setup.py -m 'update version'
+# update CHANGELOG.rst using `git shortlog`
+  git commit CHANGELOG.rst -m 'update recent changes' 
   git push
 
 # create release tag on github
@@ -22,7 +21,7 @@ Releasing a new version
 
 # upload source to pypi
   rm -rf dist/*
-  python setup.py sdist
+  python3 setup.py sdist
   twine upload dist/*
 
 # test the install by removing local developer version
