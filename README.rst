@@ -2,8 +2,17 @@ iadpython
 ========
 
 iadpython is a Python module to calculate multiple light scattering (radiative
-transport) of layered materials.  This is python wrapper for the inverse adding-doubling
-(IAD) library.
+transport) of layered materials.  This is a python interface to the inverse 
+adding-doubling package written
+in C by Scott Prahl.  This allows users to extract the intrinisic optical 
+properties of materials from measurements of total reflected and total 
+transmitted light.
+
+The original adding-doubling was developed by van de Hulst to model light
+propagation through layered media.  It was extended to handle Fresnel 
+reflection at boundaries as well as interactions with integrating spheres. 
+Finally, the code was further extended to handle lost light by including 
+Monte Carlo techniques.
 
 Usage
 -----
