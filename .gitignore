@@ -3,3 +3,4 @@
 iadpython/__pycache__/*
 docs/.ipynb_checkpoints/
 iadpython.egg-info/*
+.tox/*
