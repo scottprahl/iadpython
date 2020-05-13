@@ -48,7 +48,48 @@ class basic_forward(unittest.TestCase):
         self.assertAlmostEqual(uru, 0.08416, delta=0.0001)
         self.assertAlmostEqual(utu, 0.61111, delta=0.0001)
 
-# class basic_inverse(unittest.TestCase): 
+class basic_inverse(unittest.TestCase): 
+    def test_01_no_sphere(self):
+        UR1 = 0
+        a, b, g, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, 0, 0)
+        self.assertAlmostEqual(a, 0, delta=0.0001)
+        
+    def test_02_no_sphere(self):
+        UR1 = 0.99999
+        a, _, _, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, 0, 0)
+        print(a)
+        self.assertAlmostEqual(a, 1, delta=0.0001)
+        
+    def test_03_no_sphere(self):
+        UR1 = 0.4
+        a, _, _, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, 0, 0)
+        self.assertAlmostEqual(a, 0.8915, delta=0.0001)
+
+    def test_04_no_sphere(self):
+        UR1 = 0.4
+        UT1 = 0.1
+        a, b, _, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, UT1, 0)
+        self.assertAlmostEqual(a, 0.8938, delta=0.0001)
+        self.assertAlmostEqual(b, 4.3978, delta=0.0001)
+
+    def test_05_no_sphere(self):
+        UR1 = 0.4
+        UT1 = 0.1
+        tc = 0.002
+        a, b, g, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, UT1, tc)
+        self.assertAlmostEqual(a, 0.9301, delta=0.0001)
+        self.assertAlmostEqual(b, 6.2146, delta=0.0001)
+        self.assertAlmostEqual(g, 0.3116, delta=0.0001)
+
+    def test_06_no_sphere(self):
+        UR1 = 0.4
+        UT1 = 0.1
+        tc = 0.049787
+        a, b, g, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, UT1, tc)
+        self.assertAlmostEqual(a, 0.7926, delta=0.0001)
+        self.assertAlmostEqual(b, 3.0000, delta=0.0001)
+        self.assertAlmostEqual(g, -0.6694, delta=0.0001)
+
 #   @echo "********* Basic tests ***********"
 #     ./iad -V 0 -r 0
 #     ./iad -V 0 -r 1
