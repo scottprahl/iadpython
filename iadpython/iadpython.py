@@ -4,10 +4,39 @@
 # pylint: disable=too-many-branches
 # pylint: disable=bare-except
 
+"""
+Module for direct and inverse adding-doubling calculations.
+
+    import iadpython as iad
+
+    a = 0.9
+    b = 10
+    g = 0.9
+    n_top = 1.5
+    n_bot = 1.5
+    ur1, ut1, uru, utu = iad.rt(n_top, n_bot, a, b, g)
+    print("total reflected   light for normal incidence %.5f" % UR1)
+    print("total transmitted light for normal incidence %.5f" % UT1)
+    print("total reflected   light for diffuse incidence %.5f" % URU)
+    print("total transmitted light for diffuse incidence %.5f" % UTU)
+"""
+
 import sys
 import ctypes
 import ctypes.util
 import numpy as np
+
+__all__ = ('basic_rt',
+           'basic_rt_unscattered',
+           'basic_rt_cone',
+           'basic_rt_oblique',
+           'basic_rt_inverse',
+           'rt',
+           'rt_unscattered',
+           'rt_cone',
+           'rt_oblique',
+           'rt_inverse'
+           )
 
 libiad_path = ctypes.util.find_library("libiad")
 
@@ -41,27 +70,39 @@ libiad.ez_RT.argtypes = (ctypes.c_int,         # n quadrature points
                          ctypes.POINTER(ctypes.c_double)    # UTU
                          )
 
-""" Python wrapper for the C shared library mylib"""
 
 def basic_rt(n, nslab, ntop, nbot, a, b, g):
     """
     Calculate the total reflection and transmission for a turbid slab.
 
-    basic_rt(n,nslab,ntop,nbot,a,b,g) returns [UR1,UT1,URU,UTU] for a slab optionally
+    basic_rt() returns [UR1,UT1,URU,UTU] for a slab optionally
     bounded by glass slides.  The slab is characterized by an albedo a, an
     optical thickness b, a scattering anisotropy g, and an index of refraction nslab.
+    
     The top glass slides have an index of refraction ntop and the bottom slide has
     an index nbot.  If there are no glass slides, set ntop and nbottom to 1.
+    
     n is the number of quadrature angles (more angles give better accuracy but slow
     the calculation by n**3, n must be a multiple of 4, typically 16 is good for forward
     calculations and 4 is appropriate for inverse calculations).
 
-    All parameters must be scalars.
+    All input parameters must be scalars.
 
     UR1 is the total reflection for normally incident collimated light.
     UT1 is the total transmission for normally incident collimated light.
     URU is the total reflection for diffuse incident light.
     UTU is the total transmission for diffuse incident light.
+    
+    Args:
+        n: number of points in quadrature (multiple of 4)
+        nslab: index of refraction of the slab
+        ntop: index of refraction of the top slide
+        nbot: index of refraction of the bottom slide
+        a: single scattering albedo of the slab
+        b: optical thickness of the slab
+        g: anisotropy of single scattering
+    Returns
+        [UR1, UT1, URU, UTU]
     """
     ur1 = ctypes.c_double()
     ut1 = ctypes.c_double()
@@ -585,7 +626,8 @@ def rt_oblique(nslab, nslide, a, b, g, cos_oblique):
 
 def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
     """
-    rt_inverse(nslab, nslide, ur1, ut1, t_unscattered) Calculate [a,b,g] for a slab
+    Calculate [a,b,g] for a slab.
+
     with total reflectance ur1, total transmission ut1, unscattered transmission t_unscattered.
     The index of refraction of the slab is nslab, the index of refraction of the
     top and bottom slides is nslide.
@@ -596,13 +638,11 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
         len_r1 = len(ur1)
     except:
         len_r1 = 0
-        r1 = ur1
 
     try:
         len_t1 = len(ut1)
     except:
         len_t1 = 0
-        t1 = ut1
 
     try:
         len_tc = len(t_unscattered)
@@ -641,7 +681,7 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
             tc = t_unscattered[i]
 
         a[i], b[i], g[i], error[i] = basic_rt_inverse(
-            nslab, nslide, ur1, ut1, tc)
+            nslab, nslide, r1, t1, tc)
 
     return a, b, g, error
 
