@@ -12,6 +12,9 @@ legacy_tox_ini = """
 envlist = py37
 
 [testenv]
+deps = pytest
+       numpy
 
 commands =
+    python3 -m pytest iadpython/test_iadpython.py
 """

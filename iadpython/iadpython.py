@@ -9,12 +9,6 @@ import ctypes
 import ctypes.util
 import numpy as np
 
-# libiad is available on github
-
-# if finding the library fails, then just specify the location of your shared
-# library explicitly
-#libiad = ctypes.CDLL('/usr/local/lib/libiad.dylib')
-
 libiad_path = ctypes.util.find_library("libiad")
 
 if not libiad_path:

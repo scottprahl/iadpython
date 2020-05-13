@@ -22,6 +22,7 @@ clean:
 	rm -rf dist
 	rm -rf iadpython.egg-info
 	rm -rf iadpython/__pycache__
+	rm -rf .tox
 
 realclean:
 	make clean
