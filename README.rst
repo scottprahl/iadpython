@@ -1,5 +1,5 @@
 iadpython
-========
+=========
 
 iadpython is a Python module to calculate multiple light scattering (radiative
 transport) of layered materials.  This is a python interface to the inverse 

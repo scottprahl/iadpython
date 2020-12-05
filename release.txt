@@ -4,9 +4,6 @@ A checklist for releasing a new version
   make check
   tox
   
-# make sure all Jupyter notebooks in the doc folder still work
-  nosetests iadpython/test_iadpython.py
-  
 # update the version in setup.cfg
   git commit setup.cfg -m 'update version'
   git push
@@ -16,8 +13,8 @@ A checklist for releasing a new version
   git push
 
 # create release tag on github
-  git tag v1.0.1
-  git push origin v1.0.1
+  git tag v0.3.0
+  git push origin v0.3.0
 
 # upload source to pypi
   rm -rf dist/*

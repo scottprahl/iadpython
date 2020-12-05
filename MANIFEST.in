@@ -1,4 +1,4 @@
-include CHANGELOG.txt
+include CHANGELOG.rst
 include LICENSE.txt
 exclude .gitignore
 exclude release.txt

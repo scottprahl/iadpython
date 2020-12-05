@@ -2,6 +2,8 @@ v0.3.0
 ------
       improve packaging
       improve documentation with Sphinx
+      use tox
+      add better diagnostics for finding libiad library
       
 v0.2.5
 ------
