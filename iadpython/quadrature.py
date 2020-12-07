@@ -3,6 +3,12 @@
 """
 Module for obtaining quadrature points and w.
 
+Three types of gaussian quadrature are supported: normal Gaussian,
+Radau quadrature, and Lobatto quadrature.  The first method does not
+include either endpoint of integration, Radau quadrature includes one
+endpoint of the integration range, and Lobatto quadrature includes both
+endpoints.
+
     import iad.quadrature
 
     n=8
@@ -63,11 +69,11 @@ def gauss(n, a=-1, b=1):
     x, w, _ = scipy.special.roots_legendre(n, mu=True)
 
     # scale for desired interval
-    x *= -0.5 * (b - a)
-    x += 0.5 * (b + a)
+    x *= 0.5 * (a - b)
+    x += 0.5 * (a + b)
     w *= 0.5 * (b - a)
 
-    return(np.flip(x), np.flip(w))
+    return x, w
 
 def radau(n, a=-1, b=1):
     """
@@ -84,7 +90,6 @@ def radau(n, a=-1, b=1):
     x = np.zeros(n)
     w = np.zeros(n)
     x[0] = -1
-    w[0] = 2/n**2
 
     # the roots of P_{n} bracket the roots of P_{n}':
     brackets = scipy.special.roots_legendre(n)[0]
@@ -94,14 +99,15 @@ def radau(n, a=-1, b=1):
         x[i+1] = scipy.optimize.brentq(f, brackets[i], brackets[i+1])
 
     pp = scipy.special.legendre(n-1).deriv(1)
+    w[0] = 2/n**2
     w[1:] = 1/pp(x[1:])**2/(1-x[1:])
 
     # scale for desired interval
-    x *= -0.5 * (b - a)
+    x *= 0.5 * (a - b)
     x += 0.5 * (b + a)
     w *= 0.5 * (b - a)
 
-    return(np.flip(x), np.flip(w))
+    return x, w
 
 def lobatto(n, a=-1, b=1):
     """
@@ -116,9 +122,9 @@ def lobatto(n, a=-1, b=1):
         w: array of weights of length n
     """
     x = np.zeros(n)
+    w = np.full(n, 2/n/(n-1))
     x[0] = -1
     x[-1] = 1
-    w = np.full(n, 2/n/(n-1))
 
     # The roots of P_{n-1} bracket the roots of P_{n-1}':
     brackets = scipy.special.roots_legendre(n-1)[0]
@@ -131,8 +137,8 @@ def lobatto(n, a=-1, b=1):
     w[1:-1] = w[1:-1]/pp[1:-1]**2
 
     # scale for desired interval
-    x *= -0.5 * (b - a)
-    x += 0.5 * (b + a)
+    x *= 0.5 * (a - b)
+    x += 0.5 * (a + b)
     w *= 0.5 * (b - a)
 
-    return(np.flip(x), np.flip(w))
+    return x, w
