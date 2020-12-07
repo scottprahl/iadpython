@@ -37,20 +37,17 @@ import numpy as np
 __all__ = ('gauss',
            'radau',
            'lobatto',
-           'gauss_func',
-           'radau_func',
-           'lobatto_func'
            )
 
-def gauss_func(n, x):
+def _gauss_func(n, x):
     """Zeros of this function are the abscissas for Gaussian quadrature."""
     return scipy.special.legendre(n)(x)
 
-def radau_func(n, x):
+def _radau_func(n, x):
     """Zeros of this function are the abscissas for Radau quadrature."""
     return (scipy.special.eval_legendre(n-1, x) + scipy.special.eval_legendre(n, x))/(1+x)
 
-def lobatto_func(n, x):
+def _lobatto_func(n, x):
     """Zeros of this function are the abscissas for Lobatto quadrature."""
     return scipy.special.legendre(n-1).deriv(1)(x)
 
@@ -112,7 +109,7 @@ def radau(n, a=-1, b=1):
     # the roots of P_{n} bracket the roots of P_{n}':
     brackets = scipy.special.roots_legendre(n)[0]
 
-    f = functools.partial(radau_func, n)
+    f = functools.partial(_radau_func, n)
     for i in range(n-1):
         x[i+1] = scipy.optimize.brentq(f, brackets[i], brackets[i+1])
 
@@ -157,7 +154,7 @@ def lobatto(n, a=-1, b=1):
     # The roots of P_{n-1} bracket the roots of P_{n-1}':
     brackets = scipy.special.roots_legendre(n-1)[0]
 
-    f = functools.partial(lobatto_func, n)
+    f = functools.partial(_lobatto_func, n)
     for i in range(n-2):
         x[i+1] = scipy.optimize.brentq(f, brackets[i], brackets[i+1])
 
