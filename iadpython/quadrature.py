@@ -57,7 +57,17 @@ def lobatto_func(n, x):
 def gauss(n, a=-1, b=1):
     """
     Return abscissas and weights for Gaussian quadrature.
-    integral from a to b of f(x) dx = sum w_i f(x_i)
+
+    The definite integral ranges from a to b.  The default
+    interval is -1 to 1.  The quadrature approximation is
+    just the sum of w_i f(x_i).  Neither a nor b is included
+    in the list of quadrature abscissas.
+
+    The result should be exact when integrating any polynomial
+    of degree 2n-1 or less.
+
+    If -a=b, then abscissas will be symmetric about the origin
+
     Args:
         n: number of quadrature points
         a: lower limit of integral
@@ -78,7 +88,15 @@ def gauss(n, a=-1, b=1):
 def radau(n, a=-1, b=1):
     """
     Return abscissas and weights for Radau quadrature.
-    integral from a to b of f(x) dx = sum w_i f(x_i)
+
+    The definite integral ranges from a to b.  The default
+    interval is -1 to 1.  The quadrature approximation is
+    just the sum of w_i f(x_i).  The upper endpoint b is include
+    in the list of quadrature abscissas.
+
+    The result should be exact when integrating any polynomial
+    of degree 2n-2 or less.
+
     Args:
         n: number of quadrature points
         a: lower limit of integral
@@ -112,7 +130,17 @@ def radau(n, a=-1, b=1):
 def lobatto(n, a=-1, b=1):
     """
     Return abscissas and weights for Lobatto quadrature.
-    integral from a to b of f(x) dx = sum w_i f(x_i)
+
+    The definite integral ranges from a to b.  The default
+    interval is -1 to 1.  The quadrature approximation is
+    just the sum of w_i f(x_i).  Both endpoints a and b are include
+    in the list of quadrature abscissas.
+
+    The result should be exact when integrating any polynomial
+    of degree 2n-3 or less.
+
+    If -a=b, then abscissas will be symmetric about the origin
+
     Args:
         n: number of quadrature points
         a: lower limit of integral
