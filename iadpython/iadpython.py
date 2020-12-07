@@ -78,10 +78,10 @@ def basic_rt(n, nslab, ntop, nbot, a, b, g):
     basic_rt() returns [UR1,UT1,URU,UTU] for a slab optionally
     bounded by glass slides.  The slab is characterized by an albedo a, an
     optical thickness b, a scattering anisotropy g, and an index of refraction nslab.
-    
+
     The top glass slides have an index of refraction ntop and the bottom slide has
     an index nbot.  If there are no glass slides, set ntop and nbottom to 1.
-    
+
     n is the number of quadrature angles (more angles give better accuracy but slow
     the calculation by n**3, n must be a multiple of 4, typically 16 is good for forward
     calculations and 4 is appropriate for inverse calculations).
@@ -92,7 +92,7 @@ def basic_rt(n, nslab, ntop, nbot, a, b, g):
     UT1 is the total transmission for normally incident collimated light.
     URU is the total reflection for diffuse incident light.
     UTU is the total transmission for diffuse incident light.
-    
+
     Args:
         n: number of points in quadrature (multiple of 4)
         nslab: index of refraction of the slab

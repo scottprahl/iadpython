@@ -1,6 +1,7 @@
 .DS_Store
 *.pyc
 iadpython/__pycache__/*
+iadpython/ad-simple.nb
 docs/.ipynb_checkpoints/
 iadpython.egg-info/*
 .tox/*

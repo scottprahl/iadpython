@@ -11,12 +11,19 @@ check:
 
 pylint:
 	-pylint iadpython/iadpython.py
+	-pylint iadpython/quadrature.py
+	-pylint iadpython/test_iadpython.py
+	-pylint iadpython/test_quadrature.py
 	
 pep257:
 	-pep257 iadpython/iadpython.py
+	-pep257 iadpython/quadrature.py
+	-pep257 iadpython/test_iadpython.py
+	-pep257 iadpython/test_quadrature.py
 
 test:
 	nosetests iadpython/test_iadpython.py
+	nosetests iadpython/test_quadrature.py
 	
 clean:
 	rm -rf dist
