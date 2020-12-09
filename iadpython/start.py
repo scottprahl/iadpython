@@ -19,6 +19,7 @@ import numpy as np
 import iadpython.quadrature as quad
 
 __all__ = ('cos_critical_angle',
+           'print_matrix',
            )
 
 
@@ -26,14 +27,67 @@ def cos_critical_angle(ni, nt):
     """
     Calculates the cosine of the critical angle.
 
-    If there is no critical angle then 0.0 is returned (i.e., cos(pi/2)).
+    If there is no critical angle then 0.0 is returned.
     """
     if nt >= ni:
         return 0.0
 
     return np.sqrt(1-(nt/ni)**2)
 
-class slab():
+def print_matrix(a, slab):
+    """Print matrix and sums."""
+    n, _ = a.shape
+
+    #header line
+    print("%9.5f" % 0.0, end='')
+    for i in range(n):
+        print("%9.5f" % slab.nu[i], end='')
+    print("     flux")
+
+    #contents + row fluxes
+    tflux = 0.0
+    for i in range(n):
+        print("%9.5f" % slab.nu[i], end='')
+        for j in range(n):
+            if a[i, j] < -10 or a[i, j] > 10:
+                print("    *****", end='')
+            else:
+                print("%9.5f" % a[i, j], end='')
+        flux = 0.0
+        for j in range(n):
+            if -10 < a[i, j] < 10:
+                flux += a[i, j] * slab.twonuw[j]
+        print("%9.5f" % flux)
+        tflux += flux * slab.twonuw[i]
+
+    #column fluxes
+    print("%9s" % "flux   ", end='')
+    for i in range(n):
+        flux = 0.0
+        for j in range(n):
+            if -10 < a[j, i] < 10:
+                flux += a[j, i] * slab.twonuw[j]
+        print("%9.5f" % flux, end='')
+    print("%9.5f\n" % tflux)
+
+    #line of asterisks
+    for i in range(n+1):
+        print("*********", end='')
+    print("\n")
+
+def zero_layer(slab):
+    """
+    Create R and T matrices for layer with zero thickness.
+    """
+    r = np.zeros([slab.quad_pts, slab.quad_pts])
+    t = np.zeros([slab.quad_pts, slab.quad_pts])
+
+    for i in range(slab.quad_pts):
+        t[i, i] += 1/slab.twonuw[i]
+
+    return r, t
+
+class Slab():
     def __init__(self):
         self.quad_pts = 4
         self.a = 0.0
@@ -98,7 +152,7 @@ class slab():
         The criterion is based on an assessment of the (1) round-off error,
         (2) the angular initialization error, and (3) the thickness
         initialization error.  Wiscombe concluded that an optimal
-        starting thickness depends on the smallest quadrature angle, and
+        starting thickness depends on the smallest quadrature slab.nu, and
         recommends that when either the infinitesimal generator or diamond
         initialization methods are used then the initial thickness is optimal
         when type 2 and 3 errors are comparable, or when d ≈ µ.
@@ -128,38 +182,38 @@ class slab():
 
     def update_quadrature(self):
         """
-        This returns the quadrature angles using Radau quadrature over the
-        interval 0 to 1 if there is no critical angle for total internal reflection
-        in the self.  If there is a critical angle whose cosine is 'nu_c' then
+        This returns the quadrature slab.nus using Radau quadrature over the
+        interval 0 to 1 if there is no critical slab.nu for total internal reflection
+        in the self.  If there is a critical slab.nu whose cosine is 'nu_c' then
         Radau quadrature points are chosen from 0 to 'nu_c' and Radau
         quadrature points over the interval 'nu_c' to 1.
 
-        Now we need to include three angles, the critical angle, the cone
-        angle, and perpendicular.  Now the important angles are the ones in
-        the self.  So we calculate the cosine of the critical angle in the
-        slab and cosine of the cone angle in the self.
+        Now we need to include three slab.nus, the critical slab.nu, the cone
+        slab.nu, and perpendicular.  Now the important slab.nus are the ones in
+        the self.  So we calculate the cosine of the critical slab.nu in the
+        slab and cosine of the cone slab.nu in the self.
 
-        The critical angle will always be greater than the cone angle in the
-        slab and therefore the cosine of the critical angle will always be
-        less than the cosine of the cone angle.  Thus we will integrate from
-        zero to the cosine of the critical angle (using Gaussian quadrature
-        to avoid either endpoint) then from the critical angle to the cone
-        angle (using Radau quadrature so that the cosine angle will be
-        included) and finally from the cone angle to 1 (again using Radau
+        The critical slab.nu will always be greater than the cone slab.nu in the
+        slab and therefore the cosine of the critical slab.nu will always be
+        less than the cosine of the cone slab.nu.  Thus we will integrate from
+        zero to the cosine of the critical slab.nu (using Gaussian quadrature
+        to avoid either endpoint) then from the critical slab.nu to the cone
+        slab.nu (using Radau quadrature so that the cosine slab.nu will be
+        included) and finally from the cone slab.nu to 1 (again using Radau
         quadrature so that 1 will be included).
         """
         nu_c = cos_critical_angle(self.n, 1.0)
         nby2 = int(self.quad_pts / 2)
 
         if self.nu_0 == 1:
-            # case 1.  Normal incidence, no critical angle
+            # case 1.  Normal incidence, no critical slab.nu
             if self.n == 1:
                 a1 = []
                 w1 = []
                 a2, w2 = quad.radau(self.quad_pts, a=0, b=1)
 
-            # case 2.  Normal incidence, with critical angle
-            if self.nu_0 == 1.0:
+            # case 2.  Normal incidence, with critical slab.nu
+            else:
                 a1, w1 = quad.gauss(nby2, a=0, b=nu_c)
                 a2, w2 = quad.radau(nby2, a=nu_c, b=1)
         else:
