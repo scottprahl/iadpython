@@ -30,6 +30,8 @@ class gauss(unittest.TestCase):
         ww[1] = 0.2223810344533745
         ww[7] = 0.1012285362903763
         ww[0] = 0.1012285362903763
+        xx = np.flip(xx)
+        ww = np.flip(ww)
         np.testing.assert_allclose(x, xx)
         np.testing.assert_allclose(w, ww)
 
@@ -47,16 +49,16 @@ class gauss(unittest.TestCase):
     def test_03_gaussian(self):
         n = 5
         x, _ = quad.gauss(n)
-        self.assertLess(-1, x[n-1])
-        self.assertLess(x[0], 1)
+        self.assertLess(-1, x[0])
+        self.assertLess(x[-1], 1)
 
     def test_04_gaussian(self):
         n = 5
         a = -7
         b = 2
         x, _ = quad.gauss(n, a, b)
-        self.assertLess(a, x[n-1])
-        self.assertLess(x[0], b)
+        self.assertLess(a, x[0])
+        self.assertLess(x[-1], b)
 
 
 class radau(unittest.TestCase):
@@ -83,8 +85,7 @@ class radau(unittest.TestCase):
         ww[0] = 0.1145088147442572
 
         # the provided solutions must be adapted because the lower endpoint is assumed fixed
-        xx = -np.flip(xx)
-        ww = np.flip(ww)
+        xx *= -1
         np.testing.assert_allclose(x, xx)
         np.testing.assert_allclose(w, ww)
 
@@ -102,16 +103,16 @@ class radau(unittest.TestCase):
     def test_03_radau(self):
         n = 5
         x, _ = quad.radau(n)
-        np.testing.assert_equal(x[0], 1)
-        self.assertLess(-1, x[n-1])
+        np.testing.assert_equal(x[-1], 1)
+        self.assertLess(-1, x[0])
 
     def test_04_radau(self):
         n = 5
         a = -7
         b = 2
         x, _ = quad.radau(n, a, b)
-        np.testing.assert_equal(x[0], b)
-        self.assertLess(a, x[n-1])
+        np.testing.assert_equal(x[-1], b)
+        self.assertLess(a, x[0])
 
 
 class lobatto(unittest.TestCase):
@@ -137,6 +138,8 @@ class lobatto(unittest.TestCase):
         ww[1] = 0.210704227143506039383
         ww[0] = 0.0357142857142857142857
 
+        xx = np.flip(xx)
+        ww = np.flip(ww)
         np.testing.assert_allclose(x, xx)
         np.testing.assert_allclose(w, ww)
 
@@ -154,8 +157,8 @@ class lobatto(unittest.TestCase):
     def test_03_lobatto(self):
         n = 5
         x, _ = quad.lobatto(n)
-        np.testing.assert_equal(x[0], 1)
-        np.testing.assert_equal(x[n-1], -1)
+        np.testing.assert_equal(x[-1], 1)
+        np.testing.assert_equal(x[0], -1)
 
     def test_04_lobatto(self):
         n = 5
@@ -163,8 +166,8 @@ class lobatto(unittest.TestCase):
         b = 2
         x, _ = quad.lobatto(n, a, b)
 
-        np.testing.assert_equal(x[0], b)
-        np.testing.assert_equal(x[n-1], a)
+        np.testing.assert_equal(x[-1], b)
+        np.testing.assert_equal(x[0], a)
 
 
 if __name__ == '__main__':

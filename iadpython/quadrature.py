@@ -80,7 +80,7 @@ def gauss(n, a=-1, b=1):
     x += 0.5 * (a + b)
     w *= 0.5 * (b - a)
 
-    return x, w
+    return np.flip(x), np.flip(w)
 
 def radau(n, a=-1, b=1):
     """
@@ -122,7 +122,7 @@ def radau(n, a=-1, b=1):
     x += 0.5 * (b + a)
     w *= 0.5 * (b - a)
 
-    return x, w
+    return np.flip(x), np.flip(w)
 
 def lobatto(n, a=-1, b=1):
     """
@@ -166,4 +166,4 @@ def lobatto(n, a=-1, b=1):
     x += 0.5 * (a + b)
     w *= 0.5 * (b - a)
 
-    return x, w
+    return np.flip(x), np.flip(w)
