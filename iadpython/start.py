@@ -34,20 +34,20 @@ def cos_critical_angle(ni, nt):
 
     return np.sqrt(1-(nt/ni)**2)
 
-def print_matrix(a, slab):
+def print_matrix(a, method):
     """Print matrix and sums."""
-    n, _ = a.shape
+    n = method.quad_pts
 
     #header line
     print("%9.5f" % 0.0, end='')
     for i in range(n):
-        print("%9.5f" % slab.nu[i], end='')
+        print("%9.5f" % method.nu[i], end='')
     print("     flux")
 
     #contents + row fluxes
     tflux = 0.0
     for i in range(n):
-        print("%9.5f" % slab.nu[i], end='')
+        print("%9.5f" % method.nu[i], end='')
         for j in range(n):
             if a[i, j] < -10 or a[i, j] > 10:
                 print("    *****", end='')
@@ -55,18 +55,16 @@ def print_matrix(a, slab):
                 print("%9.5f" % a[i, j], end='')
         flux = 0.0
         for j in range(n):
-            if -10 < a[i, j] < 10:
-                flux += a[i, j] * slab.twonuw[j]
+            flux += a[i, j] * method.twonuw[j]
         print("%9.5f" % flux)
-        tflux += flux * slab.twonuw[i]
+        tflux += flux * method.twonuw[i]
 
     #column fluxes
     print("%9s" % "flux   ", end='')
     for i in range(n):
         flux = 0.0
         for j in range(n):
-            if -10 < a[j, i] < 10:
-                flux += a[j, i] * slab.twonuw[j]
+            flux += a[j, i] * method.twonuw[j]
         print("%9.5f" % flux, end='')
     print("%9.5f\n" % tflux)
 
@@ -75,21 +73,133 @@ def print_matrix(a, slab):
         print("*********", end='')
     print("\n")
 
-def zero_layer(slab):
+def zero_layer(method):
     """
     Create R and T matrices for layer with zero thickness.
     """
-    r = np.zeros([slab.quad_pts, slab.quad_pts])
-    t = np.zeros([slab.quad_pts, slab.quad_pts])
+    n = method.quad_pts
+    r = np.zeros([n, n])
+    t = np.zeros([n, n])
 
-    for i in range(slab.quad_pts):
-        t[i, i] += 1/slab.twonuw[i]
+    for i in range(n):
+        t[i, i] = 1/method.twonuw[i]
 
     return r, t
 
+class Method():
+    def __init__(self, slab):
+        self.quad_pts = 4
+        self.b_thinnest = 0.0001
+        self.nu = []
+        self.weight = []
+        self.twonuw = []
+        self.update_quadrature(slab)
+        self.update_start_depth(slab)
+
+        af = slab.a * slab.g**self.quad_pts
+        self.a_calc = (slab.a - af) / (1 - af)
+        self.b_calc = (1 - af) * slab.b
+        self.g_calc = slab.g
+
+    def __str__(self):
+        s = ""
+        s += "Quadrature Pts    = %d\n" % self.quad_pts
+        return s
+
+    def update_quadrature(self, slab):
+        """
+        This returns the quadrature slab.nus using Radau quadrature over the
+        interval 0 to 1 if there is no critical slab.nu for total internal reflection
+        in the self.  If there is a critical slab.nu whose cosine is 'nu_c' then
+        Radau quadrature points are chosen from 0 to 'nu_c' and Radau
+        quadrature points over the interval 'nu_c' to 1.
+
+        Now we need to include three slab.nus, the critical slab.nu, the cone
+        slab.nu, and perpendicular.  Now the important slab.nus are the ones in
+        the self.  So we calculate the cosine of the critical slab.nu in the
+        slab and cosine of the cone slab.nu in the self.
+
+        The critical slab.nu will always be greater than the cone slab.nu in the
+        slab and therefore the cosine of the critical slab.nu will always be
+        less than the cosine of the cone slab.nu.  Thus we will integrate from
+        zero to the cosine of the critical slab.nu (using Gaussian quadrature
+        to avoid either endpoint) then from the critical slab.nu to the cone
+        slab.nu (using Radau quadrature so that the cosine slab.nu will be
+        included) and finally from the cone slab.nu to 1 (again using Radau
+        quadrature so that 1 will be included).
+        """
+        nu_c = cos_critical_angle(slab.n, 1.0)
+        nby2 = int(self.quad_pts / 2)
+
+        if slab.nu_0 == 1:
+            # case 1.  Normal incidence, no critical slab.nu
+            if slab.n == 1:
+                a1 = []
+                w1 = []
+                a2, w2 = quad.radau(self.quad_pts, a=0, b=1)
+
+            # case 2.  Normal incidence, with critical slab.nu
+            else:
+                a1, w1 = quad.gauss(nby2, a=0, b=nu_c)
+                a2, w2 = quad.radau(nby2, a=nu_c, b=1)
+        else:
+            # case 3.  Conical incidence.  Include nu_0
+            if slab.n == 1.0:
+                a1, w1 = quad.radau(nby2, a=0, b=self.nu_0)
+                a2, w2 = quad.radau(nby2, a=self.nu_0, b=1)
+
+            # case 4.  Conical incidence.  Include nu_c, nu_00, and 1
+            else:
+                nby3 = int(self.quad_pts / 3)
+                # cosine of nu_0 in slab
+                nu_00 = np.cos(np.arcsin(np.sin(np.arccos(slab.nu_0))/slab.n))
+                a00, w00 = quad.gauss(nby3, a=0, b=nu_c)
+                a01, w01 = quad.radau(nby3, a=nu_c, b=nu_00)
+                a1 = np.append(a00, a01)
+                w1 = np.append(w00, w01)
+                a2, w2 = quad.radau(nby3, a=nu_00, b=1)
+
+        self.nu = np.append(a1, a2)
+        self.weight = np.append(w1, w2)
+        self.twonuw = 2 * self.nu * self.weight
+
+    def update_start_depth(self, slab):
+        """
+        The best starting thickness to start the doubling process.
+
+        The criterion is based on an assessment of the (1) round-off error,
+        (2) the angular initialization error, and (3) the thickness
+        initialization error.  Wiscombe concluded that an optimal
+        starting thickness depends on the smallest quadrature slab.nu, and
+        recommends that when either the infinitesimal generator or diamond
+        initialization methods are used then the initial thickness is optimal
+        when type 2 and 3 errors are comparable, or when d ≈ µ.
+
+        Note that round-off is important when the starting thickness is less than
+        |1e-4| for diamond initialization and less than
+        |1e-8| for infinitesimal generator initialization assuming
+        about 14 significant digits of accuracy.
+
+        Since the final thickness is determined by repeated doubling, the
+        starting thickness is found by dividing by 2 until the starting thickness is
+        less than 'mu'.  Also we make checks for a layer with zero thickness
+        and one that infinitely thick.
+        """
+        mu = self.nu[0]
+        if slab.d <= 0:
+            return 0.0
+
+        if slab.d == np.inf:
+            return mu / 2.0
+
+        dd = slab.d
+        while dd > mu:
+            dd /= 2
+
+        self.b_thinnest = dd
+        
 class Slab():
     def __init__(self):
-        self.quad_pts = 4
         self.a = 0.0
         self.b = 1.0
         self.g = 0.0
@@ -106,22 +216,13 @@ class Slab():
         self.b_calc = self.b
         self.g_calc = self.g
         self.b_thinnest = self.b/100
-        self.nu = []
-        self.weight = []
-        self.twonuw = []
         self.update_derived_optical_properties()
-        self.update_quadrature()
 
     def update_derived_optical_properties(self):
         self.nu_c = cos_critical_angle(self.n, 1)
         self.mu_a = (1-self.a) * self.b / self.d
         self.mu_s = self.a * self.b / self.d
         self.mu_sp = self.mu_s*(1-self.g)
-
-        af = self.a * self.g**self.quad_pts
-        self.a_calc = (self.a - af) / (1 - af)
-        self.b_calc = (1 - af) * self.b
-        self.g_calc = self.g
 
     def as_array(self):
         return [self.a, self.b, self.g, self.d, self.n]
@@ -145,95 +246,21 @@ class Slab():
         s += "mu_s*(1-g)        = %.3f [1/mm]\n" % self.mu_sp
         return s
 
-    def update_start_depth(self):
-        """
-        The best starting thickness to start the doubling process.
 
-        The criterion is based on an assessment of the (1) round-off error,
-        (2) the angular initialization error, and (3) the thickness
-        initialization error.  Wiscombe concluded that an optimal
-        starting thickness depends on the smallest quadrature slab.nu, and
-        recommends that when either the infinitesimal generator or diamond
-        initialization methods are used then the initial thickness is optimal
-        when type 2 and 3 errors are comparable, or when d ≈ µ.
 
-        Note that round-off is important when the starting thickness is less than
-        |1e-4| for diamond initialization and less than
-        |1e-8| for infinitesimal generator initialization assuming
-        about 14 significant digits of accuracy.
+def init_layer(slab, method):
+    """
+    Reflection and transmission matrices for a thin layer.
+    """
 
-        Since the final thickness is determined by repeated doubling, the
-        starting thickness is found by dividing by 2 until the starting thickness is
-        less than 'mu'.  Also we make checks for a layer with zero thickness
-        and one that infinitely thick.
-        """
-        mu = self.nu[0]
-        if self.d <= 0:
-            return 0.0
+    n = method.quad_pts
 
-        if self.d == np.inf:
-            return mu / 2.0
+    if slab.b <= 0 :
+        return zero_layer(method)
 
-        dd = self.d
-        while dd > mu:
-            dd /= 2
-
-        self.b_thinnest = dd
-
-    def update_quadrature(self):
-        """
-        This returns the quadrature slab.nus using Radau quadrature over the
-        interval 0 to 1 if there is no critical slab.nu for total internal reflection
-        in the self.  If there is a critical slab.nu whose cosine is 'nu_c' then
-        Radau quadrature points are chosen from 0 to 'nu_c' and Radau
-        quadrature points over the interval 'nu_c' to 1.
-
-        Now we need to include three slab.nus, the critical slab.nu, the cone
-        slab.nu, and perpendicular.  Now the important slab.nus are the ones in
-        the self.  So we calculate the cosine of the critical slab.nu in the
-        slab and cosine of the cone slab.nu in the self.
-
-        The critical slab.nu will always be greater than the cone slab.nu in the
-        slab and therefore the cosine of the critical slab.nu will always be
-        less than the cosine of the cone slab.nu.  Thus we will integrate from
-        zero to the cosine of the critical slab.nu (using Gaussian quadrature
-        to avoid either endpoint) then from the critical slab.nu to the cone
-        slab.nu (using Radau quadrature so that the cosine slab.nu will be
-        included) and finally from the cone slab.nu to 1 (again using Radau
-        quadrature so that 1 will be included).
-        """
-        nu_c = cos_critical_angle(self.n, 1.0)
-        nby2 = int(self.quad_pts / 2)
-
-        if self.nu_0 == 1:
-            # case 1.  Normal incidence, no critical slab.nu
-            if self.n == 1:
-                a1 = []
-                w1 = []
-                a2, w2 = quad.radau(self.quad_pts, a=0, b=1)
-
-            # case 2.  Normal incidence, with critical slab.nu
-            else:
-                a1, w1 = quad.gauss(nby2, a=0, b=nu_c)
-                a2, w2 = quad.radau(nby2, a=nu_c, b=1)
-        else:
-            # case 3.  Conical incidence.  Include nu_0
-            if self.n == 1.0:
-                a1, w1 = quad.radau(nby2, a=0, b=self.nu_0)
-                a2, w2 = quad.radau(nby2, a=self.nu_0, b=1)
-
-            # case 4.  Conical incidence.  Include nu_c, nu_00, and 1
-            else:
-                nby3 = int(self.quad_pts / 3)
-                # cosine of nu_0 in slab
-                nu_00 = np.cos(np.arcsin(np.sin(np.arccos(self.nu_0))/self.n))
-                a00, w00 = quad.gauss(nby3, a=0, b=nu_c)
-                a01, w01 = quad.radau(nby3, a=nu_c, b=nu_00)
-                a1 = np.append(a00, a01)
-                w1 = np.append(w00, w01)
-                a2, w2 = quad.radau(nby3, a=nu_00, b=1)
-
-        self.nu = np.append(a1, a2)
-        self.weight = np.append(w1, w2)
-        self.twonuw = 2 * self.nu * self.weight
-        self.update_start_depth()
+#         Get_Phi(n, slab.phase_function, method.g_calc, h);
+# 
+#         if (method.b_thinnest < 1e-4 || method.b_thinnest < 0.09 * angle[1])
+#             Get_IGI_Layer(method, h, R, T);
+#         else
+#             Get_Diamond_Layer(method, h, R, T);
