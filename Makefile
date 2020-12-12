@@ -22,6 +22,7 @@ pep257:
 	-pep257 iadpython/test_quadrature.py
 
 test:
+	nosetests iadpython/test_phase.py
 	nosetests iadpython/test_iadpython.py
 	nosetests iadpython/test_quadrature.py
 	
