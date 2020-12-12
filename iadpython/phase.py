@@ -55,7 +55,7 @@ def get_phi_legendre(slab, method):
     g = slab.g
     if g == 0:
         h = np.ones([n, n])
-        return h, h, h, h
+        return h, h
 
     hp = np.ones([n, n])
     hm = np.ones([n, n])

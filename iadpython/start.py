@@ -17,9 +17,12 @@ Two types of starting methods are possible.
 
 import numpy as np
 import iadpython.quadrature as quad
+import iadpython.phase as phase
 
 __all__ = ('cos_critical_angle',
            'print_matrix',
+           'zero_layer',
+           'igi_start',
            )
 
 
@@ -94,12 +97,12 @@ class Method():
         self.weight = []
         self.twonuw = []
         self.update_quadrature(slab)
-        self.update_start_depth(slab)
 
         af = slab.a * slab.g**self.quad_pts
         self.a_calc = (slab.a - af) / (1 - af)
         self.b_calc = (1 - af) * slab.b
         self.g_calc = slab.g
+        self.update_start_depth()
 
     def __str__(self):
         s = ""
@@ -163,7 +166,7 @@ class Method():
         self.weight = np.append(w1, w2)
         self.twonuw = 2 * self.nu * self.weight
 
-    def update_start_depth(self, slab):
+    def update_start_depth(self):
         """
         The best starting thickness to start the doubling process.
 
@@ -186,13 +189,15 @@ class Method():
         and one that infinitely thick.
         """
         mu = self.nu[0]
-        if slab.d <= 0:
+        b = self.b_calc
+        
+        if b <= 0:
             return 0.0
 
-        if slab.d == np.inf:
+        if b == np.inf:
             return mu / 2.0
 
-        dd = slab.d
+        dd = b
         while dd > mu:
             dd /= 2
 
@@ -246,6 +251,39 @@ class Slab():
         s += "mu_s*(1-g)        = %.3f [1/mm]\n" % self.mu_sp
         return s
 
+def igi_start(method, hp, hm):
+    """
+    Infinitesmal Generator Initialization.
+
+    igi_start() generates the starting matrix with the inifinitesimal generator method.
+    The accuracy is O(d) and assumes that the average irradiance upwards is
+    equal to that travelling downwards at the top and the average radiance upwards
+    equals that moving upwards from the bottom.
+    
+    Ultimately the formulas for the reflection matrix is
+
+    R_ij = a*d/(4*nu_i*nu_j) hpm_{ij}
+
+    and
+
+    T_ij = a*d/(4*nu_i*nu_j) hpp_{ij} + delta_{ij}*(1-d/nu_i)/(2*\nu_i w_i)
+
+    """
+    d = method.b_thinnest
+    n = method.quad_pts
+
+    R = np.zeros([n, n])
+    T = np.zeros([n, n])
+    for j in range(n):
+        temp = method.a_calc * d / 4 / method.nu[j]
+        for i in range(n):
+            c = temp/method.nu[i]
+            R[i, j] = c * hm[i, j]
+            T[i, j] = c * hp[i, j]
+
+        T[j, j] += (1-d/method.nu[j])/method.twonuw[j]
+
+    return R, T
 
 
 def init_layer(slab, method):
@@ -258,8 +296,8 @@ def init_layer(slab, method):
     if slab.b <= 0 :
         return zero_layer(method)
 
-#         Get_Phi(n, slab.phase_function, method.g_calc, h);
-# 
+    hp, hm = get_phi_legendre(slab, method)
+
 #         if (method.b_thinnest < 1e-4 || method.b_thinnest < 0.09 * angle[1])
 #             Get_IGI_Layer(method, h, R, T);
 #         else
