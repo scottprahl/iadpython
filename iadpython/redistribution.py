@@ -1,14 +1,6 @@
 # pylint: disable=invalid-name
 # pylint: disable=no-member
 
-import scipy.special
-import numpy as np
-import numpy.polynomial.legendre
-
-__all__ = ('get_phi_elliptic',
-           'get_phi_legendre',
-           )
-
 """
 Calculation of the redistribution function.
 
@@ -31,12 +23,21 @@ When the cosine of the angle of incidence or exitance is unity (`nu_i=1` or
 function p(nu_j).
 """
 
-def get_phi_legendre(slab, method):
+import scipy.special
+import numpy as np
+import numpy.polynomial.legendre
+
+__all__ = ('hg_elliptic',
+           'hg_legendre',
+           )
+
+def hg_legendre(slab, method):
     """
-    Calculate the redistribution matrix using Legendre polynomials.
+    Calculate the HG redistribution matrix using Legendre polynomials.
 
     This is a straightforward implementation of Wiscombe's delta-M
-    method for calculating the redistribution function as given in
+    method for calculating the redistribution function for a Henyey-
+    Greenstein phase function as given in
 
     Wiscombe, "The Delta-M Method : Rapid Yet Accurate Radiative Flux
     Calculations for Strongly Asymmetric Phase Functions,"
@@ -45,14 +46,9 @@ def get_phi_legendre(slab, method):
     Probably should generate all the Legendre polynomials one
     time and then calculate.
     """
-
-#     if (fabs(slab.g) >= 1)
-# 	    throw("Get_Phi was called with a bad g_calc value")
-
     n = method.quad_pts
-
-    # Isotropic phase function is constant
     g = slab.g
+
     if g == 0:
         h = np.ones([n, n])
         return h, h
@@ -77,7 +73,7 @@ def get_phi_legendre(slab, method):
 
     return hp, hm
 
-def get_phi_elliptic(slab, method):
+def hg_elliptic(slab, method):
     """
     Calculate redistribution function using elliptic integrals.
 
@@ -88,13 +84,7 @@ def get_phi_elliptic(slab, method):
     delta-M method to more accurate model highly anisotropic
     phase functions.
     """
-
-#     if (fabs(slab.g) >= 1)
-# 	    throw("Get_Phi was called with a bad g_calc value")
-
     n = method.quad_pts
-
-    # Isotropic phase function is constant
     g = slab.g**n
     if g == 0:
         h = np.ones([n, n])

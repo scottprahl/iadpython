@@ -1,4 +1,6 @@
 # pylint: disable=invalid-name
+# pylint: disable=no-self-use
+
 """Tests for Quadrature."""
 
 import unittest
@@ -7,8 +9,10 @@ import iadpython.quadrature as quad
 
 
 class gauss(unittest.TestCase):
+    """Tests for Gaussian-Legendre quadrature."""
 
     def test_01_gaussian(self):
+        """Gaussian quadrature with default endpoints."""
         n = 8
         x, w = quad.gauss(n)
         xx = np.empty(n)
@@ -36,6 +40,7 @@ class gauss(unittest.TestCase):
         np.testing.assert_allclose(w, ww)
 
     def test_02_gaussian(self):
+        """Gaussian quadrature with specific endpoints."""
         n = 8
         a = -7
         b = 2
@@ -47,12 +52,14 @@ class gauss(unittest.TestCase):
         np.testing.assert_approx_equal(quad_int, anal_int)
 
     def test_03_gaussian(self):
+        """Gaussian quadrature with endpoint test."""
         n = 5
         x, _ = quad.gauss(n)
         self.assertLess(-1, x[0])
         self.assertLess(x[-1], 1)
 
     def test_04_gaussian(self):
+        """Gaussian quadrature with endpoint test and specified endpoints."""
         n = 5
         a = -7
         b = 2
@@ -62,7 +69,10 @@ class gauss(unittest.TestCase):
 
 
 class radau(unittest.TestCase):
+    """Tests for Radau-Legendre quadrature."""
+
     def test_01_radau(self):
+        """Radau quadrature with default endpoints."""
         x, w = quad.radau(8)
         xx = np.empty(8)
         ww = np.empty(8)
@@ -90,6 +100,7 @@ class radau(unittest.TestCase):
         np.testing.assert_allclose(w, ww)
 
     def test_02_radau(self):
+        """Radau quadrature with specific endpoints."""
         n = 8
         a = -7
         b = 2
@@ -101,12 +112,14 @@ class radau(unittest.TestCase):
         np.testing.assert_approx_equal(quad_int, anal_int)
 
     def test_03_radau(self):
+        """Radau quadrature with endpoint test."""
         n = 5
         x, _ = quad.radau(n)
         np.testing.assert_equal(x[-1], 1)
         self.assertLess(-1, x[0])
 
     def test_04_radau(self):
+        """Radau quadrature with endpoint test and specified endpoints."""
         n = 5
         a = -7
         b = 2
@@ -116,7 +129,10 @@ class radau(unittest.TestCase):
 
 
 class lobatto(unittest.TestCase):
+    """Tests for Lobatto-Legendre quadrature."""
+
     def test_01_lobatto(self):
+        """Lobatto quadrature with default endpoints."""
         x, w = quad.lobatto(8)
         xx = np.empty(8)
         ww = np.empty(8)
@@ -144,6 +160,7 @@ class lobatto(unittest.TestCase):
         np.testing.assert_allclose(w, ww)
 
     def test_02_lobatto(self):
+        """Lobatto quadrature with specific endpoints."""
         n = 8
         a = -7
         b = 2
@@ -155,12 +172,14 @@ class lobatto(unittest.TestCase):
         np.testing.assert_approx_equal(quad_int, anal_int)
 
     def test_03_lobatto(self):
+        """Lobatto quadrature with endpoint test."""
         n = 5
         x, _ = quad.lobatto(n)
         np.testing.assert_equal(x[-1], 1)
         np.testing.assert_equal(x[0], -1)
 
     def test_04_lobatto(self):
+        """Lobatto quadrature with endpoint test and specified endpoints."""
         n = 5
         a = -7
         b = 2

@@ -1,5 +1,6 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-locals
 
 """
 Module for generating the starting layer for adding-doubling.
@@ -17,7 +18,7 @@ Two types of starting methods are possible.
 
 import numpy as np
 import iadpython.quadrature as quad
-import iadpython.phase as phase
+import iadpython.redistribution
 
 __all__ = ('cos_critical_angle',
            'print_matrix',
@@ -29,7 +30,7 @@ __all__ = ('cos_critical_angle',
 
 def cos_critical_angle(ni, nt):
     """
-    Calculates the cosine of the critical angle.
+    Calculate the cosine of the critical angle.
 
     If there is no critical angle then 0.0 is returned.
     """
@@ -80,17 +81,18 @@ def print_matrix(a, method):
 def zero_layer(method):
     """
     Create R and T matrices for layer with zero thickness.
+
+    Need to include quadrature normalization so R+T=1.
     """
     n = method.quad_pts
     r = np.zeros([n, n])
-    t = np.zeros([n, n])
-
-    for i in range(n):
-        t[i, i] = 1/method.twonuw[i]
+    t = np.identity(n) / method.twonuw
 
     return r, t
 
 class Method():
+    """Container class for tracking calculation details."""
+
     def __init__(self, slab):
         self.quad_pts = 4
         self.b_thinnest = 0.0001
@@ -106,13 +108,20 @@ class Method():
         self.update_start_depth()
 
     def __str__(self):
+        """Return a reasonable string for printing."""
         s = ""
-        s += "Quadrature Pts    = %d\n" % self.quad_pts
+        s += "Quadrature Pts = %d\n" % self.quad_pts
+        s += "Thinnest layer = %.5f\n" % self.b_thinnest
+        s += "a_calc         = %.5f\n" % self.a_calc
+        s += "b_calc         = %.5f\n" % self.b_calc
+        s += "g_calc         = %.5f\n" % self.g_calc
         return s
 
     def update_quadrature(self, slab):
         """
-        This returns the quadrature slab.nus using Radau quadrature over the
+        Calculate the correct set of quadrature points.
+
+        This returns the quadrature angles using Radau quadrature over the
         interval 0 to 1 if there is no critical slab.nu for total internal reflection
         in the self.  If there is a critical slab.nu whose cosine is 'nu_c' then
         Radau quadrature points are chosen from 0 to 'nu_c' and Radau
@@ -169,7 +178,7 @@ class Method():
 
     def update_start_depth(self):
         """
-        The best starting thickness to start the doubling process.
+        Find the best starting thickness to start the doubling process.
 
         The criterion is based on an assessment of the (1) round-off error,
         (2) the angular initialization error, and (3) the thickness
@@ -205,6 +214,8 @@ class Method():
         self.b_thinnest = dd
 
 class Slab():
+    """Container class for details of a slab."""
+
     def __init__(self):
         self.a = 0.0
         self.b = 1.0
@@ -225,22 +236,27 @@ class Slab():
         self.update_derived_optical_properties()
 
     def update_derived_optical_properties(self):
+        """Update derived optical properties."""
         self.nu_c = cos_critical_angle(self.n, 1)
         self.mu_a = (1-self.a) * self.b / self.d
         self.mu_s = self.a * self.b / self.d
         self.mu_sp = self.mu_s*(1-self.g)
 
     def as_array(self):
+        """Return details as an array."""
         return [self.a, self.b, self.g, self.d, self.n]
 
     def init_from_array(self, a):
+        """Initialize basic details as an array."""
         self.a = a[0]
         self.b = a[1]
         self.g = a[2]
         self.d = a[3]
         self.n = a[4]
+        self.update_derived_optical_properties()
 
     def __str__(self):
+        """Return basic details as a string for printing."""
         s = ""
         s += "albedo            = %.3f\n" % self.a
         s += "optical thickness = %.3f\n" % self.b
@@ -252,7 +268,7 @@ class Slab():
         s += "mu_s*(1-g)        = %.3f [1/mm]\n" % self.mu_sp
         return s
 
-def igi_start(method, hp, hm):
+def igi_start(slab, method):
     """
     Infinitesmal Generator Initialization.
 
@@ -263,15 +279,16 @@ def igi_start(method, hp, hm):
 
     Ultimately the formulas for the reflection matrix is
 
-    R_ij = a*d/(4*nu_i*nu_j) hpm_{ij}
+    R_ij = a*d/(4*nu_i*nu_j) hpm_ij
 
     and
 
-    T_ij = a*d/(4*nu_i*nu_j) hpp_{ij} + delta_{ij}*(1-d/nu_i)/(2*\nu_i w_i)
-
+    T_ij = a*d/(4*nu_i*nu_j) hpp_ij + delta_ij*(1-d/nu_i)/(2*nu_i w_i)
     """
     d = method.b_thinnest
     n = method.quad_pts
+
+    hp, hm = iadpython.redistribution.hg_legendre(slab, method)
 
     R = np.zeros([n, n])
     T = np.zeros([n, n])
@@ -286,8 +303,7 @@ def igi_start(method, hp, hm):
 
     return R, T
 
-def diamond(method, hp, hm):
-
+def diamond(slab, method):
     """
     Diamond initialization.
 
@@ -297,6 +313,8 @@ def diamond(method, hp, hm):
     """
     d = method.b_thinnest
     n = method.quad_pts
+
+    hp, hm = iadpython.redistribution.hg_legendre(slab, method)
 
     R = np.zeros([n, n])
     T = np.zeros([n, n])
@@ -332,21 +350,18 @@ def diamond(method, hp, hm):
 
     return R, T
 
-
-
 def init_layer(slab, method):
     """
     Reflection and transmission matrices for a thin layer.
+
+    The optimal method for calculating a thin layer depends on the
+    thinness of the layer and the quadrature angles.  This chooses
+    the best method using Wiscombe's criteria.
     """
-
-    n = method.quad_pts
-
     if slab.b <= 0:
         return zero_layer(method)
 
-    hp, hm = phase.get_phi_legendre(slab, method)
-
-    return zero_layer(method)
+    return igi_start(slab, method)
 
 #         if (method.b_thinnest < 1e-4 || method.b_thinnest < 0.09 * angle[1])
 #             Get_IGI_Layer(method, h, R, T)

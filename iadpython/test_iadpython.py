@@ -1,4 +1,6 @@
 # pylint: disable=invalid-name
+# pylint: disable=no-self-use
+
 """Tests for Adding-Doubling."""
 
 import unittest

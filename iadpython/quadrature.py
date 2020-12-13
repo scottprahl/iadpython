@@ -40,15 +40,15 @@ __all__ = ('gauss',
            )
 
 def _gauss_func(n, x):
-    """Function whose zeros are the abscissas for Gaussian quadrature."""
+    """Zeroes of this function are the Gaussian quadrature points."""
     return scipy.special.legendre(n)(x)
 
 def _radau_func(n, x):
-    """Function whose zeros are the abscissas for Radau quadrature."""
+    """Zeros of this function are the Radau quadrature points."""
     return (scipy.special.eval_legendre(n-1, x) + scipy.special.eval_legendre(n, x))/(1+x)
 
 def _lobatto_func(n, x):
-    """Function whose zeros are the abscissas for Lobatto quadrature."""
+    """Zeros of this function are the Lobatto quadrature points."""
     return scipy.special.legendre(n-1).deriv(1)(x)
 
 def gauss(n, a=-1, b=1):
