@@ -23,6 +23,7 @@ __all__ = ('cos_critical_angle',
            'print_matrix',
            'zero_layer',
            'igi_start',
+           'diamond'
            )
 
 
@@ -148,8 +149,8 @@ class Method():
         else:
             # case 3.  Conical incidence.  Include nu_0
             if slab.n == 1.0:
-                a1, w1 = quad.radau(nby2, a=0, b=self.nu_0)
-                a2, w2 = quad.radau(nby2, a=self.nu_0, b=1)
+                a1, w1 = quad.radau(nby2, a=0, b=slab.nu_0)
+                a2, w2 = quad.radau(nby2, a=slab.nu_0, b=1)
 
             # case 4.  Conical incidence.  Include nu_c, nu_00, and 1
             else:
@@ -190,7 +191,7 @@ class Method():
         """
         mu = self.nu[0]
         b = self.b_calc
-        
+
         if b <= 0:
             return 0.0
 
@@ -202,7 +203,7 @@ class Method():
             dd /= 2
 
         self.b_thinnest = dd
-        
+
 class Slab():
     def __init__(self):
         self.a = 0.0
@@ -259,7 +260,7 @@ def igi_start(method, hp, hm):
     The accuracy is O(d) and assumes that the average irradiance upwards is
     equal to that travelling downwards at the top and the average radiance upwards
     equals that moving upwards from the bottom.
-    
+
     Ultimately the formulas for the reflection matrix is
 
     R_ij = a*d/(4*nu_i*nu_j) hpm_{ij}
@@ -285,6 +286,53 @@ def igi_start(method, hp, hm):
 
     return R, T
 
+def diamond(method, hp, hm):
+
+    """
+    Diamond initialization.
+
+    The diamond method uses the same `R_hat` and `T_hat` as was used for infinitesimal
+    generator method.  Division by `2*nu_j*w_j` is not needed until the
+    final values for `R` and `T` are formed.
+    """
+    d = method.b_thinnest
+    n = method.quad_pts
+
+    R = np.zeros([n, n])
+    T = np.zeros([n, n])
+    for j in range(n):
+        temp = method.a_calc * d * method.weight[j]/ 4
+        for i in range(n):
+            c = temp/method.nu[i]
+            R[i, j] = c * hm[i, j]
+            T[i, j] = -c * hp[i, j]
+        T[j, j] += d/(2*method.nu[j])
+
+    I = np.identity(n)
+
+    C = R @ np.linalg.inv(I+T)
+    G = 0.5 * (I + T - C @ R)
+    G2 = 2*G
+    Ginv = np.linalg.inv(G2)
+
+    print("A from equation 5.55\n")
+    print_matrix(T, method)
+
+    print("B from equation 5.55\n")
+    print_matrix(R, method)
+
+    print("C\n")
+    print_matrix(C, method)
+
+    print("Inverse of G from equation 5.56\n")
+    print_matrix(G2, method)
+
+    print("G from equation 5.56\n")
+    print_matrix(Ginv, method)
+
+    return R, T
+
+
 
 def init_layer(slab, method):
     """
@@ -293,12 +341,14 @@ def init_layer(slab, method):
 
     n = method.quad_pts
 
-    if slab.b <= 0 :
+    if slab.b <= 0:
         return zero_layer(method)
 
-    hp, hm = get_phi_legendre(slab, method)
+    hp, hm = phase.get_phi_legendre(slab, method)
+
+    return zero_layer(method)
 
 #         if (method.b_thinnest < 1e-4 || method.b_thinnest < 0.09 * angle[1])
-#             Get_IGI_Layer(method, h, R, T);
+#             Get_IGI_Layer(method, h, R, T)
 #         else
-#             Get_Diamond_Layer(method, h, R, T);
+#             Get_Diamond_Layer(method, h, R, T)
