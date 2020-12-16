@@ -13,29 +13,16 @@ class thin(unittest.TestCase):
 
     def test_01_thin(self):
         """Starting layer thickness calculation."""
-        s = iadpython.start.Slab()
-        s.a = 1.0
-        s.b = 100
-        s.g = 0.0
-
+        s = iadpython.start.Slab(a=1, b=100, g=0.0)
         m = iadpython.start.Method(s)
-        m.update_quadrature(s)
-        m.update_start_depth()
         np.testing.assert_approx_equal(m.b_thinnest, 0.048828125)
 
 
     def test_01_igi(self):
         """IGI initialization with isotropic scattering."""
-        s = iadpython.start.Slab()
-        s.a = 1.0
-        s.b = 100
-        s.g = 0.0
-
+        s = iadpython.start.Slab(a=1, b=100, g=0.0)
         m = iadpython.start.Method(s)
-        m.update_quadrature(s)
-        m.update_start_depth()
-
-        rr, tt = iadpython.start.igi_start(s, m)
+        rr, tt = iadpython.start.igi(s, m)
 
         r = np.array([[ 1.55547, 0.33652, 0.17494, 0.13780],
                       [ 0.33652, 0.07281, 0.03785, 0.02981],
@@ -52,16 +39,9 @@ class thin(unittest.TestCase):
 
     def test_02_igi(self):
         """IGI initialization with anisotropic scattering."""
-        s = iadpython.start.Slab()
-        s.a = 1.0
-        s.b = 100
-        s.g = 0.9
-
+        s = iadpython.start.Slab(a=1, b=100, g=0.9)
         m = iadpython.start.Method(s)
-        m.update_quadrature(s)
-        m.update_start_depth()
-
-        rr, tt = iadpython.start.igi_start(s, m)
+        rr, tt = iadpython.start.igi(s, m)
 
         r = np.array([[ 3.19060, 0.51300, 0.09360,-0.01636],
                       [ 0.51300, 0.04916, 0.00524, 0.00941],
@@ -75,6 +55,66 @@ class thin(unittest.TestCase):
 
         np.testing.assert_allclose(r, rr, atol=1e-5)
         np.testing.assert_allclose(t, tt, atol=1e-5)
+
+    def test_01_diamond(self):
+        """Diamond initialization with isotropic scattering."""
+        s = iadpython.start.Slab(a=1, b=100, g=0.0)
+        m = iadpython.start.Method(s)
+        rr, tt = iadpython.start.diamond(s, m)
+
+        r = np.array([[1.04004,0.27087,0.14472,0.11473],
+                      [0.27087,0.07055,0.03769,0.02988],
+                      [0.14472,0.03769,0.02014,0.01596],
+                      [0.11473,0.02988,0.01596,0.01266]])
+
+        t = np.array([[15.57900,0.27087,0.14472,0.11473],
+                      [0.27087,2.86214,0.03769,0.02988],
+                      [0.14472,0.03769,1.83444,0.01596],
+                      [0.11473,0.02988,0.01596,7.63134]])
+
+        np.testing.assert_allclose(r, rr, atol=1e-5)
+        np.testing.assert_allclose(t, tt, atol=1e-5)
+
+    def test_02_diamond(self):
+        """Diamond initialization with anisotropic scattering."""
+        s = iadpython.start.Slab(a=1, b=100, g=0.9)
+        m = iadpython.start.Method(s)
+
+        rr, tt = iadpython.start.diamond(s, m)
+
+        r = np.array([[ 1.92637,0.40140,0.08092,-0.00869],
+                      [ 0.40140,0.05438,0.00773,0.00888],
+                      [ 0.08092,0.00773,0.00306,0.00473],
+                      [-0.00869,0.00888,0.00473,-0.00569]])
+
+        t = np.array([[13.55020,0.50578,0.13009,-0.00913],
+                      [ 0.50578,2.83738,0.07117,0.02622],
+                      [ 0.13009,0.07117,1.84366,0.07534],
+                      [-0.00913,0.02622,0.07534,7.59016]])
+
+        np.testing.assert_allclose(r, rr, atol=1e-5)
+        np.testing.assert_allclose(t, tt, atol=1e-5)
+
+    def test_03_diamond(self):
+        """Diamond initialization with isotropic scattering and n=1.5."""
+        s = iadpython.start.Slab(a=1, b=100, g=0.0, n=1.5)
+        m = iadpython.start.Method(s)
+
+        rr, tt = iadpython.start.diamond(s, m)
+
+        r = np.array([[0.65936,0.21369,0.15477,0.12972],
+                      [0.21369,0.06926,0.05016,0.04204],
+                      [0.15477,0.05016,0.03633,0.03045],
+                      [0.12972,0.04204,0.03045,0.02552]])
+
+        t = np.array([[5.14582,0.21369,0.15477,0.12972],
+                      [0.21369,2.00149,0.05016,0.04204],
+                      [0.15477,0.05016,2.83938,0.03045],
+                      [0.12972,0.04204,0.03045,7.14833]])
+
+        np.testing.assert_allclose(r, rr, atol=1e-5)
+        np.testing.assert_allclose(t, tt, atol=1e-5)
+
 
 if __name__ == '__main__':
     unittest.main()

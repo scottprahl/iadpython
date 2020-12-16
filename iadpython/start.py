@@ -17,13 +17,14 @@ Two types of starting methods are possible.
 """
 
 import numpy as np
+import scipy.linalg
 import iadpython.quadrature as quad
 import iadpython.redistribution
 
 __all__ = ('cos_critical_angle',
            'print_matrix',
            'zero_layer',
-           'igi_start',
+           'igi',
            'diamond'
            )
 
@@ -93,8 +94,8 @@ def zero_layer(method):
 class Method():
     """Container class for tracking calculation details."""
 
-    def __init__(self, slab):
-        self.quad_pts = 4
+    def __init__(self, slab, quad_pts = 4):
+        self.quad_pts = quad_pts
         self.b_thinnest = 0.0001
         self.nu = []
         self.weight = []
@@ -216,12 +217,12 @@ class Method():
 class Slab():
     """Container class for details of a slab."""
 
-    def __init__(self):
-        self.a = 0.0
-        self.b = 1.0
-        self.g = 0.0
-        self.d = 1.0    # mm
-        self.n = 1.0
+    def __init__(self, a=0, b=100, g=0, d=1, n=1):
+        self.a = a
+        self.b = b
+        self.g = g
+        self.d = d
+        self.n = n
         self.n_above = 1.0
         self.n_below = 1.0
         self.nu_0 = 1.0
@@ -229,10 +230,6 @@ class Slab():
         self.mu_a = 0.0
         self.mu_s = 1.0
         self.mu_sp = 1.0
-        self.a_calc = self.a
-        self.b_calc = self.b
-        self.g_calc = self.g
-        self.b_thinnest = self.b/100
         self.update_derived_optical_properties()
 
     def update_derived_optical_properties(self):
@@ -268,7 +265,7 @@ class Slab():
         s += "mu_s*(1-g)        = %.3f [1/mm]\n" % self.mu_sp
         return s
 
-def igi_start(slab, method):
+def igi(slab, method):
     """
     Infinitesmal Generator Initialization.
 
@@ -290,16 +287,10 @@ def igi_start(slab, method):
 
     hp, hm = iadpython.redistribution.hg_legendre(slab, method)
 
-    R = np.zeros([n, n])
-    T = np.zeros([n, n])
-    for j in range(n):
-        temp = method.a_calc * d / 4 / method.nu[j]
-        for i in range(n):
-            c = temp/method.nu[i]
-            R[i, j] = c * hm[i, j]
-            T[i, j] = c * hp[i, j]
-
-        T[j, j] += (1-d/method.nu[j])/method.twonuw[j]
+    temp = method.a_calc * d / 4 / method.nu
+    R = temp * (hm / method.nu).T
+    T = temp * (hp / method.nu).T
+    T += (1 - d/method.nu)/method.twonuw * np.identity(n)
 
     return R, T
 
@@ -307,47 +298,27 @@ def diamond(slab, method):
     """
     Diamond initialization.
 
-    The diamond method uses the same `R_hat` and `T_hat` as was used for infinitesimal
+    The diamond method uses the same `r_hat` and `t_hat` as was used for infinitesimal
     generator method.  Division by `2*nu_j*w_j` is not needed until the
     final values for `R` and `T` are formed.
     """
     d = method.b_thinnest
     n = method.quad_pts
-
+    I = np.identity(n)
     hp, hm = iadpython.redistribution.hg_legendre(slab, method)
 
-    R = np.zeros([n, n])
-    T = np.zeros([n, n])
-    for j in range(n):
-        temp = method.a_calc * d * method.weight[j]/ 4
-        for i in range(n):
-            c = temp/method.nu[i]
-            R[i, j] = c * hm[i, j]
-            T[i, j] = -c * hp[i, j]
-        T[j, j] += d/(2*method.nu[j])
+    temp = method.a_calc * d * method.weight/ 4
+    r_hat = temp * (hm / method.nu).T
+    t_hat = d/(2*method.nu) * I - temp * (hp / method.nu).T
 
-    I = np.identity(n)
-
-    C = R @ np.linalg.inv(I+T)
-    G = 0.5 * (I + T - C @ R)
-    G2 = 2*G
-    Ginv = np.linalg.inv(G2)
-
-    print("A from equation 5.55\n")
-    print_matrix(T, method)
-
-    print("B from equation 5.55\n")
-    print_matrix(R, method)
-
-    print("C\n")
-    print_matrix(C, method)
-
-    print("Inverse of G from equation 5.56\n")
-    print_matrix(G2, method)
-
-    print("G from equation 5.56\n")
-    print_matrix(Ginv, method)
-
+    C = np.linalg.solve((I+t_hat).T, r_hat.T)
+    G = 0.5 * (I + t_hat - C.T @ r_hat).T
+    lu, piv = scipy.linalg.lu_factor(G)
+    
+    D = 1/method.twonuw * (C * method.twonuw).T
+    R = scipy.linalg.lu_solve((lu, piv), D).T/method.twonuw
+    T = scipy.linalg.lu_solve((lu, piv), I).T/method.twonuw
+    T -= I.T/method.twonuw
     return R, T
 
 def init_layer(slab, method):
@@ -361,9 +332,7 @@ def init_layer(slab, method):
     if slab.b <= 0:
         return zero_layer(method)
 
-    return igi_start(slab, method)
-
-#         if (method.b_thinnest < 1e-4 || method.b_thinnest < 0.09 * angle[1])
-#             Get_IGI_Layer(method, h, R, T)
-#         else
-#             Get_Diamond_Layer(method, h, R, T)
+    if method.b_thinnest < 1e-4 or method.b_thinnest < 0.09 * method.nu[0]:
+        return igi(slab, method)
+    
+    return diamond(slab, method)
