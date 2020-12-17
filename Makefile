@@ -30,9 +30,10 @@ pydoc:
 #	-pydocstyle iadpython/test_iadpython.py
 
 test:
-	nosetests iadpython/test_start.py
-	nosetests iadpython/test_redistribution.py
-	nosetests iadpython/test_quadrature.py
+	nosetests iadpython/test_layer.py
+#	nosetests iadpython/test_start.py
+#	nosetests iadpython/test_redistribution.py
+#	nosetests iadpython/test_quadrature.py
 #	nosetests iadpython/test_iadpython.py
 	
 clean:

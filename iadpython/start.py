@@ -7,10 +7,12 @@ Module for generating the starting layer for adding-doubling.
 
 Two types of starting methods are possible.
 
-    import iad.start
+    import iadpython.start
 
     n=4
-    r, t = iad.quadrature.start(a, b, g)
+    slab = iadpython.start.Slab(a=0.9, b=10, g=0.9, n=1.5)
+    method = iadpython.start.Method(slab)
+    r, t = iad.start.init_layer(slab, method)
     print(r)
     print(t)
 
@@ -25,7 +27,8 @@ __all__ = ('cos_critical_angle',
            'print_matrix',
            'zero_layer',
            'igi',
-           'diamond'
+           'diamond',
+           'init_layer'
            )
 
 
