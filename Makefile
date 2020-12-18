@@ -10,31 +10,44 @@ check:
 	make pydoc
 
 pylint:
+	-pylint iadpython/fresnel.py
+	-pylint iadpython/test_fresnel.py
+
+xpylint:
 	-pylint iadpython/quadrature.py
 	-pylint iadpython/redistribution.py
 	-pylint iadpython/start.py
 	-pylint iadpython/test_quadrature.py
 	-pylint iadpython/test_redistribution.py
 	-pylint iadpython/test_start.py
+
 #	-pylint iadpython/iadpython.py
 #	-pylint iadpython/test_iadpython.py
 	
 pydoc:
+	-pydocstyle iadpython/fresnel.py
+	-pydocstyle iadpython/test_fresnel.py
+
+xpydoc:
 	-pydocstyle iadpython/quadrature.py
 	-pydocstyle iadpython/redistribution.py
 	-pydocstyle iadpython/start.py
 	-pydocstyle iadpython/test_quadrature.py
 	-pydocstyle iadpython/test_redistribution.py
 	-pydocstyle iadpython/test_start.py
-#	-pydocstyle iadpython/iadpython.py
-#	-pydocstyle iadpython/test_iadpython.py
+
+	-pydocstyle iadpython/iadpython.py
+	-pydocstyle iadpython/test_iadpython.py
 
 test:
+	nosetests iadpython/test_fresnel.py
+
+xtest:
 	nosetests iadpython/test_layer.py
-#	nosetests iadpython/test_start.py
-#	nosetests iadpython/test_redistribution.py
-#	nosetests iadpython/test_quadrature.py
-#	nosetests iadpython/test_iadpython.py
+	nosetests iadpython/test_start.py
+	nosetests iadpython/test_redistribution.py
+	nosetests iadpython/test_quadrature.py
+	nosetests iadpython/test_iadpython.py
 	
 clean:
 	rm -rf dist

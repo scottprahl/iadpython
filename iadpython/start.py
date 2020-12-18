@@ -339,3 +339,42 @@ def init_layer(slab, method):
         return igi(slab, method)
     
     return diamond(slab, method)
+
+def Init_Boundary(slab, int n, R01, R10, T01, T10, boundary):
+    """
+    Reflection and transmission matrices for a boundary.
+
+    If 'boundary=="top"' then the arrays returned are for the top surface and the  
+    labels are as expected i.e. 'T01' is the reflection for light from air passing to the slab. 
+    Otherwise the calculations are made for the bottom surface and 
+    the labels are backwards i.e. 'T01 == T32' and 'T10 == T23', where 0 is the first air slide 
+    surface, 1 is the slide/slab surface, 2 is the second slide/slab surface, and 3 is the 
+    bottom slide/air surface 
+    """
+    if boundary == 'top':
+        boundary_RT(1.0, slab.n_top_slide, slab.n_slab, n, slab.b_top_slide, R01, T01)
+        boundary_RT(slab.n_slab, slab.n_top_slide, 1.0, n, slab.b_top_slide, R10, T10)
+    else:
+        boundary_RT(1.0, slab.n_bottom_slide, slab.n_slab, n, slab.b_bottom_slide, R10, T10)
+        boundary_RT(slab.n_slab, slab.n_bottom_slide, 1.0, n, slab.b_bottom_slide, R01, T01)
+   
+def boundary_RT(n_i, n_g, n_t, b, nu_i)
+    """
+    @ 'boundary_RT' computes the diagonal matrix (represented as an array) 
+    that characterizes reflection and transmission at an air (0), absorbing glass (1), 
+    slab (2) boundary.  The reflection matrix is the same entering or exiting the slab.  
+    The transmission matrices should differ by a factor of ($n_\rm slab/n_\rm outside)^4$, 
+    due to $n^2$ law of radiance, but there is some inconsistency in the program and
+    if I use this principle then regular calculations for $R$ and $T$ don't work and
+    the fluence calculations still don't work.  So punted and took all that code out.
+
+    The important point that must be remembered is that all the angles in this
+    program assume that the angles are those actually in the sample.  This allows
+    angles greater that the critical angle to be used.  Everything is fine as long
+    as the index of refraction of the incident medium is 1.0.  If this is not the
+    case then the angle inside the medium must be figured out.
+    """
+    nu_t = iadpython.fresnel.cos_snell(n_t, method.nu, n_t)
+    r, t = iadpython.fresnel.absorbing_glass_RT(n_i, n_g, n_t, method.nu, b)
+    returm r*method.twonu. t
+

@@ -2,6 +2,7 @@
 # pylint: disable = arguments-out-of-order
 # pylint: disable = too-many-arguments
 # pylint: disable = too-many-locals
+# pylint: disable = consider-using-in
 
 """
 Module for generating boundary matrices.
@@ -21,7 +22,7 @@ Two types of starting methods are possible.
 import sys
 import numpy as np
 
-__all__ = ('cos_critical_angle',
+__all__ = ('cos_critical',
            'cos_snell',
            'absorbing_glass_RT',
            'specular_nu_RT',
@@ -30,93 +31,67 @@ __all__ = ('cos_critical_angle',
            'glass',
            )
 
-def cos_critical_angle(ni, nt):
+
+def cos_critical(ni, nt):
     """
-    @*2 The critical angle.
+    Calculate the cosine of the critical angle.
 
-     'cos_critical_Angle' calculates the cosine of the critical angle.
-    If there is no critical angle then 0.0 is returned (i.e.,  cos( pi/2)).
-    Note that no trigonmetric functions are required.
-    Recalling snell's law
+    This works for arrays too.  If there is no critical angle then 
+    cos(pi/2)=0 is returned.
 
-    n_i  sin theta_i = n_t sin theta_t
-
-    To find the critical angle, let  theta_t = pi/2 and then
-
-     theta_c = sin^-1 n_t / n_i
+    theta_c = arcsin(n_t / n_i)
 
     The cosine of this angle is then
 
-     cos theta_c = cos  left( sin^-1 n_t / n_i right) = sqrtn_i^2-n_t^2 / n_i
-
-    or more simply
-
-     cos theta_c = sqrt1-n^2
-
-    where n = n_t/n_i.
+    cos(theta_c) = cos(arcsin(n_t / n_i)) = sqrt(1-(n_t/n_i)**2)
     """
+    temp = 1.0 - (nt/ni)**2
 
-    if nt >= ni:
-        return 0.0
-
-    return np.sqrt(1.0 - (nt/ni)**2)
-
-
-
-def cos_snell(n_i, nu_i, n_t):
-    """
-    Snell's Law.
-
-    'cos_snell' returns the cosine of the angle that the light propagates through
-    a medium given the cosine of the angle of incidence and the indices of refraction.
-    Let the cosine of the angle of incidence be  nu_t, the transmitted cosine as  nu_t,
-    the index of refraction of the incident material n_i and that of the transmitted material
-    be n_t.
-
-    Snell's law states
-
-    n_i  sin theta_i = n_t  sin theta_t
-
-    but if the angles are expressed as cosines,  nu_i = cos theta_i then
-
-    n_i  sin( cos^-1 nu_i) = n_t  sin( cos^-1 nu_t)
-
-    Solving for  nu_t yields
-
-    nu_t = cos  sin^-1[(n_i/n_t) sin( cos^-1 nu_i)]
-
-    which is pretty ugly.  However, note that  sin( cos^-1 nu) = sqrt1- nu^2
-    and the above becomes
-
-    nu_t = sqrt1-(n_i/n_t)^2 (1- nu_i^2)
-
-    and no trigonmetric calls are necessary.  Hooray!
-
-    A few final notes.  I check to make sure that the index of refraction of
-    changes before calculating a bunch of stuff.  This routine should
-    not be passed incident angles greater
-    than the critical angle, but I shall program defensively and test
-    to make sure that the argument of the 'sqrt' function is non-negative.
-    If it is, then I return  nu_t = 0 i.e.,  theta_t = 90^ circ.
-
-    I also pretest for the common but trivial case of normal incidence.
-    """
-    if nu_i == 1.0:
-        return 1.0
-
-    if n_i == n_t:
-        return nu_i
-
-    temp = n_i/n_t
-    temp = 1.0-temp*temp*(1.0 - nu_i*nu_i)
-    if temp < 0:
-        return 0.0
+    if not np.isscalar(temp):
+        np.place(temp, temp < 0, 0)
+    elif temp < 0:
+        return 0
 
     return np.sqrt(temp)
 
 
+def cos_snell(n_i, nu, n_t):
+    """
+    Return the cosine of the transmitted angle.
 
-def fresnel_reflection(n_i, n_t, nu_i):
+    Snell's law states
+
+    n_i * sin(theta_i) = n_t*sin(theta_t)
+
+    but if the angles are expressed as cosines,  nu_i = cos(theta_i) then
+
+    n_i*sin(arccos(nu_i)) = n_t*sin(arccos(nu_t))
+
+    Solving for nu_t yields
+
+    nu_t = cos(arcsin[(n_i/n_t) sin(arccos(nu_i))]
+
+    which is pretty ugly.  However, note that sin(arccos(nu)) = sqrt(1-nu**2)
+    and the above becomes
+
+    nu_t = sqrt(1-(n_i/n_t)^2 (1- nu_i^2))
+
+    Args:
+        n_i: index of refraction of incident medium
+
+        n_t: index of refraction of transmitted medium
+    """
+    temp = 1.0-(n_i/n_t)**2*(1.0 - nu**2)
+
+    if not np.isscalar(temp):
+        np.place(temp, temp < 0, 0)
+    elif temp < 0:
+        return 0
+
+    return np.sqrt(temp)
+
+
+def reflection(n_i, nu_i, n_t):
     """
     Fresnel Reflection.
 
@@ -138,7 +113,7 @@ def fresnel_reflection(n_i, n_t, nu_i):
     Furthermore, if the angle of incidence is near zero, then the formula is the ratio
     of two small numbers and the results can be inaccurate.
     Second, if the angle of incidence exceeds the critical angle, then the calculation of
-     theta_t results in an attempt to find the arcsine of a quantity greater than
+    theta_t results in an attempt to find the arcsine of a quantity greater than
     one.  Third, all calculations in this program are based on the cosine of the angle.
     This routine forces the calling routine to find  theta_i = cos^-1  nu.
     Fourth, the routine also gives problems when the critical angle is exceeded.
@@ -148,7 +123,7 @@ def fresnel_reflection(n_i, n_t, nu_i):
 
     R_ parallel = left[n_t cos theta_i-n_i cos theta_t /
                                             n_t cos theta_i+n_i cos theta_t right]^2,
-     qquad qquad
+
     R_ perp = left[ n_i cos theta_i-n_t cos theta_t /
                                             n_i cos theta_i+n_t cos theta_t right]^2.
 
@@ -167,26 +142,13 @@ def fresnel_reflection(n_i, n_t, nu_i):
     find the ratio of the indices of refraction to avoid an extra multiplication and
     several intermediate variables.
     """
-    if n_i == n_t:
-        return 0.0
-
-    if nu_i == 1.0:
-        return ((n_i-n_t)/(n_i+n_t))**2
-
-    if nu_i == 0.0:
-        return 1.0
-
     nu_t = cos_snell(n_i, nu_i, n_t)
-    if nu_t == 0.0:
-        return 1.0
-
     ratio = n_i/n_t
     temp = ratio*nu_t
     temp1 = (nu_i-temp)/(nu_i+temp)
     temp = ratio*nu_i
     temp = (nu_t-temp)/(nu_t+temp)
     return (temp1**2+temp**2)/2
-
 
 
 def glass(n_i, n_g, n_t, nu_i):
@@ -230,17 +192,13 @@ def glass(n_i, n_g, n_t, nu_i):
     Note that  nu_g gets calculated twice
     (once in the first call to 'Fresnel' and once directly).
     """
-    if n_i == n_g:
-        return fresnel_reflection(n_g, n_t, nu_i)
+    if n_i == n_g or n_g == n_t:
+        return reflection(n_i, nu_i, n_t)
 
-    r1 = fresnel_reflection(n_i, n_g, nu_i)
-    if r1 >= 1.0 or n_g == n_t:
-        return r1
-
+    r1 = reflection(n_i, nu_i, n_g)
     nu_g = cos_snell(n_i, nu_i, n_g)
-    r2 = fresnel_reflection(n_g, n_t, nu_g)
-    temp = r1*r2
-    return (r1 + r2 - 2 * temp) / (1 - temp)
+    r2 = reflection(n_g, nu_g, n_t)
+    return (r1 + r2 - 2 * r1 * r2) / (1 - r1 * r2)
 
 
 def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
@@ -286,19 +244,18 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
 
     I also check to make sure that the exponent is not too small.
     """
-    r1 = fresnel_reflection(n_i, n_g, nu_i)
-    if r1 >= 1.0 or b == np.inf or nu_i == 0.0:
-        return r1, 0
-
-    nu_g = cos_snell(n_i, nu_i, n_g)
-    r2 = fresnel_reflection(n_g, n_t, nu_g)
-
-    if b == 0.0:
-        r = (r1 + r2 - 2.0 * r1 *r2) / (1- r1 * r2)
+    if b == 0:
+        r = glass(n_i, n_g, n_t, nu_i)
         return r, 1-r
 
-    if 2 * (-b/nu_g) <= sys.float_info.min_10_exp * 2.3025851:
-        return r1, 0.0
+    r1 = reflection(n_i, nu_i, n_g)
+    nu_g = cos_snell(n_i, nu_i, n_g)
+
+    # too thick for any light to make it through the sample
+    if b > -sys.float_info.min_10_exp * np.log(10) / 4:
+        return r1, np.zeros_like(r1)
+
+    r2 = reflection(n_g, nu_g, n_t)
 
     expo = np.exp(-b/nu_g)
     denom = 1.0-r1*r2*expo**2
@@ -315,11 +272,12 @@ def specular_nu_RT_flip(flip, n_top, n_slab, n_bottom, tau_top, tau_slab, tau_bo
     Find the reflectance to incorporate flipping of the sample.  This
     is needed when the sample is flipped between measurements.
     """
-
-    r, t = specular_nu_RT(n_top, n_slab, n_bottom, tau_top, tau_slab, tau_bottom, nu)
+    r, t = specular_nu_RT(n_top, n_slab, n_bottom,
+                          tau_top, tau_slab, tau_bottom, nu)
 
     if flip and n_top != n_bottom and tau_top != tau_bottom:
-        _, t = specular_nu_RT(n_bottom, n_slab, n_top, tau_bottom, tau_slab, tau_top, nu)
+        _, t = specular_nu_RT(n_bottom, n_slab, n_top,
+                              tau_bottom, tau_slab, tau_top, nu)
 
     return r, t
 
@@ -341,7 +299,8 @@ def specular_nu_RT(n_top, n_slab, n_bottom, tau_top, tau_slab, tau_bottom, nu):
     if nu_slab == 0:
         return r_top, 0
 
-    r_bottom, t_bottom = absorbing_glass_RT(n_slab, n_bottom, 1.0, nu_slab, tau_bottom)
+    r_bottom, t_bottom = absorbing_glass_RT(
+        n_slab, n_bottom, 1.0, nu_slab, tau_bottom)
 
     # avoid underflow errors and division by zero.
     if tau_slab == np.inf:
@@ -367,7 +326,7 @@ def specular_nu_RT(n_top, n_slab, n_bottom, tau_top, tau_slab, tau_bottom, nu):
     beer = np.exp(-tau_slab/nu_slab)
     temp = t_top * beer
     denom = 1 - r_top * r_bottom * beer * beer
-    r = r_top + r_bottom*temp * temp  / denom
+    r = r_top + r_bottom*temp * temp / denom
     t = t_bottom * temp / denom
 
     return r, t
@@ -397,7 +356,6 @@ def R1(ni, nt):
 
     R(1/m) = 1-m^2[1-R(m)]
     """
-
     if ni == nt:
         return 0.0
 
