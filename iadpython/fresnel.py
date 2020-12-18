@@ -74,7 +74,7 @@ def cos_snell(n_i, nu, n_t):
     which is pretty ugly.  However, note that sin(arccos(nu)) = sqrt(1-nu**2)
     and the above becomes
 
-    nu_t = sqrt(1-(n_i/n_t)^2 (1- nu_i^2))
+    nu_t = sqrt(1-(n_i/n_t)**2 (1- nu_i**2))
 
     Args:
         n_i: index of refraction of incident medium
@@ -103,8 +103,8 @@ def reflection(n_i, nu_i, n_t):
     The usual way to calculate the total reflection for unpolarized light is
     to use the Fresnel formula
 
-    R = 1 / 2 left[  sin^2( theta_i- theta_t) /  sin^2( theta_i+ theta_t)
-                         + tan^2( theta_i- theta_t) /  tan^2( theta_i+ theta_t)  right]
+    R = 1 / 2 left[  sin**2( theta_i- theta_t) /  sin**2( theta_i+ theta_t)
+                         + tan**2( theta_i- theta_t) /  tan**2( theta_i+ theta_t)  right]
 
     where  theta_i and  theta_t represent the angle (from normal) that light is incident
     and the angle at which light is transmitted.
@@ -115,23 +115,23 @@ def reflection(n_i, nu_i, n_t):
     Second, if the angle of incidence exceeds the critical angle, then the calculation of
     theta_t results in an attempt to find the arcsine of a quantity greater than
     one.  Third, all calculations in this program are based on the cosine of the angle.
-    This routine forces the calling routine to find  theta_i = cos^-1  nu.
+    This routine forces the calling routine to find  theta_i = cos**-1  nu.
     Fourth, the routine also gives problems when the critical angle is exceeded.
 
     Closer inspection reveals that this is the wrong formulation to use.  The formulas that
     should be used for parallel and perpendicular polarization are
 
     R_ parallel = left[n_t cos theta_i-n_i cos theta_t /
-                                            n_t cos theta_i+n_i cos theta_t right]^2,
+                                            n_t cos theta_i+n_i cos theta_t right]**2,
 
     R_ perp = left[ n_i cos theta_i-n_t cos theta_t /
-                                            n_i cos theta_i+n_t cos theta_t right]^2.
+                                            n_i cos theta_i+n_t cos theta_t right]**2.
 
     The formula for unpolarized light, written in terms of  nu_i = cos theta_i and
      nu_t = cos theta_t is
 
-    R = 1 / 2 left[n_t nu_i-n_i nu_t / n_t nu_i+n_i nu_t right]^2
-    +1 / 2 left[n_i nu_i-n_t nu_t / n_i nu_i+n_t nu_t right]^2
+    R = 1 / 2 left[n_t nu_i-n_i nu_t / n_t nu_i+n_i nu_t right]**2
+    +1 / 2 left[n_i nu_i-n_t nu_t / n_i nu_i+n_t nu_t right]**2
 
 
     This formula has the advantage that no trig routines need to be called and that the
@@ -265,69 +265,69 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     return r, t
 
 
-def specular_nu_RT_flip(flip, n_top, n_slab, n_bottom, tau_top, tau_slab, tau_bottom, nu):
+def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
+    """
+    Unscattered reflection and transmission through a glass-slab-glass sandwich.
+
+    Light is incident at nu=cos(theta) from air onto a absorbing glass 
+    plate onto a slab resting on another absorbing glass plate before
+    exiting into air again.
+    
+    If r_top and r_bottom are the reflectances for the top and bottom then
+
+    r = r_top + r_bottom*t_top**2*expo**2 / [1-r_top*r_bottom*expo**2]
+
+    and the transmission is
+
+    t = t_top*t_bottom*expo / [1-r_top*r_bottom*expo**2]
+
+    where expo = exp(-b_slab/nu)
+
+    Args:
+        n_top: index of glass slide on top
+        n_slab: index of the slab
+        n_bottom: index of glass on bottom
+        b_top: optical thickness of top slide
+        b_slab: optical thickness of the slab
+        b_bottom: optical thickness of the bottom slide
+        nu: cosine of angle(s) of incident light
+    Returns
+        r, t: unscattered reflectance(s) and transmission(s)
+    """
+    r_top, t_top = absorbing_glass_RT(1.0, n_top, n_slab, nu, b_top)
+    nu_slab = cos_snell(1.0, nu, n_slab)
+
+    # avoid underflow errors and division by zero.
+    if b_slab > -sys.float_info.min_10_exp * np.log(10) / 4:
+        return r_top, 0
+
+    r_bottom, t_bottom = absorbing_glass_RT(n_slab, n_bottom, 1.0, nu_slab, b_bottom)
+
+    expo = np.exp(-b_slab/nu_slab)
+    denom = 1 - r_top * r_bottom * expo**2
+    r = r_top + r_bottom * t_top**2 * expo**2/ denom
+    t = t_bottom * t_top * expo / denom
+    return r, t
+
+
+def specular_nu_RT_flip(flip, n_top, n_slab, n_bottom, b_slab, nu, btop=0, b_bottom=0):
     """
     Unscattered refl and trans for a sample.
 
     Find the reflectance to incorporate flipping of the sample.  This
     is needed when the sample is flipped between measurements.
     """
-    r, t = specular_nu_RT(n_top, n_slab, n_bottom,
-                          tau_top, tau_slab, tau_bottom, nu)
+    r, t = specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, 
+                          btop=btop, b_bottom=b_bottom)
 
-    if flip and n_top != n_bottom and tau_top != tau_bottom:
-        _, t = specular_nu_RT(n_bottom, n_slab, n_top,
-                              tau_bottom, tau_slab, tau_top, nu)
-
-    return r, t
-
-
-def specular_nu_RT(n_top, n_slab, n_bottom, tau_top, tau_slab, tau_bottom, nu):
-    """
-    Unscattered reflection and transmission through a glass-slab-glass sandwich.
-
-    Light is incident at
-    an angle having a cosine 'nu' from air onto a possibly absorbing glass plate with index 'n_top'
-    on a sample with index 'n_slab' resting on another possibly absorbing glass plate with index
-    'n_bottom' and then exiting into air again.
-
-    The optical thickness of the slab is 'tau_slab'.
-    """
-    r_top, t_top = absorbing_glass_RT(1.0, n_top, n_slab, nu, tau_top)
-    nu_slab = cos_snell(1.0, nu, n_slab)
-
-    if nu_slab == 0:
-        return r_top, 0
-
-    r_bottom, t_bottom = absorbing_glass_RT(
-        n_slab, n_bottom, 1.0, nu_slab, tau_bottom)
-
-    # avoid underflow errors and division by zero.
-    if tau_slab == np.inf:
-        return r_top, 0
-
-    if 2*(-tau_slab/nu_slab) <= sys.float_info.min_10_exp * 2.3025851:
-        return r_top, 0
-
-    # If r_top is the reflection for the top and r_bottom is that for the
-    # bottom surface then the total reflection will be
-    #
-    # r = r_top + r_bottom*t_top^2 * exp(-2*tau/nu)  /
-    #      [1 - r_rm top  r_rm bottom  exp(-2 tau/ nu)]
-    #
-    # and the transmission is
-    #
-    # t = t_ rm top t_ rm bottom  exp(-tau/ nu) /
-    #     [1 - r_rm top  r_rm bottom  exp(-2*tau/nu)]
-    #
-    # where nu is the angle inside the slab and  tau is the optical
-    # thickness of the slab.
-
-    beer = np.exp(-tau_slab/nu_slab)
-    temp = t_top * beer
-    denom = 1 - r_top * r_bottom * beer * beer
-    r = r_top + r_bottom*temp * temp / denom
-    t = t_bottom * temp / denom
+    if not flip:
+        return r, t
+    
+    if n_top == n_bottom and b_top == b_bottom:
+        return r, t
+    
+    _, t = specular_nu_RT(n_bottom, n_slab, n_top, bslab, nu,
+                          b_top=b_bottom, b_bottom=b_top)
 
     return r, t
 
@@ -342,19 +342,19 @@ def R1(ni, nt):
     The integral of the first moment of the Fresnel reflection (R_1)
     has been found analytically by Walsh, [see Ryde 1931]
 
-    R_1 & = 1 / 2 + (m-1)(3m+1) / 6(m+1)^2
-            + left[ m^2(m^2-1)^2 / (m^2+1)^3 right] log( m-1 / m+1) cr
-            & qquad- 2m^3 (m^2+2m-1) / (m^2+1)(m^4-1) +
-             left[ 8m^4(m^4+1) / (m^2+1)(m^4-1)^2 right] log(m)
+    R_1 & = 1 / 2 + (m-1)(3m+1) / 6(m+1)**2
+            + [ m**2(m**2-1)**2 / (m**2+1)**3 ] log( m-1 / m+1) cr
+            - 2m**3 (m**2+2m-1) / (m**2+1)(m**4-1) +
+            + [ 8m**4(m**4+1) / (m**2+1)(m**4-1)**2 ] log(m)
 
     where Walsh's parameter m = n_t/n_i.    This equation is only valid when
     n_i<n_t.  If n_i>n_t then using (see Egan and Hilgeman 1973),
 
-    1-R_1(n_i/n_t) / n_t^2 = 1-R_1(n_t/n_i) / n_i^2
+    1-R_1(n_i/n_t) / n_t**2 = 1-R_1(n_t/n_i) / n_i**2
 
     or
 
-    R(1/m) = 1-m^2[1-R(m)]
+    R(1/m) = 1-m**2[1-R(m)]
     """
     if ni == nt:
         return 0.0
