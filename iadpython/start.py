@@ -220,27 +220,33 @@ class Method():
 class Slab():
     """Container class for details of a slab."""
 
-    def __init__(self, a=0, b=100, g=0, d=1, n=1):
+    def __init__(self, a=0, b=100, g=0, d=1, n=1, n_above=1, n_below=1, nu_0=1):
         self.a = a
         self.b = b
         self.g = g
         self.d = d
         self.n = n
-        self.n_above = 1.0
-        self.n_below = 1.0
-        self.nu_0 = 1.0
-        self.nu_c = 0.0
-        self.mu_a = 0.0
-        self.mu_s = 1.0
-        self.mu_sp = 1.0
-        self.update_derived_optical_properties()
+        self.n_above = n_above
+        self.n_below = n_below
+        self.nu_0 = nu_0
+        self.b_above = 0
+        self.b_below = 0
 
-    def update_derived_optical_properties(self):
-        """Update derived optical properties."""
-        self.nu_c = cos_critical_angle(self.n, 1)
-        self.mu_a = (1-self.a) * self.b / self.d
-        self.mu_s = self.a * self.b / self.d
-        self.mu_sp = self.mu_s*(1-self.g)
+    def mu_a(cls):
+        """Absorption coefficient for the slab."""
+        return (1-cls.a) * cls.b / cls.d
+
+    def mu_s(cls):
+        """Scattering coefficient for the slab."""
+        return cls.a * cls.b / cls.d
+
+    def mu_sp(cls):
+        """Reduced scattering coefficient for the slab."""
+        return (1 - cls.g) * cls.a * cls.b / cls.d
+
+    def nu_c(cls):
+        """Cosine of critical angle in the slab."""
+        return iadpython.fresnel.cos_critical_angle(cls.n, 1)
 
     def as_array(self):
         """Return details as an array."""
@@ -261,11 +267,20 @@ class Slab():
         s += "albedo            = %.3f\n" % self.a
         s += "optical thickness = %.3f\n" % self.b
         s += "anisotropy        = %.3f\n" % self.g
-        s += "refractive index  = %.3f\n" % self.n
         s += "\n"
-        s += "mu_a              = %.3f [1/mm]\n" % self.mu_a
-        s += "mu_s              = %.3f [1/mm]\n" % self.mu_s
-        s += "mu_s*(1-g)        = %.3f [1/mm]\n" % self.mu_sp
+        s += "  n slab          = %.4f\n" % self.n
+        s += "  n top slide     = %.4f\n" % self.n_above
+        s += "  n bottom slide  = %.4f\n" % self.n_below
+        s += "\n"
+        s += "d                 = %.3f mm\n" % self.d
+        s += "mu_a              = %.3f /mm\n" % self.mu_a()
+        s += "mu_s              = %.3f /mm\n" % self.mu_s()
+        s += "mu_s*(1-g)        = %.3f /mm\n" % self.mu_sp()
+        s += "Light angles\n"
+        s += " cos(theta incident) = %.5f\n" % self.nu_0
+        s += "      theta incident = %.1f°\n" % np.degrees(np.arccos(self.nu_0))
+        s += " cos(theta critical) = %.5f\n" % self.nu_c()
+        s += "      theta critical = %.1f°\n" % np.degrees(np.arccos(self.nu_c()))
         return s
 
 def igi(slab, method):
@@ -339,42 +354,4 @@ def init_layer(slab, method):
         return igi(slab, method)
     
     return diamond(slab, method)
-
-def Init_Boundary(slab, int n, R01, R10, T01, T10, boundary):
-    """
-    Reflection and transmission matrices for a boundary.
-
-    If 'boundary=="top"' then the arrays returned are for the top surface and the  
-    labels are as expected i.e. 'T01' is the reflection for light from air passing to the slab. 
-    Otherwise the calculations are made for the bottom surface and 
-    the labels are backwards i.e. 'T01 == T32' and 'T10 == T23', where 0 is the first air slide 
-    surface, 1 is the slide/slab surface, 2 is the second slide/slab surface, and 3 is the 
-    bottom slide/air surface 
-    """
-    if boundary == 'top':
-        boundary_RT(1.0, slab.n_top_slide, slab.n_slab, n, slab.b_top_slide, R01, T01)
-        boundary_RT(slab.n_slab, slab.n_top_slide, 1.0, n, slab.b_top_slide, R10, T10)
-    else:
-        boundary_RT(1.0, slab.n_bottom_slide, slab.n_slab, n, slab.b_bottom_slide, R10, T10)
-        boundary_RT(slab.n_slab, slab.n_bottom_slide, 1.0, n, slab.b_bottom_slide, R01, T01)
-   
-def boundary_RT(n_i, n_g, n_t, b, nu_i)
-    """
-    @ 'boundary_RT' computes the diagonal matrix (represented as an array) 
-    that characterizes reflection and transmission at an air (0), absorbing glass (1), 
-    slab (2) boundary.  The reflection matrix is the same entering or exiting the slab.  
-    The transmission matrices should differ by a factor of ($n_\rm slab/n_\rm outside)^4$, 
-    due to $n^2$ law of radiance, but there is some inconsistency in the program and
-    if I use this principle then regular calculations for $R$ and $T$ don't work and
-    the fluence calculations still don't work.  So punted and took all that code out.
-
-    The important point that must be remembered is that all the angles in this
-    program assume that the angles are those actually in the sample.  This allows
-    angles greater that the critical angle to be used.  Everything is fine as long
-    as the index of refraction of the incident medium is 1.0.  If this is not the
-    case then the angle inside the medium must be figured out.
-    """
-    nu_t = iadpython.fresnel.cos_snell(n_t, method.nu, n_t)
-    r, t = iadpython.fresnel.absorbing_glass_RT(n_i, n_g, n_t, method.nu, b)
-    returm r*method.twonu. t
 
