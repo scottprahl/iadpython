@@ -26,7 +26,6 @@ __all__ = ('cos_critical',
            'cos_snell',
            'absorbing_glass_RT',
            'specular_nu_RT',
-           'specular_nu_RT_flip',
            'diffuse_glass_R',
            'glass',
            )
@@ -265,7 +264,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     return r, t
 
 
-def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
+def _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
     """
     Unscattered reflection and transmission through a glass-slab-glass sandwich.
 
@@ -310,7 +309,7 @@ def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
     return r, t
 
 
-def specular_nu_RT_flip(flip, n_top, n_slab, n_bottom, b_slab, nu, btop=0, b_bottom=0):
+def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, btop=0, b_bottom=0, flip=False):
     """
     Unscattered refl and trans for a sample.
 
@@ -322,10 +321,10 @@ def specular_nu_RT_flip(flip, n_top, n_slab, n_bottom, b_slab, nu, btop=0, b_bot
 
     if not flip:
         return r, t
-    
+
     if n_top == n_bottom and b_top == b_bottom:
         return r, t
-    
+
     _, t = specular_nu_RT(n_bottom, n_slab, n_top, bslab, nu,
                           b_top=b_bottom, b_bottom=b_top)
 
