@@ -220,5 +220,6 @@ class fresnel(unittest.TestCase):
         rr = iadpython.fresnel.reflection(n_i, nu_i, n_g)
         np.testing.assert_allclose(r, rr, atol=1e-5)
 
+
 if __name__ == '__main__':
     unittest.main()
