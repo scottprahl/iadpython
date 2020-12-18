@@ -35,7 +35,7 @@ def cos_critical(ni, nt):
     """
     Calculate the cosine of the critical angle.
 
-    This works for arrays too.  If there is no critical angle then 
+    This works for arrays too.  If there is no critical angle then
     cos(pi/2)=0 is returned.
 
     theta_c = arcsin(n_t / n_i)
@@ -268,10 +268,10 @@ def _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
     """
     Unscattered reflection and transmission through a glass-slab-glass sandwich.
 
-    Light is incident at nu=cos(theta) from air onto a absorbing glass 
+    Light is incident at nu=cos(theta) from air onto a absorbing glass
     plate onto a slab resting on another absorbing glass plate before
     exiting into air again.
-    
+
     If r_top and r_bottom are the reflectances for the top and bottom then
 
     r = r_top + r_bottom*t_top**2*expo**2 / [1-r_top*r_bottom*expo**2]
@@ -309,15 +309,15 @@ def _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
     return r, t
 
 
-def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, btop=0, b_bottom=0, flip=False):
+def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0, flip=False):
     """
     Unscattered refl and trans for a sample.
 
     Find the reflectance to incorporate flipping of the sample.  This
     is needed when the sample is flipped between measurements.
     """
-    r, t = specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, 
-                          btop=btop, b_bottom=b_bottom)
+    r, t = specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu,
+                          b_top=b_top, b_bottom=b_bottom)
 
     if not flip:
         return r, t
@@ -325,7 +325,7 @@ def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, btop=0, b_bottom=0, flip
     if n_top == n_bottom and b_top == b_bottom:
         return r, t
 
-    _, t = specular_nu_RT(n_bottom, n_slab, n_top, bslab, nu,
+    _, t = specular_nu_RT(n_bottom, n_slab, n_top, b_slab, nu,
                           b_top=b_bottom, b_bottom=b_top)
 
     return r, t
