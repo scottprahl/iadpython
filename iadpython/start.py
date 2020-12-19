@@ -1,6 +1,7 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-arguments
 
 """
 Module for generating the starting layer for adding-doubling.
@@ -23,25 +24,13 @@ import scipy.linalg
 import iadpython.quadrature as quad
 import iadpython.redistribution
 
-__all__ = ('cos_critical_angle',
-           'print_matrix',
+__all__ = ('print_matrix',
            'zero_layer',
            'igi',
            'diamond',
            'init_layer'
            )
 
-
-def cos_critical_angle(ni, nt):
-    """
-    Calculate the cosine of the critical angle.
-
-    If there is no critical angle then 0.0 is returned.
-    """
-    if nt >= ni:
-        return 0.0
-
-    return np.sqrt(1-(nt/ni)**2)
 
 def print_matrix(a, method):
     """Print matrix and sums."""
@@ -97,7 +86,7 @@ def zero_layer(method):
 class Method():
     """Container class for tracking calculation details."""
 
-    def __init__(self, slab, quad_pts = 4):
+    def __init__(self, slab, quad_pts=4):
         self.quad_pts = quad_pts
         self.b_thinnest = 0.0001
         self.nu = []
@@ -145,7 +134,7 @@ class Method():
         included) and finally from the cone slab.nu to 1 (again using Radau
         quadrature so that 1 will be included).
         """
-        nu_c = cos_critical_angle(slab.n, 1.0)
+        nu_c = iadpython.fresnel.cos_critical(slab.n, 1.0)
         nby2 = int(self.quad_pts / 2)
 
         if slab.nu_0 == 1:
@@ -220,33 +209,33 @@ class Method():
 class Slab():
     """Container class for details of a slab."""
 
-    def __init__(self, a=0, b=100, g=0, d=1, n=1, n_above=1, n_below=1, nu_0=1):
+    def __init__(self, a=0, b=1, g=0, n=1, n_above=1, n_below=1):
         self.a = a
         self.b = b
         self.g = g
-        self.d = d
         self.n = n
         self.n_above = n_above
         self.n_below = n_below
-        self.nu_0 = nu_0
+        self.d = 1.0
+        self.nu_0 = 1.0
         self.b_above = 0
         self.b_below = 0
 
-    def mu_a(cls):
+    def mu_a(self):
         """Absorption coefficient for the slab."""
-        return (1-cls.a) * cls.b / cls.d
+        return (1-self.a) * self.b / self.d
 
-    def mu_s(cls):
+    def mu_s(self):
         """Scattering coefficient for the slab."""
-        return cls.a * cls.b / cls.d
+        return self.a * self.b / self.d
 
-    def mu_sp(cls):
+    def mu_sp(self):
         """Reduced scattering coefficient for the slab."""
-        return (1 - cls.g) * cls.a * cls.b / cls.d
+        return (1 - self.g) * self.a * self.b / self.d
 
-    def nu_c(cls):
+    def nu_c(self):
         """Cosine of critical angle in the slab."""
-        return iadpython.fresnel.cos_critical_angle(cls.n, 1)
+        return iadpython.fresnel.cos_critical(self.n, 1)
 
     def as_array(self):
         """Return details as an array."""
@@ -259,7 +248,6 @@ class Slab():
         self.g = a[2]
         self.d = a[3]
         self.n = a[4]
-        self.update_derived_optical_properties()
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -332,7 +320,7 @@ def diamond(slab, method):
     C = np.linalg.solve((I+t_hat).T, r_hat.T)
     G = 0.5 * (I + t_hat - C.T @ r_hat).T
     lu, piv = scipy.linalg.lu_factor(G)
-    
+
     D = 1/method.twonuw * (C * method.twonuw).T
     R = scipy.linalg.lu_solve((lu, piv), D).T/method.twonuw
     T = scipy.linalg.lu_solve((lu, piv), I).T/method.twonuw
@@ -352,6 +340,5 @@ def init_layer(slab, method):
 
     if method.b_thinnest < 1e-4 or method.b_thinnest < 0.09 * method.nu[0]:
         return igi(slab, method)
-    
-    return diamond(slab, method)
 
+    return diamond(slab, method)

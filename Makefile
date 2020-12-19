@@ -10,10 +10,12 @@ check:
 	make pydoc
 
 pylint:
-	-pylint iadpython/fresnel.py
-	-pylint iadpython/test_fresnel.py
+	-pylint iadpython/boundary.py
+	-pylint iadpython/test_boundary.py
 
 xpylint:
+	-pylint iadpython/fresnel.py
+	-pylint iadpython/test_fresnel.py
 	-pylint iadpython/quadrature.py
 	-pylint iadpython/redistribution.py
 	-pylint iadpython/start.py
@@ -21,14 +23,16 @@ xpylint:
 	-pylint iadpython/test_redistribution.py
 	-pylint iadpython/test_start.py
 
-#	-pylint iadpython/iadpython.py
-#	-pylint iadpython/test_iadpython.py
+	-pylint iadpython/iadpython.py
+	-pylint iadpython/test_iadpython.py
 	
 pydoc:
-	-pydocstyle iadpython/fresnel.py
-	-pydocstyle iadpython/test_fresnel.py
+	-pydocstyle iadpython/boundary.py
+	-pydocstyle iadpython/test_boundary.py
 
 xpydoc:
+	-pydocstyle iadpython/fresnel.py
+	-pydocstyle iadpython/test_fresnel.py
 	-pydocstyle iadpython/quadrature.py
 	-pydocstyle iadpython/redistribution.py
 	-pydocstyle iadpython/start.py
