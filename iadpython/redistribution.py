@@ -31,7 +31,7 @@ __all__ = ('hg_elliptic',
            'hg_legendre',
            )
 
-def hg_legendre(slab, method):
+def hg_legendre(sample):
     """
     Calculate the HG redistribution matrix using Legendre polynomials.
 
@@ -46,8 +46,8 @@ def hg_legendre(slab, method):
     Probably should generate all the Legendre polynomials one
     time and then calculate.
     """
-    n = method.quad_pts
-    g = slab.g
+    n = sample.quad_pts
+    g = sample.g
 
     if g == 0:
         h = np.ones([n, n])
@@ -58,7 +58,7 @@ def hg_legendre(slab, method):
     for k in range(1, n):
         c = np.append(np.zeros(k), [1])
         chik = (2*k + 1) * (g**k - g**n) /(1 - g**n)
-        pk = numpy.polynomial.legendre.legval(method.nu, c)
+        pk = numpy.polynomial.legendre.legval(sample.nu, c)
         for i in range(n):
             for j in range(i+1):
                 temp = chik * pk[i] * pk[j]
@@ -73,7 +73,8 @@ def hg_legendre(slab, method):
 
     return hp, hm
 
-def hg_elliptic(slab, method):
+
+def hg_elliptic(sample):
     """
     Calculate redistribution function using elliptic integrals.
 
@@ -84,8 +85,8 @@ def hg_elliptic(slab, method):
     delta-M method to more accurate model highly anisotropic
     phase functions.
     """
-    n = method.quad_pts
-    g = slab.g**n
+    n = sample.quad_pts
+    g = sample.g**n
     if g == 0:
         h = np.ones([n, n])
         return h, h
@@ -94,8 +95,8 @@ def hg_elliptic(slab, method):
     hm = np.zeros([n, n])
     for i in range(n):
         for j in range(i+1):
-            ni = method.nu[i]
-            nj = method.nu[j]
+            ni = sample.nu[i]
+            nj = sample.nu[j]
             gamma = 2 * g * np.sqrt(1-ni**2) * np.sqrt(1-nj**2)
 
             alpha = 1 + g*g - 2 * g * ni * nj

@@ -21,10 +21,10 @@ import iadpython.fresnel
 
 __all__ = ('init_boundary',
            'boundary_RT',
-           'Add_Top',
-           'Add_Bottom',
-           'Add_Slides',
-           'Sp_RT',
+           'add_top',
+           'add_bottom',
+           'add_slides',
+           'sp_RT',
            )
 
 def init_boundary(s, method, top=True):
@@ -163,7 +163,7 @@ def B_Add_Slide(R12, T21, R01, R10, T01, T10, method):
     return R02, T20
 
 
-def Add_Top(R01, R10, T01, T10, R12, R21, T12, T21, method):
+def add_top(R01, R10, T01, T10, R12, R21, T12, T21, method):
     """
     Calculate matrices for a slab with a boundary placed on top.
 
@@ -178,7 +178,7 @@ def Add_Top(R01, R10, T01, T10, R12, R21, T12, T21, method):
     return R02, R20, T02, T20
 
 
-def Add_Bottom(R01, R10, T01, T10, R12, R21, T12, T21, method):
+def add_bottom(R01, R10, T01, T10, R12, R21, T12, T21, method):
     """
     Calculate matrices for a slab with a boundary placed on bottom.
 
@@ -193,7 +193,7 @@ def Add_Bottom(R01, R10, T01, T10, R12, R21, T12, T21, method):
     return R02, R20, T02, T20
 
 
-def Add_Slides(R01, R10, T01, T10, R, T, method):
+def add_slides(R01, R10, T01, T10, R, T, method):
     """
     Find matrix when slab is sandwiched between identical slides.
 
@@ -248,7 +248,7 @@ def Add_Slides(R01, R10, T01, T10, R, T, method):
     return R30, T03
 
 
-def Sp_RT(s, method):
+def sp_RT(s, method):
     """
     Specular reflection and transmission for a slide-slab-slide sandwich.
 

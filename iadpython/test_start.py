@@ -6,23 +6,66 @@
 
 import unittest
 import numpy as np
-import iadpython.start
+import iadpython
 
-class thin(unittest.TestCase):
+class A_thin(unittest.TestCase):
     """Starting layer calculations."""
 
     def test_01_thin(self):
-        """Starting layer thickness calculation."""
-        s = iadpython.start.Slab(a=1, b=100, g=0.0)
-        m = iadpython.start.Method(s)
-        np.testing.assert_approx_equal(m.b_thinnest, 0.048828125)
+        """Isotropic finite layer."""
+        s = iadpython.ad.Sample(a=1, b=1, g=0.0, n=1, quad_pts=4)
+        b_min = iadpython.starting_thickness(s)
+        np.testing.assert_approx_equal(b_min, 0.0625)
 
+    def test_02_thin(self):
+        """Isotropic thick layer."""
+        s = iadpython.ad.Sample(a=1, b=100, g=0.0, n=1, quad_pts=4)
+        b_min = iadpython.starting_thickness(s)
+        np.testing.assert_approx_equal(b_min, 0.048828125)
 
+    def test_03_thin(self):
+        """Isotropic semi-infinite layer."""
+        s = iadpython.ad.Sample(a=1, b=np.inf, g=0.0, n=1, quad_pts=4)
+        b_min = iadpython.starting_thickness(s)
+        np.testing.assert_approx_equal(b_min, 0.04429397)
+
+    def test_04_thin(self):
+        """Isotropic semi-infinite layer."""
+        s = iadpython.ad.Sample(a=1, b=0, g=0.0, n=1, quad_pts=4)
+        b_min = iadpython.starting_thickness(s)
+        np.testing.assert_approx_equal(b_min, 0.0)
+
+    def test_05_thin(self):
+        """Anisotropic finite layer."""
+        s = iadpython.ad.Sample(a=1, b=1, g=0.9, n=1, quad_pts=4)
+        b_min = iadpython.starting_thickness(s)
+        np.testing.assert_approx_equal(b_min, 0.08597500)
+
+    def test_06_thin(self):
+        """Anisotropic thick layer."""
+        s = iadpython.ad.Sample(a=1, b=100, g=0.9, n=1, quad_pts=4)
+        b_min = iadpython.starting_thickness(s)
+        np.testing.assert_approx_equal(b_min, 0.06716797)
+
+    def test_07_thin(self):
+        """Anisotropic semi-infinite layer."""
+        s = iadpython.ad.Sample(a=1, b=np.inf, g=0.9, n=1, quad_pts=4)
+        b_min = iadpython.starting_thickness(s)
+        np.testing.assert_approx_equal(b_min, 0.04429397)
+
+    def test_08_thin(self):
+        """Anisotropic zero-thickness layer."""
+        s = iadpython.ad.Sample(a=1, b=0, g=0.9, n=1, quad_pts=4)
+        b_min = iadpython.starting_thickness(s)
+        np.testing.assert_approx_equal(b_min, 0.0)
+
+class B_igi(unittest.TestCase):
+    """IGI layer initializations."""
     def test_01_igi(self):
         """IGI initialization with isotropic scattering."""
-        s = iadpython.start.Slab(a=1, b=100, g=0.0)
-        m = iadpython.start.Method(s)
-        rr, tt = iadpython.start.igi(s, m)
+        s = iadpython.ad.Sample(a=1, b=100, g=0.0, n=1, quad_pts=4)
+        rr, tt = iadpython.start.igi(s)
+        np.testing.assert_approx_equal(s.b_thinnest, 0.048828125)
 
         r = np.array([[ 1.55547, 0.33652, 0.17494, 0.13780],
                       [ 0.33652, 0.07281, 0.03785, 0.02981],
@@ -39,9 +82,9 @@ class thin(unittest.TestCase):
 
     def test_02_igi(self):
         """IGI initialization with anisotropic scattering."""
-        s = iadpython.start.Slab(a=1, b=100, g=0.9)
-        m = iadpython.start.Method(s)
-        rr, tt = iadpython.start.igi(s, m)
+        s = iadpython.ad.Sample(a=1, b=100, g=0.9, quad_pts=4)
+        rr, tt = iadpython.start.igi(s)
+        np.testing.assert_approx_equal(s.b_thinnest, 0.06716797)
 
         r = np.array([[ 3.19060, 0.51300, 0.09360,-0.01636],
                       [ 0.51300, 0.04916, 0.00524, 0.00941],
@@ -56,11 +99,12 @@ class thin(unittest.TestCase):
         np.testing.assert_allclose(r, rr, atol=1e-5)
         np.testing.assert_allclose(t, tt, atol=1e-5)
 
-    def test_01_diamond(self):
+class C_diamond(unittest.TestCase):
+    """Diamond layer initializations."""
+    def test_0_diamond(self):
         """Diamond initialization with isotropic scattering."""
-        s = iadpython.start.Slab(a=1, b=100, g=0.0)
-        m = iadpython.start.Method(s)
-        rr, tt = iadpython.start.diamond(s, m)
+        s = iadpython.ad.Sample(a=1, b=100, g=0.0, quad_pts=4)
+        rr, tt = iadpython.start.diamond(s)
 
         r = np.array([[1.04004,0.27087,0.14472,0.11473],
                       [0.27087,0.07055,0.03769,0.02988],
@@ -77,10 +121,9 @@ class thin(unittest.TestCase):
 
     def test_02_diamond(self):
         """Diamond initialization with anisotropic scattering."""
-        s = iadpython.start.Slab(a=1, b=100, g=0.9)
-        m = iadpython.start.Method(s)
+        s = iadpython.ad.Sample(a=1, b=100, g=0.9, quad_pts=4)
 
-        rr, tt = iadpython.start.diamond(s, m)
+        rr, tt = iadpython.start.diamond(s)
 
         r = np.array([[ 1.92637,0.40140,0.08092,-0.00869],
                       [ 0.40140,0.05438,0.00773,0.00888],
@@ -97,10 +140,9 @@ class thin(unittest.TestCase):
 
     def test_03_diamond(self):
         """Diamond initialization with isotropic scattering and n=1.5."""
-        s = iadpython.start.Slab(a=1, b=100, g=0.0, n=1.5)
-        m = iadpython.start.Method(s)
+        s = iadpython.ad.Sample(a=1, b=100, g=0.0, n=1.5, quad_pts=4)
 
-        rr, tt = iadpython.start.diamond(s, m)
+        rr, tt = iadpython.start.diamond(s)
 
         r = np.array([[0.65936,0.21369,0.15477,0.12972],
                       [0.21369,0.06926,0.05016,0.04204],

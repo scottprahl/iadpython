@@ -6,21 +6,17 @@
 
 import unittest
 import numpy as np
-import iadpython.start
-import iadpython.redistribution
+import iadpython
 
 class redistribution(unittest.TestCase):
     """Redistribution function tests."""
 
     def test_01(self):
         """Isotropic scattering."""
-        s = iadpython.start.Slab()
-        s.g = 0.0
-        m = iadpython.start.Method(s)
         n = 4
-        m.quad_pts = n
-        m.update_quadrature(s)
-        hp, hm = iadpython.redistribution.hg_legendre(s,m)
+        s = iadpython.ad.Sample(g=0.0, quad_pts=n)
+        s.update_quadrature()
+        hp, hm = iadpython.redistribution.hg_legendre(s)
 
         np.testing.assert_allclose(hp, np.ones([n,n]))
         np.testing.assert_allclose(hm, np.ones([n,n]))
@@ -38,13 +34,10 @@ class redistribution(unittest.TestCase):
              [ 0.22803,0.09250,0.10074, 0.38894,0.00000, 0.67022,1.42038,2.73731, 3.69902],
              [-0.37395,0.22803,0.22946,-0.08633,0.00000,-0.09856,0.65844,3.69902, 6.84908]])
 
-        s = iadpython.start.Slab()
-        s.g = 0.9
-        m = iadpython.start.Method(s)
         n = 4
-        m.quad_pts = n
-        m.update_quadrature(s)
-        hp, hm = iadpython.redistribution.hg_legendre(s,m)
+        s = iadpython.ad.Sample(g=0.9, quad_pts=n)
+        s.update_quadrature()
+        hp, hm = iadpython.redistribution.hg_legendre(s)
 
         hh =  h[n+1:,n+1:]
         np.testing.assert_allclose(hp, hh, rtol=1e-4)

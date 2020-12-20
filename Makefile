@@ -10,15 +10,16 @@ check:
 	make pydoc
 
 pylint:
-	-pylint iadpython/boundary.py
-	-pylint iadpython/test_boundary.py
-
-xpylint:
-	-pylint iadpython/fresnel.py
-	-pylint iadpython/test_fresnel.py
+	-pylint iadpython/combine.py
+	-pylint iadpython/ad.py
 	-pylint iadpython/quadrature.py
 	-pylint iadpython/redistribution.py
 	-pylint iadpython/start.py
+	-pylint iadpython/fresnel.py
+
+xpylint:
+	-pylint iadpython/test_boundary.py
+	-pylint iadpython/test_fresnel.py
 	-pylint iadpython/test_quadrature.py
 	-pylint iadpython/test_redistribution.py
 	-pylint iadpython/test_start.py
@@ -45,12 +46,13 @@ xpydoc:
 
 test:
 	nosetests iadpython/test_fresnel.py
-
-xtest:
-	nosetests iadpython/test_layer.py
-	nosetests iadpython/test_start.py
 	nosetests iadpython/test_redistribution.py
 	nosetests iadpython/test_quadrature.py
+	nosetests iadpython/test_start.py
+	nosetests iadpython/test_layer.py
+	nosetests iadpython/test_boundary.py
+
+xtest:
 	nosetests iadpython/test_iadpython.py
 	
 clean:
