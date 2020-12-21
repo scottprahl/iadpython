@@ -23,14 +23,14 @@ Two types of starting methods are possible.
 import numpy as np
 import iadpython.start
 
-__all__ = ('layers_no_sources',
-           'double_until',
-           'top',
-           'bottom',
-           'slides'
+__all__ = ('add_layers',
+           'simple_layer_matrices',
+           'add_slide_above',
+           'add_slide_below',
+           'add_same_slides'
            )
 
-def layers_no_sources(sample, R10, T01, R12, R21, T12, T21):
+def add_layers(sample, R10, T01, R12, R21, T12, T21):
     """
     Add Layers Without Sources.
 
@@ -73,13 +73,22 @@ def double_until(sample, r_start, t_start, b_start, b_end):
     r = r_start
     t = t_start
     while abs(b_end-b_start) > 0.00001 and b_end > b_start:
-        r, t = layers_no_sources(sample, r, t, r, r, t, t)
+        r, t = add_layers(sample, r, t, r, r, t, t)
         b_start *= 2
 
     return r, t
 
 
-def basic_slide_a(sample, R12, R21, T12, T21, R10, T01):
+def simple_layer_matrices(sample):
+    """Create R and T matrices for layer without boundaries."""
+    r_start, t_start = iadpython.start.thinnest_layer(sample)
+    b_start = sample.b_thinnest
+    b_end = sample.b_delta_M()
+    r, t = double_until(sample, r_start, t_start, b_start, b_end)
+    return r, t
+
+
+def _add_boundary_config_a(sample, R12, R21, T12, T21, R10, T01):
     """
     Find two matrices when slide is added to top of slab.
 
@@ -109,7 +118,7 @@ def basic_slide_a(sample, R12, R21, T12, T21, R10, T01):
     return R20, T02
 
 
-def basic_slide_b(sample, R12, T21, R01, R10, T01, T10):
+def _add_boundary_config_b(sample, R12, T21, R01, R10, T01, T10):
     """
     Find two other matrices when slide is added to top of slab.
 
@@ -131,9 +140,9 @@ def basic_slide_b(sample, R12, T21, R01, R10, T01, T10):
     return R02, T20
 
 
-def top(sample, R01, R10, T01, T10, R12, R21, T12, T21):
+def add_slide_above(sample, R01, R10, T01, T10, R12, R21, T12, T21):
     """
-    Calculate matrices for a slab with a boundary placed on top.
+    Calculate matrices for a slab with a boundary placed above.
 
     Args:
         'R01', 'R10', 'T01', 'T10' :R, T for slide assuming 0=air and 1=slab
@@ -141,27 +150,27 @@ def top(sample, R01, R10, T01, T10, R12, R21, T12, T21):
     Returns:
         'R02', 'R20', 'T02', 'T20' & calc R, T for both  assuming 0=air and 2=?
     """
-    R20, T02 = basic_slide_a(sample, R12, R21, T12, T21, R10, T01)
-    R02, T20 = basic_slide_b(sample, R12, T21, R01, R10, T01, T10)
+    R20, T02 = _add_boundary_config_a(sample, R12, R21, T12, T21, R10, T01)
+    R02, T20 = _add_boundary_config_b(sample, R12, T21, R01, R10, T01, T10)
     return R02, R20, T02, T20
 
 
-def bottom(sample, R01, R10, T01, T10, R12, R21, T12, T21):
+def add_slide_below(sample, R01, R10, T01, T10, R12, R21, T12, T21):
     """
-    Calculate matrices for a slab with a boundary placed on bottom.
+    Calculate matrices for a slab with a boundary placed below.
 
     Args:
-        'R01', 'R10', 'T01', 'T10' :R, T for slide assuming 0=air and 1=slab
-        'R12', 'R21', 'T12', 'T21' :R, T for slab  assuming 1=slide and 2=?
+        'R01', 'R10', 'T01', 'T10' :R, T for slab assuming 0=air and 1=slab
+        'R12', 'R21', 'T12', 'T21' :R, T for slide  assuming 1=slide and 2=?
     Returns:
         'R02', 'R20', 'T02', 'T20' & calc R, T for both  assuming 0=air and 2=?
     """
-    R02, T20 = basic_slide_a(sample, R10, R01, T10, T01, R12, T21)
-    R20, T02 = basic_slide_b(sample, R10, T01, R21, R12, T21, T12)
+    R02, T20 = _add_boundary_config_a(sample, R10, R01, T10, T01, R12, T21)
+    R20, T02 = _add_boundary_config_b(sample, R10, T01, R21, R12, T21, T12)
     return R02, R20, T02, T20
 
 
-def slides(sample, R01, R10, T01, T10, R, T):
+def add_same_slides(sample, R01, R10, T01, T10, R, T):
     """
     Find matrix when slab is sandwiched between identical slides.
 

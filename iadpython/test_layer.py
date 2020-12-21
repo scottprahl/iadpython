@@ -23,7 +23,7 @@ class layer(unittest.TestCase):
         rr, tt = iadpython.start.thinnest_layer(s)
 
         b=0.12500
-        rr, tt = iadpython.combine.layers_no_sources(s, rr, tt, rr, rr, tt, tt)
+        rr, tt = iadpython.add_layers(s, rr, tt, rr, rr, tt, tt)
         R=np.array([[0.72851,0.22898,0.12610,0.10068],
                     [0.22898,0.07678,0.04267,0.03414],
                     [0.12610,0.04267,0.02374,0.01900],
@@ -38,7 +38,7 @@ class layer(unittest.TestCase):
         np.testing.assert_allclose(T, tt, atol=1e-5)
 
         b=0.25000
-        rr, tt = iadpython.combine.layers_no_sources(s, rr, tt, rr, rr, tt, tt)
+        rr, tt = iadpython.add_layers(s, rr, tt, rr, rr, tt, tt)
         R=np.array([[0.78844,0.28216,0.15973,0.12840],
                     [0.28216,0.12615,0.07411,0.06010],
                     [0.15973,0.07411,0.04379,0.03556],
@@ -53,7 +53,7 @@ class layer(unittest.TestCase):
         np.testing.assert_allclose(T, tt, atol=1e-5)
 
         b=0.50000
-        rr, tt = iadpython.combine.layers_no_sources(s, rr, tt, rr, rr, tt, tt)
+        rr, tt = iadpython.add_layers(s, rr, tt, rr, rr, tt, tt)
         R=np.array([[0.79808,0.30346,0.17574,0.14215],
                     [0.30346,0.17598,0.11217,0.09291],
                     [0.17574,0.11217,0.07299,0.06076],
@@ -68,7 +68,7 @@ class layer(unittest.TestCase):
         np.testing.assert_allclose(T, tt, atol=1e-5)
 
         b=1.00000
-        rr, tt = iadpython.combine.layers_no_sources(s, rr, tt, rr, rr, tt, tt)
+        rr, tt = iadpython.add_layers(s, rr, tt, rr, rr, tt, tt)
         R=np.array([[0.80010,0.31085,0.18343,0.14931],
                     [0.31085,0.20307,0.14031,0.11912],
                     [0.18343,0.14031,0.10265,0.08848],
@@ -85,11 +85,7 @@ class layer(unittest.TestCase):
     def test_02_double(self):
         """Isotropic slab with matched boundaries."""
         s = iadpython.ad.Sample(a=0.5, b=1, g=0.0, n=1, quad_pts=4)
-        rr, tt = iadpython.start.thinnest_layer(s)
-        np.testing.assert_approx_equal(s.b_thinnest, 0.0625)
-        bmin = s.b_thinnest
-        bmax = s.b_delta_M()
-        rr, tt = iadpython.combine.double_until(s, rr, tt, bmin, bmax)
+        rr, tt = iadpython.simple_layer_matrices(s)
 
         R=np.array([[0.80010,0.31085,0.18343,0.14931],
                     [0.31085,0.20307,0.14031,0.11912],
@@ -107,11 +103,7 @@ class layer(unittest.TestCase):
     def test_03_double(self):
         """Anisotropic slab with matched boundaries."""
         s = iadpython.ad.Sample(a=0.5, b=1, g=0.9, n=1, quad_pts=4)
-        rr, tt = iadpython.start.thinnest_layer(s)
-        bmin = s.b_thinnest
-        print("bmin=%.5f" % bmin)
-        bmax = s.b_delta_M()
-        rr, tt = iadpython.combine.double_until(s, rr, tt, bmin, bmax)
+        rr, tt = iadpython.simple_layer_matrices(s)
 
         R=np.array([[0.57675,0.15818,0.03296,-0.00369],
                     [0.15818,0.04710,0.00836,0.01059],

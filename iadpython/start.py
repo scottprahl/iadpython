@@ -35,8 +35,7 @@ import numpy as np
 import scipy.linalg
 import iadpython.redistribution
 
-__all__ = ('print_matrix',
-           'zero_layer',
+__all__ = ('zero_layer',
            'starting_thickness',
            'igi',
            'diamond',
@@ -45,56 +44,14 @@ __all__ = ('print_matrix',
            )
 
 
-def print_matrix(a, sample):
-    """Print matrix and sums."""
-    n = sample.quad_pts
-
-    #header line
-    print("%9.5f" % 0.0, end='')
-    for i in range(n):
-        print("%9.5f" % sample.nu[i], end='')
-    print("     flux")
-
-    #contents + row fluxes
-    tflux = 0.0
-    for i in range(n):
-        print("%9.5f" % sample.nu[i], end='')
-        for j in range(n):
-            if a[i, j] < -10 or a[i, j] > 10:
-                print("    *****", end='')
-            else:
-                print("%9.5f" % a[i, j], end='')
-        flux = 0.0
-        for j in range(n):
-            flux += a[i, j] * sample.twonuw[j]
-        print("%9.5f" % flux)
-        tflux += flux * sample.twonuw[i]
-
-    #column fluxes
-    print("%9s" % "flux   ", end='')
-    for i in range(n):
-        flux = 0.0
-        for j in range(n):
-            flux += a[j, i] * sample.twonuw[j]
-        print("%9.5f" % flux, end='')
-    print("%9.5f\n" % tflux)
-
-    #line of asterisks
-    for i in range(n+1):
-        print("*********", end='')
-    print("\n")
-
-
 def zero_layer(sample):
     """
     Create R and T matrices for thinnest_layer with zero thickness.
 
     Need to include quadrature normalization so R+T=1.
     """
-    n = sample.quad_pts
-    r = np.zeros([n, n])
-    t = np.identity(n) / sample.twonuw
-
+    t = np.diagflat(1/sample.twonuw)
+    r = np.zeros_like(t)
     return r, t
 
 

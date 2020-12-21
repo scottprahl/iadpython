@@ -102,6 +102,42 @@ class Sample():
         s += "      theta critical = %.1f°\n" % np.degrees(np.arccos(self.nu_c()))
         return s
 
+    def wrmatrix(self, a, title=None):
+        """Print matrix and sums."""
+        n = self.quad_pts
+
+        #header line
+        if title is not None:
+            print(title)
+        print("%9.5f" % 0.0, end='')
+        for i in range(n):
+            print("%9.5f" % self.nu[i], end='')
+        print("     flux")
+
+        #contents + row fluxes
+        tflux = 0.0
+        for i in range(n):
+            print("%9.5f" % self.nu[i], end='')
+            for j in range(n):
+                if a[i, j] < -100 or a[i, j] > 100:
+                    print("    *****", end='')
+                else:
+                    print("%9.5f" % a[i, j], end='')
+            flux = 0.0
+            for j in range(n):
+                flux += a[i, j] * self.twonuw[j]
+            print("%9.5f" % flux)
+            tflux += flux * self.twonuw[i]
+
+        #column fluxes
+        print("%9s" % "flux   ", end='')
+        for i in range(n):
+            flux = 0.0
+            for j in range(n):
+                flux += a[j, i] * self.twonuw[j]
+            print("%9.5f" % flux, end='')
+        print("%9.5f\n" % tflux)
+
     def update_quadrature(self):
         """
         Calculate the correct set of quadrature points.
@@ -164,7 +200,7 @@ class Sample():
         self.twonuw = 2 * self.nu * self.weight
 
 
-    def rt(self):
+    def rt_matrices(self):
         """
         Total reflection and transmission.
 
@@ -187,32 +223,34 @@ class Sample():
         integrated reflection and transmission.   Similarly, if the top and
         bottom slides are similar, then quickly calculate these.
         """
+        # cone not implemented yet
         if self.nu_0 != 1.0:
 #            RT_Cone(n,sample,OBLIQUE,UR1,UT1,URU,UTU);
-            return iadpython.start.zero_layer(self.quad_pts)
+            r, t = iadpython.start.zero_layer(self.quad_pts)
+            return r, r, t, t
 
-        #    @<Validate input parameters@>@;
-
-        r_start, t_start = iadpython.start.thinnest_layer(self)
-        b_start = self.b_thinnest
-        b_end = self.b_delta_M()
-
-        R12, T12 = iadpython.combine.double_until(self, r_start, t_start, b_start, b_end)
+        R12, T12 = iadpython.simple_layer_matrices(self)
 
         # all done if boundaries are not an issue
         if self.n == 1 and self.n_above == 1 and self.n_below == 1 and \
             self.b_above == 0 and self.b_below == 0:
-            return R12, T12
+            return R12, R12, T12, T12
 
         R01, R10, T01, T10 = iadpython.start.boundary_layer(self, top=True)
 
         # same slide above and below.
-        if self.n_above == self.n_below and self.b_above == 0 and self.b_below == 0:
-            R03, T03 = iadpython.combine.slides(self, R01, R10, T01, T10, R12, T12)
-            return R03, T03
+        if self.n_above == self.n_below and self.b_above == self.b_below:
+            R03, T03 = iadpython.add_same_slides(self, R01, R10, T01, T10, R12, T12)
+#             self.wrmatrix(R03, "same slide R")
+#             self.wrmatrix(T03, "same slide T")
+            return R03, R03, T03, T03
 
         R23, R32, T23, T32 = iadpython.start.boundary_layer(self, top=False)
+        R02, R20, T02, T20 = iadpython.add_slide_above(self, R01, R10, T01, T10, R12, R12, T12, T12)
+        R03, R30, T03, T30 = iadpython.add_slide_below(self, R02, R20, T02, T20, R23, R32, T23, T32)
 
-        R02, R20, T02, T20 = iadpython.combine.top(self, R01, R10, T01, T10, R12, R12, T12, T12)
-        R03, _, _, T30 = iadpython.combine.bottom(self, R02, R20, T02, T20, R23, R32, T23, T32)
-        return R03, T30
+#         self.wrmatrix(R03, "diff slides R03")
+#         self.wrmatrix(R30, "diff slides R30")
+#         self.wrmatrix(T03, "diff slides T03")
+#         self.wrmatrix(T30, "diff slides T30")
+        return R03, R30, T03, T30
