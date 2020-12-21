@@ -32,7 +32,7 @@ __all__ = ('layers_no_sources',
 
 def layers_no_sources(sample, R10, T01, R12, R21, T12, T21):
     """
-    Basic Routine to Add Layers Without Sources.
+    Add Layers Without Sources.
 
     The basic equations for the adding-doubling sample (neglecting sources) are
 
@@ -218,13 +218,15 @@ def slides(sample, R01, R10, T01, T10, R, T):
     with boundary conditions are R_30 and  T_03 respectively.  These are
     given by
 
-    T_02 = T_12(E-R_10R_12)**-1T_01
+    A_XX = T_12(E-R_10R_12)**-1
 
-    R_20 = T_12(E-R_10R_12)**-1 R_10T_21+R_21
+    R_20 = A_XX R_10T_21 + R_21
 
-    T_03 = T_10(E-R_20R_10)**-1T_02
+    B_XX = T_10(E-R_20R_10)**-1
 
-    R_30 = T_10(E-R_20R_10)**-1 R_20T_01+R_01
+    T_03 = B_XX A_XX T_01
+
+    R_30 = B_XX R_20 T_01 + R_01/(2nuw)**2
 
     Args:
         'R01', 'R10', 'T01', 'T10' : R, T for slide assuming 0=air and 1=slab
@@ -234,13 +236,13 @@ def slides(sample, R01, R10, T01, T10, R, T):
     """
     n = sample.quad_pts
     X = np.identity(n) - R10*R
-    temp = np.linalg.solve(X.T, T.T).T
-    T02 = temp * T01
-    R20 = (temp * R10) @ T + R
+    AXX = np.linalg.solve(X, T.T).T
+    R20 = (AXX * R10) @ T + R
 
     X = np.identity(n) - R20*R10
-    temp = np.linalg.solve(X.T, T10.T).T
-    T03 = temp * T02
-    R30 = (temp @ R20) * T01 + R01/sample.twonuw**2
+    BXX = np.linalg.solve(X.T, np.diagflat(T10)).T
+    T03 = BXX @ AXX * T01
+    R30 = BXX @ R20 * T01
+    R30 += np.diagflat(R01/sample.twonuw**2)
 
     return R30, T03

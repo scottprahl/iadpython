@@ -61,6 +61,7 @@ class A_thin(unittest.TestCase):
 
 class B_igi(unittest.TestCase):
     """IGI layer initializations."""
+
     def test_01_igi(self):
         """IGI initialization with isotropic scattering."""
         s = iadpython.ad.Sample(a=1, b=100, g=0.0, n=1, quad_pts=4)
@@ -101,6 +102,7 @@ class B_igi(unittest.TestCase):
 
 class C_diamond(unittest.TestCase):
     """Diamond layer initializations."""
+
     def test_0_diamond(self):
         """Diamond initialization with isotropic scattering."""
         s = iadpython.ad.Sample(a=1, b=100, g=0.0, quad_pts=4)

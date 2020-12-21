@@ -25,6 +25,7 @@ class Sample():
     """Container class for details of a sample."""
 
     def __init__(self, a=0, b=1, g=0, n=1, n_above=1, n_below=1, quad_pts=4):
+        """Object initialization."""
         self.a = a
         self.b = b
         self.g = g
@@ -38,7 +39,7 @@ class Sample():
         self.quad_pts = quad_pts
         self.b_thinnest = None
         self.nu = None
-        self.weights = None
+        self.weight = None
         self.twonuw = None
 
     def mu_a(self):
@@ -125,7 +126,6 @@ class Sample():
         included) and finally from the cone angle to 1 (again using Radau
         quadrature so that 1 will be included).
         """
-
         nby2 = int(self.quad_pts / 2)
 
         if self.nu_0 == 1:
@@ -187,7 +187,6 @@ class Sample():
         integrated reflection and transmission.   Similarly, if the top and
         bottom slides are similar, then quickly calculate these.
         """
-
         if self.nu_0 != 1.0:
 #            RT_Cone(n,sample,OBLIQUE,UR1,UT1,URU,UTU);
             return iadpython.start.zero_layer(self.quad_pts)

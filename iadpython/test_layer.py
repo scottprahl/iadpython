@@ -2,7 +2,7 @@
 # pylint: disable=bad-whitespace
 # pylint: disable=no-self-use
 
-"""Tests for initial layer thickness Function."""
+"""Tests for finite layer thicknesses."""
 
 import unittest
 import numpy as np

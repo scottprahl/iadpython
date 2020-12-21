@@ -122,7 +122,7 @@ def starting_thickness(sample):
     """
     if sample.nu is None:
         sample.update_quadrature()
-    
+
     if sample.b <= 0:
         return 0.0
 
