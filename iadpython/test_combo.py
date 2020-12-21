@@ -48,5 +48,24 @@ class Air_sandwich(unittest.TestCase):
         np.testing.assert_allclose(R, rr, atol=1e-5)
         np.testing.assert_allclose(T, tt, atol=1e-5)
 
+    def test_03_sandwich(self):
+        """Isotropic finite layer with mismatched slides."""
+        s = iadpython.Sample(a=0.5, b=1, g=0.0, n=1.4, n_above=1.5, n_below=1.6)
+        s.quad_pts = 4
+        rr, tt = s.rt()
+
+        R=np.array([[9.66127,0.00000,0.00000,0.00000],
+                    [0.00000,2.58873,0.00000,0.00000],
+                    [0.00000,0.00000,0.34228,0.09582],
+                    [0.00000,0.00000,0.09582,0.40788]])
+
+        T=np.array([[0.00000,0.00000,0.00000,0.00000],
+                    [0.00000,0.00000,0.00000,0.00000],
+                    [0.00000,0.00000,0.74890,0.08218],
+                    [0.00000,0.00000,0.08193,2.29000]])
+
+        np.testing.assert_allclose(R, rr, atol=1e-5)
+        np.testing.assert_allclose(T, tt, atol=1e-5)
+
 if __name__ == '__main__':
     unittest.main()

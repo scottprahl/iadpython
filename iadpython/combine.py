@@ -100,28 +100,12 @@ def basic_slide_a(sample, R12, R21, T12, T21, R10, T01):
     Returns:
         R20, T02
     """
-    print("A_Add_Slide")
-    print("R12=")
-    iadpython.start.print_matrix(R12, sample)
-    print("R21=")
-    iadpython.start.print_matrix(R21, sample)
-    print("T12=")
-    iadpython.start.print_matrix(T12, sample)
-    print("T21=")
-    iadpython.start.print_matrix(T21, sample)
-    print("R10=")
-    print(R10)
-    print("T01=")
-    print(T01)
-    X = np.identity(len(R10)) - R10*R12
+    n = sample.quad_pts
+    X = (np.identity(n) - R10 * R12.T).T
     temp = np.linalg.solve(X.T, T12.T).T
     T02 = temp * T01
     R20 = (temp * R10) @ T21 + R21
 
-    print("T02=")
-    iadpython.start.print_matrix(T02, sample)
-    print("R20=")
-    iadpython.start.print_matrix(R20, sample)
     return R20, T02
 
 
@@ -137,27 +121,13 @@ def basic_slide_b(sample, R12, T21, R01, R10, T01, T10):
 
     R_02=T_10 (E-R_12R_10)**-1 R_12 T_01 + R_01
     """
-    print("R12=")
-    iadpython.start.print_matrix(R12, sample)
-    print("T21=")
-    iadpython.start.print_matrix(T21, sample)
-    print("R01=")
-    print(R01)
-    print("R10=")
-    print(R10)
-    print("T01=")
-    print(T01)
-    print("T10=")
-    print(T10)
-    X = np.identity(len(R10)) - R12*R10
-    temp = np.linalg.solve(X.T, T10.T).T
-    T20 = temp * T21
-    R02 = (temp @ R12) * T01 + R01
+    n = sample.quad_pts
+    X = np.identity(n) - R12*R10
+    temp = np.linalg.solve(X.T, np.diagflat(T10)).T
+    T20 = temp @ T21
+    R02 = (temp @ R12) * T01
+    R02 += np.diagflat(R01/sample.twonuw**2)
 
-    print("T20=")
-    print(T20)
-    print("R02=")
-    print(R02)
     return R02, T20
 
 

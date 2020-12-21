@@ -214,5 +214,5 @@ class Sample():
         R23, R32, T23, T32 = iadpython.start.boundary_layer(self, top=False)
 
         R02, R20, T02, T20 = iadpython.combine.top(self, R01, R10, T01, T10, R12, R12, T12, T12)
-        R03, _, T03, _ = iadpython.combine.bottom(self, R02, R20, T02, T20, R23, R32, T23, T32)
-        return R03, T03
+        R03, _, _, T30 = iadpython.combine.bottom(self, R02, R20, T02, T20, R23, R32, T23, T32)
+        return R03, T30
