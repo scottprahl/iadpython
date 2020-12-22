@@ -39,7 +39,6 @@ class Sample():
         self.quad_pts = quad_pts
         self.b_thinnest = None
         self.nu = None
-        self.weight = None
         self.twonuw = None
 
     def mu_a(self):
@@ -109,15 +108,19 @@ class Sample():
         #header line
         if title is not None:
             print(title)
-        print("%9.5f" % 0.0, end='')
+        print("cos_theta |", end='')
         for i in range(n):
             print("%9.5f" % self.nu[i], end='')
-        print("     flux")
+        print(" |     flux")
+        print("----------+",end='')
+        for i in range(n):
+            print("---------",end='')
+        print("-+---------")
 
         #contents + row fluxes
         tflux = 0.0
         for i in range(n):
-            print("%9.5f" % self.nu[i], end='')
+            print("%9.5f |" % self.nu[i], end='')
             for j in range(n):
                 if a[i, j] < -100 or a[i, j] > 100:
                     print("    *****", end='')
@@ -126,17 +129,45 @@ class Sample():
             flux = 0.0
             for j in range(n):
                 flux += a[i, j] * self.twonuw[j]
-            print("%9.5f" % flux)
+            print(" |%9.5f" % flux)
             tflux += flux * self.twonuw[i]
 
         #column fluxes
-        print("%9s" % "flux   ", end='')
+        print("----------+",end='')
+        for i in range(n):
+            print("---------",end='')
+        print("-+---------")
+        print("%9s |" % "flux   ", end='')
         for i in range(n):
             flux = 0.0
             for j in range(n):
                 flux += a[j, i] * self.twonuw[j]
             print("%9.5f" % flux, end='')
-        print("%9.5f\n" % tflux)
+        print(" |%9.5f\n" % tflux)
+
+    def prmatrix(self, a, title=None):
+        """Print matrix and sums."""
+        if title is not None:
+            print(title)
+        n = self.quad_pts
+
+        #first row
+        print("[[", end='')
+        for j in range(n-1):
+            print("%9.5f," % a[0, j], end='')
+        print("%9.5f]," % a[0, -1])
+        
+        for i in range(1,n-1):
+            print(" [", end='')
+            for j in range(n-1):
+                print("%9.5f," % a[i, j], end='')
+            print("%9.5f]," % a[i, -1])
+        
+        #last row
+        print(" [", end='')
+        for j in range(n-1):
+            print("%9.5f," % a[-1, j], end='')
+        print("%9.5f]]" % a[-1, -1])
 
     def update_quadrature(self):
         """
@@ -196,8 +227,7 @@ class Sample():
                 a2, w2 = iadpython.quadrature.radau(nby3, a=nu_00, b=1)
 
         self.nu = np.append(a1, a2)
-        self.weight = np.append(w1, w2)
-        self.twonuw = 2 * self.nu * self.weight
+        self.twonuw = 2 * self.nu * np.append(w1, w2)
 
 
     def rt_matrices(self):
@@ -236,21 +266,19 @@ class Sample():
             self.b_above == 0 and self.b_below == 0:
             return R12, R12, T12, T12
 
+        # reflection/transmission arrays for top boundary
         R01, R10, T01, T10 = iadpython.start.boundary_layer(self, top=True)
 
         # same slide above and below.
         if self.n_above == self.n_below and self.b_above == self.b_below:
             R03, T03 = iadpython.add_same_slides(self, R01, R10, T01, T10, R12, T12)
-#             self.wrmatrix(R03, "same slide R")
-#             self.wrmatrix(T03, "same slide T")
             return R03, R03, T03, T03
 
+        # reflection/transmission arrays for bottom boundary
         R23, R32, T23, T32 = iadpython.start.boundary_layer(self, top=False)
+
+        # different boundaries on top and bottom
         R02, R20, T02, T20 = iadpython.add_slide_above(self, R01, R10, T01, T10, R12, R12, T12, T12)
         R03, R30, T03, T30 = iadpython.add_slide_below(self, R02, R20, T02, T20, R23, R32, T23, T32)
 
-#         self.wrmatrix(R03, "diff slides R03")
-#         self.wrmatrix(R30, "diff slides R30")
-#         self.wrmatrix(T03, "diff slides T03")
-#         self.wrmatrix(T30, "diff slides T30")
         return R03, R30, T03, T30

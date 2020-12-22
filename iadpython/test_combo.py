@@ -8,6 +8,16 @@ import unittest
 import numpy as np
 import iadpython
 
+from nose.plugins.attrib import attr
+def wip(f):
+    """
+    Only test functions with @wip decorator.
+    
+    Add the @wip decorator before functions that are works-in-progress.
+    `nosetests -a wip test_file.py` will test only those with @wip decorator.
+    """
+    return attr('wip')(f)
+    
 class Air_sandwich(unittest.TestCase):
     """Finite layer in air."""
 
@@ -81,29 +91,29 @@ class Air_sandwich(unittest.TestCase):
 
     def test_04_sandwich(self):
         """Isotropic finite layer with top slide only."""
-        s = iadpython.Sample(a=0.5, b=1, g=0.0, n=1.0, n_above=1.5, n_below=1.0)
+        s = iadpython.Sample(a=0.5, b=1, g=0.0, n=1.4, n_above=1.5, n_below=1.0)
         s.quad_pts = 4
         rr03, rr30, tt03, tt30 = s.rt_matrices()
 
-        R03=np.array([[19.41024,0.06124,0.04285,0.03524],
-                      [0.06124,0.83640,0.10265,0.08790],
-                      [0.04285,0.10265,0.25297,0.07688],
-                      [0.03524,0.08790,0.07688,0.68248]])
+        R03=np.array([[9.66127,0.00000,0.00000,0.00000],
+                      [0.00000,2.58873,0.00000,0.00000],
+                      [0.00000,0.00000,0.33325,0.09392],
+                      [0.00000,0.00000,0.09392,0.38170]])
 
-        R30=np.array([[0.80071,0.31300,0.18613,0.15223],
-                      [0.31300,0.21395,0.14597,0.12471],
-                      [0.18613,0.14597,0.12100,0.09369],
-                      [0.15223,0.12471,0.09369,0.16481]])
+        R30=np.array([[9.66127,0.00000,0.00000,0.00000],
+                      [0.00000,2.58873,0.00000,0.00000],
+                      [0.00000,0.00000,0.29330,0.09784],
+                      [0.00000,0.00000,0.09784,0.30804]])
 
-        T03=np.array([[0.00501,0.04926,0.07167,0.07041],
-                      [0.01783,0.29506,0.09238,0.08524],
-                      [0.02114,0.07934,0.57611,0.07273],
-                      [0.02056,0.07307,0.07259,2.78119]])
+        T03=np.array([[0.00000,0.00000,0.00000,0.00000],
+                      [0.00000,0.00000,0.00000,0.00000],
+                      [0.00000,0.00000,0.77759,0.08400],
+                      [0.00000,0.00000,0.08356,2.36008]])
 
-        T30=np.array([[0.00501,0.01783,0.02114,0.02056],
-                      [0.04926,0.29506,0.07934,0.07307],
-                      [0.07167,0.09238,0.57611,0.07259],
-                      [0.07041,0.08524,0.07273,2.78119]])
+        T30=np.array([[0.00000,0.00000,0.00000,0.00000],
+                      [0.00000,0.00000,0.00000,0.00000],
+                      [0.00000,0.00000,0.77759,0.08356],
+                      [0.00000,0.00000,0.08400,2.36008]])
 
         np.testing.assert_allclose(R03, rr03, atol=1e-5)
         np.testing.assert_allclose(R30, rr30, atol=1e-5)
@@ -115,6 +125,41 @@ class Air_sandwich(unittest.TestCase):
         s = iadpython.Sample(a=0.5, b=1, g=0.0, n=1.4, n_above=1.5, n_below=1.6)
         s.quad_pts = 4
         rr03, rr30, tt03, tt30 = s.rt_matrices()
+        R03=np.array([[9.66127,0.00000,0.00000,0.00000],
+                      [0.00000,2.58873,0.00000,0.00000],
+                      [0.00000,0.00000,0.34228,0.09582],
+                      [0.00000,0.00000,0.09582,0.40788]])
+
+        R30=np.array([[9.66127,0.00000,0.00000,0.00000],
+                      [0.00000,2.58873,0.00000,0.00000],
+                      [0.00000,0.00000,0.38508,0.09142],
+                      [0.00000,0.00000,0.09142,0.49721]])
+
+        T03=np.array([[0.00000,0.00000,0.00000,0.00000],
+                      [0.00000,0.00000,0.00000,0.00000],
+                      [0.00000,0.00000,0.74890,0.08193],
+                      [0.00000,0.00000,0.08218,2.29000]])
+
+        T30=np.array([[0.00000,0.00000,0.00000,0.00000],
+                      [0.00000,0.00000,0.00000,0.00000],
+                      [0.00000,0.00000,0.74890,0.08218],
+                      [0.00000,0.00000,0.08193,2.29000]])
+
+        np.testing.assert_allclose(R03, rr03, atol=1e-5)
+        np.testing.assert_allclose(R30, rr30, atol=1e-5)
+        np.testing.assert_allclose(T03, tt03, atol=1e-5)
+        np.testing.assert_allclose(T30, tt30, atol=1e-5)
+
+    @wip
+    def test_06_sandwich(self):
+        """Isotropic finite layer with mismatched slides the hard way."""
+        s = iadpython.Sample(a=0.5, b=1, g=0.0, n=1.4, n_above=1.5, n_below=1.6)
+        s.quad_pts = 4
+        R01, R10, T01, T10 = iadpython.boundary_matrices(s, top=True)
+        R23, R32, T23, T32 = iadpython.boundary_matrices(s, top=False)
+        R12, T12 = iadpython.simple_layer_matrices(s)
+        R02, R20, T02, T20 = iadpython.add_layers(s, R01, R10, T01, T10, R12, R12, T12, T12)
+        rr03, rr30, tt03, tt30 = iadpython.add_layers(s, R02, R20, T02, T20, R23, R32, T23, T32)
 
         R03=np.array([[9.66127,0.00000,0.00000,0.00000],
                       [0.00000,2.58873,0.00000,0.00000],

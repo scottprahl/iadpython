@@ -24,15 +24,16 @@ import numpy as np
 import iadpython.start
 
 __all__ = ('add_layers',
+           'add_layers_basic',
            'simple_layer_matrices',
            'add_slide_above',
            'add_slide_below',
            'add_same_slides'
            )
 
-def add_layers(sample, R10, T01, R12, R21, T12, T21):
+def add_layers_basic(sample, R10, T01, R12, R21, T12, T21):
     """
-    Add Layers Without Sources.
+    Basic layer addition.
 
     The basic equations for the adding-doubling sample (neglecting sources) are
 
@@ -57,9 +58,8 @@ def add_layers(sample, R10, T01, R12, R21, T12, T21):
     E_ij= 1/(2*nu_i*w_i) delta_ij
     C_ij= 2*nu_i*w_i delta_ij
     """
-    n = len(sample.twonuw)
-    C = np.identity(n) * sample.twonuw
-    E = np.identity(n) / sample.twonuw
+    C = np.diagflat(sample.twonuw)
+    E = np.diagflat(1/sample.twonuw)
 
     A = E - R10 @ C @ R12
     B = np.linalg.solve(A.T, T12.T).T
@@ -68,14 +68,24 @@ def add_layers(sample, R10, T01, R12, R21, T12, T21):
     return R20, T02
 
 
+def add_layers(sample, R01, R10, T01, T10, R12, R21, T12, T21):
+    """
+    Add two layers together.
+
+    Use this when the combined system is asymmetric R02!=R20 and T02!=T20.
+    """
+    R20, T02 = add_layers_basic(sample, R10, T01, R12, R21, T12, T21)
+    R02, T20 = add_layers_basic(sample, R12, T21, R10, R01, T10, T01)
+    return R02, R20, T02, T20
+
+
 def double_until(sample, r_start, t_start, b_start, b_end):
     """Double until proper thickness is reached."""
     r = r_start
     t = t_start
     while abs(b_end-b_start) > 0.00001 and b_end > b_start:
-        r, t = add_layers(sample, r, t, r, r, t, t)
+        r, t = add_layers_basic(sample, r, t, r, r, t, t)
         b_start *= 2
-
     return r, t
 
 
@@ -143,12 +153,19 @@ def _add_boundary_config_b(sample, R12, T21, R01, R10, T01, T10):
 def add_slide_above(sample, R01, R10, T01, T10, R12, R21, T12, T21):
     """
     Calculate matrices for a slab with a boundary placed above.
+    
+    This routine should be used before the slide is been added below!
 
+    Here 0 is the air/top-of-slide, 1 is the bottom-of-slide/top-of-slab boundary, 
+    and 2 is the is the bottom-of-slab boundary.
+    
     Args:
-        'R01', 'R10', 'T01', 'T10' :R, T for slide assuming 0=air and 1=slab
-        'R12', 'R21', 'T12', 'T21' :R, T for slab  assuming 1=slide and 2=?
+        R01, R10 : reflection arrays for slide
+        T01, T10 : transmission arrays for slide
+        R12, R21 : reflection matrices for slab
+        T12, T21 : transmission matrices for slab
     Returns:
-        'R02', 'R20', 'T02', 'T20' & calc R, T for both  assuming 0=air and 2=?
+        R02, R20, T02, T20: matrices for slide+slab combination
     """
     R20, T02 = _add_boundary_config_a(sample, R12, R21, T12, T21, R10, T01)
     R02, T20 = _add_boundary_config_b(sample, R12, T21, R01, R10, T01, T10)
@@ -158,12 +175,19 @@ def add_slide_above(sample, R01, R10, T01, T10, R12, R21, T12, T21):
 def add_slide_below(sample, R01, R10, T01, T10, R12, R21, T12, T21):
     """
     Calculate matrices for a slab with a boundary placed below.
+    
+    This routine should be used after the slide has been added to the top.
 
+    Here 0 is the top of slab, 1 is the bottom-of-slab/top-of-slide boundary, 
+    and 2 is the is the bottom-of-slide/air boundary.
+    
     Args:
-        'R01', 'R10', 'T01', 'T10' :R, T for slab assuming 0=air and 1=slab
-        'R12', 'R21', 'T12', 'T21' :R, T for slide  assuming 1=slide and 2=?
+        R01, R10 : reflection matrices for slab
+        T01, T10 : transmission matrices for slab
+        R12, R21 : reflection arrays for slide
+        T12, T21 : transmission arrays for slide
     Returns:
-        'R02', 'R20', 'T02', 'T20' & calc R, T for both  assuming 0=air and 2=?
+        R02, R20, T02, T20: matrices for slab+slide combination
     """
     R02, T20 = _add_boundary_config_a(sample, R10, R01, T10, T01, R12, T21)
     R20, T02 = _add_boundary_config_b(sample, R10, T01, R21, R12, T21, T12)

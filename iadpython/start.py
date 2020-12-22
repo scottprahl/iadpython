@@ -41,6 +41,7 @@ __all__ = ('zero_layer',
            'diamond',
            'thinnest_layer',
            'boundary_layer',
+           'boundary_matrices',
            )
 
 
@@ -142,7 +143,8 @@ def diamond(sample):
 
     hp, hm = iadpython.redistribution.hg_legendre(sample)
 
-    temp = sample.a_delta_M() * d * sample.weight/ 4
+    w = sample.twonuw/sample.nu/2
+    temp = sample.a_delta_M() * d * w / 4
     r_hat = temp * (hm / sample.nu).T
     t_hat = d/(2*sample.nu) * I - temp * (hp / sample.nu).T
 
@@ -205,7 +207,7 @@ def _boundary(sample, n_i, n_g, n_t, b):
 
 def boundary_layer(s, top=True):
     """
-    Create reflection and transmission matrices for a boundary_layer.
+    Create reflection and transmission arrays for a boundary_layer.
 
     If 'boundary_layer=="top"' then the arrays returned are for the top
     surface and the labels are as expected i.e. 'T01' is the reflection for
@@ -216,7 +218,6 @@ def boundary_layer(s, top=True):
     bottom slide/air surface
     Args:
         s: slab
-        method: method
         top: True if this is the top slide
     Returns:
         R01: reflection array from air to slab
@@ -232,6 +233,30 @@ def boundary_layer(s, top=True):
         R01, T01 = _boundary(s, s.n, s.n_below, 1.0, s.b_below)
     return R01, R10, T01, T10
 
+
+def boundary_matrices(s, top=True):
+    """
+    Create reflection and transmission matrices for a boundary_layer.
+
+    These can be treated like any other layer in the adding-doubling
+    formalism.  
+
+    Args:
+        s: slab
+        top: True if this is the top boundary
+    Returns:
+        R01: reflection array from air to slab
+        R10: reflection array from slab to air
+        T01: transmission array from air to slab
+        T10: transmission array from slab to air
+    """
+    R01, R10, T01, T10 = boundary_layer(s, top=top)
+    rr01 = np.diagflat(R01/s.twonuw**2)
+    rr10 = np.diagflat(R10/s.twonuw**2)
+    tt01 = np.diagflat(T01/s.twonuw)
+    tt10 = np.diagflat(T10/s.twonuw)
+
+    return rr01, rr10, tt01, tt10
 
 def unscattered(s):
     """
