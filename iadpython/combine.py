@@ -21,7 +21,7 @@ Two types of starting methods are possible.
 """
 
 import numpy as np
-import iadpython.start
+import iadpython
 
 __all__ = ('add_layers',
            'add_layers_basic',
@@ -81,8 +81,18 @@ def add_layers(sample, R01, R10, T01, T10, R12, R21, T12, T21):
 
 def double_until(sample, r_start, t_start, b_start, b_end):
     """Double until proper thickness is reached."""
+
     r = r_start
     t = t_start
+    if b_end > iadpython.AD_MAX_THICKNESS:
+        old_utu = 100
+        utu = 10
+        while abs(utu-old_utu)>1e-6:
+            old_utu = utu
+            r, t = add_layers_basic(sample, r, t, r, r, t, t)
+            _, _, _, utu = sample.UX1_and_UXU(r,t)
+        return r, t
+
     while abs(b_end-b_start) > 0.00001 and b_end > b_start:
         r, t = add_layers_basic(sample, r, t, r, r, t, t)
         b_start *= 2

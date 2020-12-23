@@ -21,6 +21,7 @@ Two types of starting methods are possible.
 """
 import sys
 import numpy as np
+import iadpython
 
 __all__ = ('cos_critical',
            'cos_snell',
@@ -251,7 +252,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     nu_g = cos_snell(n_i, nu_i, n_g)
 
     # too thick for any light to make it through the sample
-    if b > -sys.float_info.min_10_exp * np.log(10) / 4:
+    if b > iadpython.AD_MAX_THICKNESS:
         return r1, np.zeros_like(r1)
 
     r2 = reflection(n_g, nu_g, n_t)
@@ -297,7 +298,7 @@ def _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
     nu_slab = cos_snell(1.0, nu, n_slab)
 
     # avoid underflow errors and division by zero.
-    if b_slab > -sys.float_info.min_10_exp * np.log(10) / 4:
+    if b_slab > iadpython.AD_MAX_THICKNESS:
         return r_top, 0
 
     r_bottom, t_bottom = absorbing_glass_RT(n_slab, n_bottom, 1.0, nu_slab, b_bottom)

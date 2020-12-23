@@ -23,7 +23,7 @@ class layer(unittest.TestCase):
         rr, tt = iadpython.start.thinnest_layer(s)
 
         b=0.12500
-        rr, tt = iadpython.add_layers(s, rr, tt, rr, rr, tt, tt)
+        rr, tt = iadpython.add_layers_basic(s, rr, tt, rr, rr, tt, tt)
         R=np.array([[0.72851,0.22898,0.12610,0.10068],
                     [0.22898,0.07678,0.04267,0.03414],
                     [0.12610,0.04267,0.02374,0.01900],
@@ -38,7 +38,7 @@ class layer(unittest.TestCase):
         np.testing.assert_allclose(T, tt, atol=1e-5)
 
         b=0.25000
-        rr, tt = iadpython.add_layers(s, rr, tt, rr, rr, tt, tt)
+        rr, tt = iadpython.add_layers_basic(s, rr, tt, rr, rr, tt, tt)
         R=np.array([[0.78844,0.28216,0.15973,0.12840],
                     [0.28216,0.12615,0.07411,0.06010],
                     [0.15973,0.07411,0.04379,0.03556],
@@ -53,7 +53,7 @@ class layer(unittest.TestCase):
         np.testing.assert_allclose(T, tt, atol=1e-5)
 
         b=0.50000
-        rr, tt = iadpython.add_layers(s, rr, tt, rr, rr, tt, tt)
+        rr, tt = iadpython.add_layers_basic(s, rr, tt, rr, rr, tt, tt)
         R=np.array([[0.79808,0.30346,0.17574,0.14215],
                     [0.30346,0.17598,0.11217,0.09291],
                     [0.17574,0.11217,0.07299,0.06076],
@@ -68,7 +68,7 @@ class layer(unittest.TestCase):
         np.testing.assert_allclose(T, tt, atol=1e-5)
 
         b=1.00000
-        rr, tt = iadpython.add_layers(s, rr, tt, rr, rr, tt, tt)
+        rr, tt = iadpython.add_layers_basic(s, rr, tt, rr, rr, tt, tt)
         R=np.array([[0.80010,0.31085,0.18343,0.14931],
                     [0.31085,0.20307,0.14031,0.11912],
                     [0.18343,0.14031,0.10265,0.08848],

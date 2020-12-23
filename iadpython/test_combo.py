@@ -14,7 +14,7 @@ def wip(f):
     Only test functions with @wip decorator.
     
     Add the @wip decorator before functions that are works-in-progress.
-    `nosetests -a wip test_file.py` will test only those with @wip decorator.
+    `nosetests -a wip test_combo.py` will test only those with @wip decorator.
     """
     return attr('wip')(f)
     
@@ -150,7 +150,6 @@ class Air_sandwich(unittest.TestCase):
         np.testing.assert_allclose(T03, tt03, atol=1e-5)
         np.testing.assert_allclose(T30, tt30, atol=1e-5)
 
-    @wip
     def test_06_sandwich(self):
         """Isotropic finite layer with mismatched slides the hard way."""
         s = iadpython.Sample(a=0.5, b=1, g=0.0, n=1.4, n_above=1.5, n_below=1.6)

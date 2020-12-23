@@ -20,6 +20,7 @@ import iadpython.quadrature
 import iadpython.combine
 import iadpython.start
 
+AD_MAX_THICKNESS = 1e6
 
 class Sample():
     """Container class for details of a sample."""
@@ -282,3 +283,43 @@ class Sample():
         R03, R30, T03, T30 = iadpython.add_slide_below(self, R02, R20, T02, T20, R23, R32, T23, T32)
 
         return R03, R30, T03, T30
+
+
+    def UX1_and_UXU(self, R, T):
+        """
+        Just add up all the angles up to the critical angle.  This is 
+        a commonly used convenience function to easily calculate |UR1| and
+        |URU|.  We select the entire range of angles by passing $\cos(\pi/2)= 0$
+        to the |URU_and_UR1_Cone| routine.
+        """
+        nu_c = self.nu_c()
+        k = np.min(np.where(self.nu>nu_c))
+        n = self.quad_pts
+
+        URU = 0
+        UTU = 0
+        for i in range(k, n):
+            URx = 0
+            UTx = 0
+            
+            for j in range(k, n):
+                URx += R[i, j] * self.twonuw[j]
+                UTx += T[i, j] * self.twonuw[j]
+
+            URU += URx * self.twonuw[i]
+            UTU += UTx * self.twonuw[i]
+
+        URU *= self.n**2
+        UTU *= self.n**2
+
+        return URx, URU, UTx, UTU
+
+    def rt(self):
+        """
+        Just add up all the angles up to the critical angle.  This is 
+        a commonly used convenience function to easily calculate |UR1| and
+        |URU|.  We select the entire range of angles by passing $\cos(\pi/2)= 0$
+        to the |URU_and_UR1_Cone| routine.
+        """
+        R, _, T, _ = self.rt_matrices()
+        return self.UX1_and_UXU(R, T)
