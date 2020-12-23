@@ -15,6 +15,7 @@ Class for doing adding-doubling calculations for a sample.
     print(t)
 """
 
+import copy
 import numpy as np
 import iadpython.quadrature
 import iadpython.combine
@@ -315,9 +316,61 @@ class Sample():
         URU *= self.n**2
         UTU *= self.n**2
 
-        return URx, URU, UTx, UTU
+        return URx, UTx, URU, UTU
 
     def rt(self):
-        """Find the total reflected and transmitted flux for a sample."""
-        R, _, T, _ = self.rt_matrices()
-        return self.UX1_and_UXU(R, T)
+        """
+        Find the total reflected and transmitted flux for a sample.
+
+        This is extended so that arrays can be handled.
+        """
+        len_a = 0
+        len_b = 0
+        len_g = 0
+        if not np.isscalar(self.a):
+            len_a = len(self.a)
+
+        if not np.isscalar(self.b):
+            len_b = len(self.b)
+
+        if not np.isscalar(self.g):
+            len_g = len(self.g)
+
+        thelen = max(len_a, len_b, len_g)
+
+        if thelen == 0:
+            R, _, T, _ = self.rt_matrices()
+            return self.UX1_and_UXU(R, T)
+
+        if len_a and len_b and len_a != len_b:
+            raise RuntimeError('rt: a and b arrays must be same length')
+
+        if len_a and len_g and len_a != len_g:
+            raise RuntimeError('rt: a and g arrays must be same length')
+
+        if len_b and len_g and len_b != len_g:
+            raise RuntimeError('rt: b and g arrays must be same length')
+
+        ur1 = np.empty(thelen)
+        ut1 = np.empty(thelen)
+        uru = np.empty(thelen)
+        utu = np.empty(thelen)
+
+        if self.nu is None:
+            self.update_quadrature()
+
+        sample = copy.deepcopy(self)
+        for i in range(thelen):
+            if len_a > 0:
+                sample.a = self.a[i]
+
+            if len_b > 0:
+                sample.b = self.b[i]
+
+            if len_g > 0:
+                sample.g = self.g[i]
+
+            R, _, T, _ = sample.rt_matrices()
+            ur1[i], ut1[i], uru[i], utu[i] = sample.UX1_and_UXU(R, T)
+
+        return ur1, ut1, uru, utu
