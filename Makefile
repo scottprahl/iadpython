@@ -22,6 +22,7 @@ pylint:
 	-pylint iadpython/test_quadrature.py
 	-pylint iadpython/test_redistribution.py
 	-pylint iadpython/test_start.py
+	-pylint iadpython/test_ur1_uru.py
 
 xpylint:
 
@@ -41,6 +42,7 @@ pydoc:
 	-pydocstyle iadpython/test_quadrature.py
 	-pydocstyle iadpython/test_redistribution.py
 	-pydocstyle iadpython/test_start.py
+	-pydocstyle iadpython/test_ur1_uru.py
 
 xpydoc:
 	-pydocstyle iadpython/iadpython.py
@@ -54,6 +56,7 @@ test:
 	nosetests iadpython/test_layer.py
 	nosetests iadpython/test_boundary.py
 	nosetests iadpython/test_combo.py
+	nosetests iadpython/test_ur1_uru.py
 
 xtest:
 	nosetests iadpython/test_iadpython.py

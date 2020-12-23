@@ -19,7 +19,6 @@ Two types of starting methods are possible.
     print(t)
 
 """
-import sys
 import numpy as np
 import iadpython
 

@@ -33,7 +33,7 @@ __all__ = ('add_layers',
 
 def add_layers_basic(sample, R10, T01, R12, R21, T12, T21):
     """
-    Basic layer addition.
+    Add two layers together.
 
     The basic equations for the adding-doubling sample (neglecting sources) are
 
@@ -81,16 +81,15 @@ def add_layers(sample, R01, R10, T01, T10, R12, R21, T12, T21):
 
 def double_until(sample, r_start, t_start, b_start, b_end):
     """Double until proper thickness is reached."""
-
     r = r_start
     t = t_start
     if b_end > iadpython.AD_MAX_THICKNESS:
         old_utu = 100
         utu = 10
-        while abs(utu-old_utu)>1e-6:
+        while abs(utu-old_utu) > 1e-6:
             old_utu = utu
             r, t = add_layers_basic(sample, r, t, r, r, t, t)
-            _, _, _, utu = sample.UX1_and_UXU(r,t)
+            _, _, _, utu = sample.UX1_and_UXU(r, t)
         return r, t
 
     while abs(b_end-b_start) > 0.00001 and b_end > b_start:
@@ -163,12 +162,12 @@ def _add_boundary_config_b(sample, R12, T21, R01, R10, T01, T10):
 def add_slide_above(sample, R01, R10, T01, T10, R12, R21, T12, T21):
     """
     Calculate matrices for a slab with a boundary placed above.
-    
+
     This routine should be used before the slide is been added below!
 
-    Here 0 is the air/top-of-slide, 1 is the bottom-of-slide/top-of-slab boundary, 
+    Here 0 is the air/top-of-slide, 1 is the bottom-of-slide/top-of-slab boundary,
     and 2 is the is the bottom-of-slab boundary.
-    
+
     Args:
         R01, R10 : reflection arrays for slide
         T01, T10 : transmission arrays for slide
@@ -185,12 +184,12 @@ def add_slide_above(sample, R01, R10, T01, T10, R12, R21, T12, T21):
 def add_slide_below(sample, R01, R10, T01, T10, R12, R21, T12, T21):
     """
     Calculate matrices for a slab with a boundary placed below.
-    
+
     This routine should be used after the slide has been added to the top.
 
-    Here 0 is the top of slab, 1 is the bottom-of-slab/top-of-slide boundary, 
+    Here 0 is the top of slab, 1 is the bottom-of-slab/top-of-slide boundary,
     and 2 is the is the bottom-of-slide/air boundary.
-    
+
     Args:
         R01, R10 : reflection matrices for slab
         T01, T10 : transmission matrices for slab

@@ -239,7 +239,7 @@ def boundary_matrices(s, top=True):
     Create reflection and transmission matrices for a boundary_layer.
 
     These can be treated like any other layer in the adding-doubling
-    formalism.  
+    formalism.
 
     Args:
         s: slab

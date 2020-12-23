@@ -1,23 +1,24 @@
 # pylint: disable=invalid-name
 # pylint: disable=bad-whitespace
 # pylint: disable=no-self-use
+# pylint: disable=too-many-locals
 
 """Tests for slide-sample-slide combinations."""
 
 import unittest
 import numpy as np
+from nose.plugins.attrib import attr
 import iadpython
 
-from nose.plugins.attrib import attr
 def wip(f):
     """
     Only test functions with @wip decorator.
-    
+
     Add the @wip decorator before functions that are works-in-progress.
     `nosetests -a wip test_combo.py` will test only those with @wip decorator.
     """
     return attr('wip')(f)
-    
+
 class Air_sandwich(unittest.TestCase):
     """Finite layer in air."""
 

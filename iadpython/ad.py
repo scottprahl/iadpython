@@ -113,9 +113,9 @@ class Sample():
         for i in range(n):
             print("%9.5f" % self.nu[i], end='')
         print(" |     flux")
-        print("----------+",end='')
+        print("----------+", end='')
         for i in range(n):
-            print("---------",end='')
+            print("---------", end='')
         print("-+---------")
 
         #contents + row fluxes
@@ -134,9 +134,9 @@ class Sample():
             tflux += flux * self.twonuw[i]
 
         #column fluxes
-        print("----------+",end='')
+        print("----------+", end='')
         for i in range(n):
-            print("---------",end='')
+            print("---------", end='')
         print("-+---------")
         print("%9s |" % "flux   ", end='')
         for i in range(n):
@@ -157,13 +157,13 @@ class Sample():
         for j in range(n-1):
             print("%9.5f," % a[0, j], end='')
         print("%9.5f]," % a[0, -1])
-        
-        for i in range(1,n-1):
+
+        for i in range(1, n-1):
             print(" [", end='')
             for j in range(n-1):
                 print("%9.5f," % a[i, j], end='')
             print("%9.5f]," % a[i, -1])
-        
+
         #last row
         print(" [", end='')
         for j in range(n-1):
@@ -287,13 +287,16 @@ class Sample():
 
     def UX1_and_UXU(self, R, T):
         """
-        Just add up all the angles up to the critical angle.  This is 
-        a commonly used convenience function to easily calculate |UR1| and
-        |URU|.  We select the entire range of angles by passing $\cos(\pi/2)= 0$
-        to the |URU_and_UR1_Cone| routine.
+        Calculate total reflected and transmitted fluxes from matrices.
+
+        The trick here is that the integration must be done over the fluxes
+        that leave the sample.  This is not much of an issue for the transmitted
+        fluxes because they are zero.  However, the internal reflected fluxes will
+        not be zero and should be excluded from the sums.
         """
         nu_c = self.nu_c()
-        k = np.min(np.where(self.nu>nu_c))
+        # identify index of first quadrature angle greater than the critical angle
+        k = np.min(np.where(self.nu > nu_c))
         n = self.quad_pts
 
         URU = 0
@@ -301,7 +304,7 @@ class Sample():
         for i in range(k, n):
             URx = 0
             UTx = 0
-            
+
             for j in range(k, n):
                 URx += R[i, j] * self.twonuw[j]
                 UTx += T[i, j] * self.twonuw[j]
@@ -315,11 +318,6 @@ class Sample():
         return URx, URU, UTx, UTU
 
     def rt(self):
-        """
-        Just add up all the angles up to the critical angle.  This is 
-        a commonly used convenience function to easily calculate |UR1| and
-        |URU|.  We select the entire range of angles by passing $\cos(\pi/2)= 0$
-        to the |URU_and_UR1_Cone| routine.
-        """
+        """Find the total reflected and transmitted flux for a sample."""
         R, _, T, _ = self.rt_matrices()
         return self.UX1_and_UXU(R, T)

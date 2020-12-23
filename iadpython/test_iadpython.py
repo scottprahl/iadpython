@@ -4,8 +4,17 @@
 """Tests for Adding-Doubling."""
 
 import unittest
+from nose.plugins.attrib import attr
 import iadpython as iad
 
+def wip(f):
+    """
+    Only test functions with @wip decorator.
+
+    Add the @wip decorator before functions that are works-in-progress.
+    `nosetests -a wip test_combo.py` will test only those with @wip decorator.
+    """
+    return attr('wip')(f)
 
 class basic_forward(unittest.TestCase):
 
