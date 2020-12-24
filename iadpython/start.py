@@ -111,17 +111,21 @@ def igi(sample):
 
     T_ij = a*d/(4*nu_i*nu_j) hpp_ij + delta_ij*(1-d/nu_i)/(2*nu_i w_i)
     """
+    if sample.nu is None:
+        sample.update_quadrature()
+
     if sample.b_thinnest is None:
         sample.b_thinnest = starting_thickness(sample)
 
     n = sample.quad_pts
     d = sample.b_thinnest
 
-    hp, hm = iadpython.redistribution.hg_legendre(sample)
+    if sample.hp is None:
+        sample.hp, sample.hm = iadpython.redistribution.hg_legendre(sample)
 
     temp = sample.a_delta_M() * d / 4 / sample.nu
-    R = temp * (hm / sample.nu).T
-    T = temp * (hp / sample.nu).T
+    R = temp * (sample.hm / sample.nu).T
+    T = temp * (sample.hp / sample.nu).T
     T += (1 - d/sample.nu)/sample.twonuw * np.identity(n)
 
     return R, T
@@ -134,6 +138,9 @@ def diamond(sample):
     generator method.  Division by `2*nu_j*w_j` is not needed until the
     final values for `R` and `T` are formed.
     """
+    if sample.nu is None:
+        sample.update_quadrature()
+
     if sample.b_thinnest is None:
         sample.b_thinnest = starting_thickness(sample)
 
@@ -141,12 +148,13 @@ def diamond(sample):
     d = sample.b_thinnest
     I = np.identity(n)
 
-    hp, hm = iadpython.redistribution.hg_legendre(sample)
+    if sample.hp is None:
+        sample.hp, sample.hm = iadpython.redistribution.hg_legendre(sample)
 
     w = sample.twonuw/sample.nu/2
     temp = sample.a_delta_M() * d * w / 4
-    r_hat = temp * (hm / sample.nu).T
-    t_hat = d/(2*sample.nu) * I - temp * (hp / sample.nu).T
+    r_hat = temp * (sample.hm / sample.nu).T
+    t_hat = d/(2*sample.nu) * I - temp * (sample.hp / sample.nu).T
 
     C = np.linalg.solve((I+t_hat).T, r_hat.T)
     G = 0.5 * (I + t_hat - C.T @ r_hat).T

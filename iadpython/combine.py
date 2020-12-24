@@ -83,6 +83,9 @@ def double_until(sample, r_start, t_start, b_start, b_end):
     """Double until proper thickness is reached."""
     r = r_start
     t = t_start
+    if b_end == 0 or b_end <= b_start:
+        return r, t
+
     if b_end > iadpython.AD_MAX_THICKNESS:
         old_utu = 100
         utu = 10

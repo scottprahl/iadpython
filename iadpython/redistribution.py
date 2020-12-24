@@ -46,6 +46,9 @@ def hg_legendre(sample):
     Probably should generate all the Legendre polynomials one
     time and then calculate.
     """
+    if sample.nu is None:
+        sample.update_quadrature()
+
     n = sample.quad_pts
     g = sample.g
 
@@ -85,6 +88,9 @@ def hg_elliptic(sample):
     delta-M method to more accurate model highly anisotropic
     phase functions.
     """
+    if sample.nu is None:
+        sample.update_quadrature()
+
     n = sample.quad_pts
     g = sample.g**n
     if g == 0:

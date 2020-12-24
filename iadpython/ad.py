@@ -30,18 +30,61 @@ class Sample():
         """Object initialization."""
         self.a = a
         self.b = b
-        self.g = g
-        self.n = n
+        self._g = g
+        self._n = n
         self.n_above = n_above
         self.n_below = n_below
         self.d = 1.0
         self.nu_0 = 1.0
         self.b_above = 0
         self.b_below = 0
-        self.quad_pts = quad_pts
+        self._quad_pts = quad_pts
         self.b_thinnest = None
         self.nu = None
         self.twonuw = None
+        self.hp = None
+        self.hm = None
+
+    @property
+    def n(self):
+        """When index is changed nu and twonuw are invalid."""
+        return self._n
+
+    @n.setter
+    def n(self, value):
+        """When index is changed quadrature becomes invalid."""
+        if value != self._n:
+            self.nu = None
+            self.twonuw = None
+            self.hp = None
+            self.hm = None
+            self._n = value
+
+    @property
+    def g(self):
+        return self._g
+
+    @g.setter
+    def g(self, value):
+        """When anisotropy is changed phi is invalid."""
+        if value != self._g:
+            self.hp = None
+            self.hm = None
+            self._g = value
+
+    @property
+    def quad_pts(self):
+        return self._quad_pts
+
+    @quad_pts.setter
+    def quad_pts(self, value):
+        """When quadrature points are change everything is invalid."""
+        if value != self._quad_pts:
+            self.nu = None
+            self.twonuw = None
+            self.hp = None
+            self.hm = None
+            self._quad_pts = value
 
     def mu_a(self):
         """Absorption coefficient for the sample."""
@@ -195,11 +238,11 @@ class Sample():
         included) and finally from the cone angle to 1 (again using Radau
         quadrature so that 1 will be included).
         """
-        nby2 = int(self.quad_pts / 2)
+        nby2 = self.quad_pts // 2
 
         if self.nu_0 == 1:
             # case 1.  Normal incidence, no critical angle
-            if self.n == 1:
+            if self._n == 1:
                 a1 = []
                 w1 = []
                 a2, w2 = iadpython.quadrature.radau(self.quad_pts, a=0, b=1)
@@ -211,7 +254,7 @@ class Sample():
                 a2, w2 = iadpython.quadrature.radau(nby2, a=nu_c, b=1)
         else:
             # case 3.  Conical incidence.  Include nu_0
-            if self.n == 1.0:
+            if self._n == 1.0:
                 a1, w1 = iadpython.quadrature.radau(nby2, a=0, b=self.nu_0)
                 a2, w2 = iadpython.quadrature.radau(nby2, a=self.nu_0, b=1)
 
