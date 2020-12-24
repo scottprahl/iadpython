@@ -23,6 +23,7 @@ class Test_Finite(unittest.TestCase):
 
     def test_01_sandwich(self):
         """Anisotropic finite layer calculation."""
+        print("Test 01")
         s = iadpython.Sample(a=0.5, b=1, g=0.9, n=1.0, quad_pts=4)
         ur1, ut1, uru, utu = s.rt()
         ur1_true=0.00585
@@ -36,6 +37,7 @@ class Test_Finite(unittest.TestCase):
 
     def test_02_sandwich(self):
         """Anisotropic finite layer in air."""
+        print("Test 02")
         s = iadpython.Sample(a=0.5, b=1, g=0.9, n=1.4, n_above=1.0, n_below=1.0)
         ur1, ut1, uru, utu = s.rt()
         ur1_true=0.03859
@@ -49,6 +51,7 @@ class Test_Finite(unittest.TestCase):
 
     def test_03_sandwich(self):
         """Anisotropic finite layer with slides."""
+        print("Test 03")
         s = iadpython.Sample(a=0.5, b=1, g=0.9, n=1.4, n_above=1.5, n_below=1.5)
         ur1, ut1, uru, utu = s.rt()
         ur1_true=0.05563
@@ -62,6 +65,7 @@ class Test_Finite(unittest.TestCase):
 
     def test_04_semi_infinite(self):
         """Anisotropic infinite layer with slides."""
+        print("Test 04")
         s = iadpython.Sample(a=0.5, b=np.inf, g=0.9, n=1.4, n_above=1.5)
         ur1, ut1, uru, utu = s.rt()
         ur1_true=0.04255
@@ -76,6 +80,7 @@ class Test_Finite(unittest.TestCase):
 
     def test_05_semi_infinite(self):
         """Anisotropic infinite layer with slides and arrays."""
+        print("Test 05")
         s = iadpython.Sample(a=[0.0, 0.5], b=np.inf, g=0.9, n=1.4, n_above=1.5)
         ur1, ut1, uru, utu = s.rt()
         ur1_true=[0.04110,0.04255]

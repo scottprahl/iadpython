@@ -47,7 +47,7 @@ class Sample():
 
     @property
     def n(self):
-        """When index is changed nu and twonuw are invalid."""
+        """Getter property for index of refraction."""
         return self._n
 
     @n.setter
@@ -62,6 +62,7 @@ class Sample():
 
     @property
     def g(self):
+        """Getter property for anisotropy."""
         return self._g
 
     @g.setter
@@ -74,6 +75,7 @@ class Sample():
 
     @property
     def quad_pts(self):
+        """Getter property for number of quadrature points."""
         return self._quad_pts
 
     @quad_pts.setter
@@ -341,25 +343,13 @@ class Sample():
         nu_c = self.nu_c()
         # identify index of first quadrature angle greater than the critical angle
         k = np.min(np.where(self.nu > nu_c))
-        n = self.quad_pts
 
-        URU = 0
-        UTU = 0
-        for i in range(k, n):
-            URx = 0
-            UTx = 0
+        URx = np.dot(self.twonuw[k:], R[k:, k:])
+        UTx = np.dot(self.twonuw[k:], T[k:, k:])
+        URU = np.dot(self.twonuw[k:], URx) * self.n**2
+        UTU = np.dot(self.twonuw[k:], UTx) * self.n**2
 
-            for j in range(k, n):
-                URx += R[i, j] * self.twonuw[j]
-                UTx += T[i, j] * self.twonuw[j]
-
-            URU += URx * self.twonuw[i]
-            UTU += UTx * self.twonuw[i]
-
-        URU *= self.n**2
-        UTU *= self.n**2
-
-        return URx, UTx, URU, UTU
+        return URx[-1], UTx[-1], URU, UTU
 
     def rt(self):
         """
