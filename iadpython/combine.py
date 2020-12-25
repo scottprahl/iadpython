@@ -20,6 +20,7 @@ Two types of starting methods are possible.
 
 """
 
+import scipy
 import numpy as np
 import iadpython
 
@@ -255,7 +256,7 @@ def add_same_slides(sample, R01, R10, T01, T10, R, T):
     R20 = (AXX * R10) @ T + R
 
     X = np.identity(n) - R20*R10
-    BXX = np.linalg.solve(X.T, np.diagflat(T10)).T
+    BXX = scipy.linalg.solve(X.T, np.diagflat(T10)).T
     T03 = BXX @ AXX * T01
     R30 = BXX @ R20 * T01
     R30 += np.diagflat(R01/sample.twonuw**2)

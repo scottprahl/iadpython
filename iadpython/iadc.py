@@ -686,7 +686,7 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
     return a, b, g, error
 
 
-class Sample():
+class CSample():
     def __init__(self):
         self.sample_index = 1.4
         self.top_slide_index = 1.5
@@ -723,7 +723,7 @@ class Sample():
         return s
 
 
-class Sphere():
+class CSphere():
     def __init__(self):
         self.d_sphere = 8.0 * 25.4
         self.d_sample = 1.0 * 25.4
@@ -759,7 +759,7 @@ class Sphere():
         return s
 
 
-class Illumination():
+class CIllumination():
     def __init__(self):
         self.beam_diameter = 5  # mm
         self.specular_reflection_excluded = 0
@@ -799,7 +799,7 @@ class Illumination():
         return s
 
 
-class Analysis():
+class CAnalysis():
     def __init__(self):
         self.quadrature_points = 8
         self.monte_carlo_runs = 0
@@ -825,7 +825,7 @@ class Analysis():
         return s
 
 
-class Measurement():
+class CMeasurement():
     def __init__(self):
         self.standard_reflectance = 0.98
         self.reflectance = 0.5
@@ -882,12 +882,12 @@ def _indent(s):
 
 class Experiment():
     def __init__(self):
-        self.illumination = Illumination()
-        self.sample = Sample()
-        self.r_sphere = Sphere()
-        self.t_sphere = Sphere()
-        self.analysis = Analysis()
-        self.measurement = Measurement()
+        self.illumination = CIllumination()
+        self.sample = CSample()
+        self.r_sphere = CSphere()
+        self.t_sphere = CSphere()
+        self.analysis = CAnalysis()
+        self.measurement = CMeasurement()
 
     def __str__(self):
         s = "e.sample.\n"

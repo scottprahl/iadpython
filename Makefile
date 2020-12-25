@@ -23,11 +23,11 @@ pylint:
 	-pylint iadpython/test_redistribution.py
 	-pylint iadpython/test_start.py
 	-pylint iadpython/test_ur1_uru.py
+	-pylint iadpython/test_iadc.py
+	-pylint iadpython/test_time.py
 
 xpylint:
-
-	-pylint iadpython/iadpython.py
-	-pylint iadpython/test_iadpython.py
+	-pylint iadpython/iadc.py
 	
 pydoc:
 	-pydocstyle iadpython/ad.py
@@ -43,23 +43,26 @@ pydoc:
 	-pydocstyle iadpython/test_redistribution.py
 	-pydocstyle iadpython/test_start.py
 	-pydocstyle iadpython/test_ur1_uru.py
+	-pydocstyle iadpython/test_iadc.py
+	-pydocstyle iadpython/test_time.py
 
 xpydoc:
-	-pydocstyle iadpython/iadpython.py
-	-pydocstyle iadpython/test_iadpython.py
+	-pydocstyle iadpython/iadc.py
 
 test:
-	nosetests iadpython/test_fresnel.py
-	nosetests iadpython/test_quadrature.py
-	nosetests iadpython/test_redistribution.py
-	nosetests iadpython/test_start.py
-	nosetests iadpython/test_layer.py
-	nosetests iadpython/test_boundary.py
-	nosetests iadpython/test_combo.py
-	nosetests iadpython/test_ur1_uru.py
+	python -m unittest iadpython/test_fresnel.py
+	python -m unittest iadpython/test_quadrature.py
+	python -m unittest iadpython/test_redistribution.py
+	python -m unittest iadpython/test_start.py
+	python -m unittest iadpython/test_layer.py
+	python -m unittest iadpython/test_boundary.py
+	python -m unittest iadpython/test_combo.py
+	python -m unittest iadpython/test_ur1_uru.py
+	python -m unittest iadpython/test_iadc.py
+	python -m unittest iadpython/test_time.py
 
 xtest:
-	nosetests iadpython/test_iadpython.py
+	python -m unittest iadpython/test_iadpython.py
 	
 clean:
 	rm -rf dist

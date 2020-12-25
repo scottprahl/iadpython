@@ -8,17 +8,7 @@
 
 import unittest
 import numpy as np
-from nose.plugins.attrib import attr
 import iadpython
-
-def wip(f):
-    """
-    Only test functions with @wip decorator.
-
-    Add the @wip decorator before functions that are works-in-progress.
-    `nosetests -a wip test_combo.py` will test only those with @wip decorator.
-    """
-    return attr('wip')(f)
 
 class boundary(unittest.TestCase):
     """Boundary layer calculations."""

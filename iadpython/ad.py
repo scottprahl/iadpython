@@ -165,7 +165,6 @@ class Sample():
         print("-+---------")
 
         #contents + row fluxes
-        tflux = 0.0
         for i in range(n):
             print("%9.5f |" % self.nu[i], end='')
             for j in range(n):
@@ -177,7 +176,12 @@ class Sample():
             for j in range(n):
                 flux += a[i, j] * self.twonuw[j]
             print(" |%9.5f" % flux)
-            tflux += flux * self.twonuw[i]
+
+        # identify index of first quadrature angle greater than the critical angle
+        nu_c = self.nu_c()
+        k = np.min(np.where(self.nu > nu_c))
+        UXx = np.dot(self.twonuw[k:], a[k:, k:])
+        tflux = np.dot(self.twonuw[k:], UXx) * self.n**2
 
         #column fluxes
         print("----------+", end='')
@@ -300,6 +304,9 @@ class Sample():
         integrated reflection and transmission.   Similarly, if the top and
         bottom slides are similar, then quickly calculate these.
         """
+        if self.b == 0:
+            return iadpython.unscattered_rt(self)
+
         # cone not implemented yet
         if self.nu_0 != 1.0:
 #            RT_Cone(n,sample,OBLIQUE,UR1,UT1,URU,UTU);

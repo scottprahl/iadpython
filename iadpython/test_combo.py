@@ -7,19 +7,74 @@
 
 import unittest
 import numpy as np
-from nose.plugins.attrib import attr
 import iadpython
 
-def wip(f):
-    """
-    Only test functions with @wip decorator.
+class A_nothing_sandwich(unittest.TestCase):
+    """Empty layer in air."""
 
-    Add the @wip decorator before functions that are works-in-progress.
-    `nosetests -a wip test_combo.py` will test only those with @wip decorator.
-    """
-    return attr('wip')(f)
+    def test_01_nothing(self):
+        """Empty layer calculation with no boundaries."""
+        s = iadpython.Sample(a=0.5, b=0.0, g=0.0, n=1, quad_pts=4)
+        rr, _, tt, _ = s.rt_matrices()
+        R, T = iadpython.zero_layer(s)
+        np.testing.assert_allclose(R, rr, atol=1e-5)
+        np.testing.assert_allclose(T, tt, atol=1e-5)
 
-class Air_sandwich(unittest.TestCase):
+    def test_02_nothing(self):
+        """Empty layer calculation with boundary but no slides."""
+        s = iadpython.Sample(a=0.5, b=0, g=0.0, n=1.5, quad_pts=4)
+        rr, _, tt, _ = s.rt_matrices()
+
+        R=np.array([[8.51769,0.00000,0.00000,0.00000],
+                    [0.00000,2.28231,0.00000,0.00000],
+                    [0.00000,0.00000,0.44244,0.00000],
+                    [0.00000,0.00000,0.00000,0.60416]])
+
+        T=np.array([[0.00000,0.00000,0.00000,0.00000],
+                    [0.00000,0.00000,0.00000,0.00000],
+                    [0.00000,0.00000,2.71091,0.00000],
+                    [0.00000,0.00000,0.00000,7.24994]])
+
+        np.testing.assert_allclose(R, rr, atol=1e-5)
+        np.testing.assert_allclose(T, tt, atol=1e-5)
+
+    def test_03_nothing(self):
+        """Empty layer calculation with matching slides ."""
+        s = iadpython.Sample(a=0.5, b=0, g=0.0, n=1.5, quad_pts=4, n_above=1.5, n_below=1.5)
+        rr, _, tt, _ = s.rt_matrices()
+
+        R=np.array([[8.51769,0.00000,0.00000,0.00000],
+                    [0.00000,2.28231,0.00000,0.00000],
+                    [0.00000,0.00000,0.44244,0.00000],
+                    [0.00000,0.00000,0.00000,0.60416]])
+
+        T=np.array([[0.00000,0.00000,0.00000,0.00000],
+                    [0.00000,0.00000,0.00000,0.00000],
+                    [0.00000,0.00000,2.71091,0.00000],
+                    [0.00000,0.00000,0.00000,7.24994]])
+
+        np.testing.assert_allclose(R, rr, atol=1e-5)
+        np.testing.assert_allclose(T, tt, atol=1e-5)
+
+    def test_04_nothing(self):
+        """Empty layer calculation with mismatched slides ."""
+        s = iadpython.Sample(a=0.5, b=0, g=0.0, n=1.4, quad_pts=4, n_above=1.5, n_below=1.5)
+        rr, _, tt, _ = s.rt_matrices()
+
+        R=np.array([[9.66127,0.00000,0.00000,0.00000],
+                    [0.00000,2.58873,0.00000,0.00000],
+                    [0.00000,0.00000,0.40318,0.00000],
+                    [0.00000,0.00000,0.00000,0.52606]])
+
+        T=np.array([[0.00000,0.00000,0.00000,0.00000],
+                    [0.00000,0.00000,0.00000,0.00000],
+                    [0.00000,0.00000,2.37358,0.00000],
+                    [0.00000,0.00000,0.00000,6.13737]])
+
+        np.testing.assert_allclose(R, rr, atol=1e-5)
+        np.testing.assert_allclose(T, tt, atol=1e-5)
+
+class B_finite_sandwich(unittest.TestCase):
     """Finite layer in air."""
 
     def test_01_sandwich(self):

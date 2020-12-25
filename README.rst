@@ -48,7 +48,7 @@ Alternatively you can install from github
 
 Test by changing the iadpython directory and doing
 
-    nosetests iadpython/test_iadpython.py
+    make test
 
 Then, add the iadpython directory to your PYTHONPATH or somehow
 
@@ -57,7 +57,7 @@ Dependencies
 ------------
 For installation: setuptools
 
-Required Python modules: numpy, matplotlib, cytpes
+Required Python modules: numpy, matplotlib, ctypes, scipy
 
 
 License

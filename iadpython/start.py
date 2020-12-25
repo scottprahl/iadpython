@@ -42,6 +42,7 @@ __all__ = ('zero_layer',
            'thinnest_layer',
            'boundary_layer',
            'boundary_matrices',
+           'unscattered_rt'
            )
 
 
@@ -51,6 +52,8 @@ def zero_layer(sample):
 
     Need to include quadrature normalization so R+T=1.
     """
+    if sample.twonuw is None:
+        sample.update_quadrature()
     t = np.diagflat(1/sample.twonuw)
     r = np.zeros_like(t)
     return r, t
@@ -266,6 +269,49 @@ def boundary_matrices(s, top=True):
 
     return rr01, rr10, tt01, tt10
 
+def unscattered_rt(s):
+    """
+    Unscattered reflection and transmission for a slide-slab-slide sandwich.
+
+    The sample is characterized by the record 'slab'.  The total unscattered_layer
+    reflection and transmission for oblique irradiance ('urx' and 'utx')
+    together with their companions 'uru' and 'utu' for diffuse irradiance.
+    The cosine of the incident angle is specified by 'slab.cos_angle'.
+
+    The way that this routine calculates the diffuse unscattered_layer quantities
+    based on the global quadrature angles previously set-up.  Consequently,
+    these estimates are not exact.  In fact if 'n=4' then only two
+    quadrature points will actually be used to figure out the diffuse
+    reflection and transmission (assuming mismatched boundaries).
+
+    This algorithm is pretty simple.  Since the quadrature angles are all
+    chosen assuming points inside the medium, I must calculate the
+    corresponding angle for light entering from the outside.  If the the
+    cosine of this angle is greater than zero then the angle does not
+    correspond to a direction in which light is totally internally
+    reflected. For this ray, I find the unscattered_layer that would be reflected
+    or transmitted from the slab.  I multiply this by the quadrature angle
+    and weight 'twoaw[i]' to get the total diffuse reflectance and
+    transmittance.
+
+    Oh, yes.  The mysterious multiplication by a factor of 'n_slab*n_slab'
+    is required to account for the n**2-law of radiance.
+    """
+    r01, t01 = iadpython.zero_layer(s)
+    r10, t10 = iadpython.zero_layer(s)
+
+    r01, t01 = iadpython.specular_nu_RT(s.n_above, s.n, s.n_below, s.b, s.nu,
+                                        s.b_above, s.b_below)
+    r10, t10 = iadpython.specular_nu_RT(s.n_below, s.n, s.n_above, s.b, s.nu,
+                                        s.b_below, s.b_above)
+
+    rr01 = np.diagflat(r01) / s.twonuw
+    rr10 = np.diagflat(r10) / s.twonuw
+    tt01 = np.diagflat(t01) / s.twonuw
+    tt10 = np.diagflat(t10) / s.twonuw
+
+    return rr01, rr10, tt01, tt10
+
 def unscattered(s):
     """
     Unscattered reflection and transmission for a slide-slab-slide sandwich.
@@ -295,16 +341,17 @@ def unscattered(s):
     is required to account for the n**2-law of radiance.
     """
     n = s.quad_pts
+
     uru = 0
     utu = 0
 
     for i in range(n):
         nu_outside = iadpython.fresnel.cos_snell(s.n, s.nu[i], 1.0)
-        if nu_outside != 0:
+        if nu_outside == 0:
             r, t = iadpython.fresnel.specular_nu_RT(s.n_above, s.n, s.n_below,
                                                     s.b_above, s.b, s.b_below, nu_outside)
-            uru += s.twonuw[i] * r
-            utu += s.twonuw[i] * t
+            uru += s.twonuw[i] * r[i, i]
+            utu += s.twonuw[i] * t[i, i]
 
     ur1, ut1 = iadpython.fresnel.specular_nu_RT(s.n_above, s.n, s.n_below,
                                                 s.b_above, s.b, s.b_below, s.nu_0)

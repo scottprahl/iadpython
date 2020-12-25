@@ -15,15 +15,16 @@ envlist = py37
 deps = pytest
        numpy
        scipy
-       nose
 
 commands =
-    nosetests iadpython/test_fresnel.py
-    nosetests iadpython/test_quadrature.py
-    nosetests iadpython/test_redistribution.py
-    nosetests iadpython/test_start.py
-    nosetests iadpython/test_layer.py
-    nosetests iadpython/test_boundary.py
-    nosetests iadpython/test_combo.py
-    nosetests iadpython/test_ur1_uru.py
+    python -m unittest iadpython/test_fresnel.py
+    python -m unittest iadpython/test_quadrature.py
+    python -m unittest iadpython/test_redistribution.py
+    python -m unittest iadpython/test_start.py
+    python -m unittest iadpython/test_layer.py
+    python -m unittest iadpython/test_boundary.py
+    python -m unittest iadpython/test_combo.py
+    python -m unittest iadpython/test_ur1_uru.py
+    python -m unittest iadpython/test_iadc.py
+    python -m unittest iadpython/test_time.py
 """

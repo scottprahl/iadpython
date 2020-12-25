@@ -129,7 +129,7 @@ def reflection(n_i, nu_i, n_t):
     The formula for unpolarized light, written in terms of  nu_i = cos theta_i and
      nu_t = cos theta_t is
 
-    R = 1 / 2 left[n_t nu_i-n_i nu_t / n_t nu_i+n_i nu_t right]**2
+    R = 1 / 2 (n_t nu_i-n_i nu_t)**2/(n_t nu_i+n_i nu_t)**2
     +1 / 2 left[n_i nu_i-n_t nu_t / n_i nu_i+n_t nu_t right]**2
 
 
@@ -140,14 +140,33 @@ def reflection(n_i, nu_i, n_t):
     test for total internal reflection to avoid possible division by zero.  I also
     find the ratio of the indices of refraction to avoid an extra multiplication and
     several intermediate variables.
+
+    The tricky things about this implementation are to get handle angles above
+    the critical angle properly and trying to keep everything working when
+    arrays are passed.  If n_i==n_t then we want to return zero, otherwise
+    we want to return 1.
     """
+    if n_i == n_t:
+        if np.isscalar(nu_i):
+            return 0
+        return np.zeros_like(nu_i)
+
     nu_t = cos_snell(n_i, nu_i, n_t)
-    ratio = n_i/n_t
-    temp = ratio*nu_t
-    temp1 = (nu_i-temp)/(nu_i+temp)
-    temp = ratio*nu_i
-    temp = (nu_t-temp)/(nu_t+temp)
-    return (temp1**2+temp**2)/2
+
+    sum1 = (n_t * nu_i + n_i * nu_t) ** 2
+    dif1 = (n_t * nu_i - n_i * nu_t) ** 2
+    sum2 = (n_i * nu_i + n_t * nu_t) ** 2
+    dif2 = (n_i * nu_i - n_t * nu_t) ** 2
+
+    if np.isscalar(sum1):
+        if nu_i == 0:       # angle is greater than critical angle
+            return 1
+        return (dif1/sum1+dif2/sum2)/2
+
+    # when dif1==sum1==0, then ratio should be one
+    out1 = np.divide(dif1, sum1, out=np.ones_like(dif1), where=dif1 != sum1)
+    out2 = np.divide(dif2, sum2, out=np.ones_like(dif2), where=dif2 != sum2)
+    return (out1+out2)/2
 
 
 def glass(n_i, n_g, n_t, nu_i):
@@ -197,7 +216,15 @@ def glass(n_i, n_g, n_t, nu_i):
     r1 = reflection(n_i, nu_i, n_g)
     nu_g = cos_snell(n_i, nu_i, n_g)
     r2 = reflection(n_g, nu_g, n_t)
-    return (r1 + r2 - 2 * r1 * r2) / (1 - r1 * r2)
+    denom = 1 - r1 * r2
+    numer = r1 + r2 - 2 * r1 * r2
+
+    if np.isscalar(denom):
+        if numer == denom:
+            return 1
+        return numer/denom
+
+    return np.divide(numer, denom, out=np.ones_like(numer), where=numer != denom)
 
 
 def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
@@ -289,22 +316,43 @@ def _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
         b_top: optical thickness of top slide
         b_slab: optical thickness of the slab
         b_bottom: optical thickness of the bottom slide
-        nu: cosine of angle(s) of incident light
+        nu: cosine of angle(s) in slab
     Returns
         r, t: unscattered reflectance(s) and transmission(s)
     """
-    r_top, t_top = absorbing_glass_RT(1.0, n_top, n_slab, nu, b_top)
-    nu_slab = cos_snell(1.0, nu, n_slab)
+    r_top, t_top = absorbing_glass_RT(n_slab, n_top, 1.0, nu, b_top)
 
     # avoid underflow errors and division by zero.
     if b_slab > iadpython.AD_MAX_THICKNESS:
         return r_top, 0
 
-    r_bottom, t_bottom = absorbing_glass_RT(n_slab, n_bottom, 1.0, nu_slab, b_bottom)
+    r_bottom, t_bottom = absorbing_glass_RT(n_slab, n_bottom, 1.0, nu, b_bottom)
 
-    expo = np.exp(-b_slab/nu_slab)
+    # if b==0, no attenuation.
+    if np.isscalar(nu):
+        if b_slab == 0:
+            expo = 1
+        elif nu == 0:
+            expo = 0
+        else:
+            expo = np.exp(-b_slab/nu)
+    else:
+        if b_slab == 0:
+            expo = np.ones_like(nu)
+        else:
+            ratio = nu/b_slab
+            np.place(ratio, ratio == 0, 0.01)
+            expo = np.exp(-1/ratio)
+
     denom = 1 - r_top * r_bottom * expo**2
-    r = r_top + r_bottom * t_top**2 * expo**2/ denom
+    numer = r_bottom * t_top**2 * expo**2
+
+    if np.isscalar(denom):
+        denom = 1
+    else:
+        np.place(denom, denom == 0, 1)
+
+    r = r_top + numer / denom
     t = t_bottom * t_top * expo / denom
     return r, t
 
@@ -316,8 +364,7 @@ def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0, fli
     Find the reflectance to incorporate flipping of the sample.  This
     is needed when the sample is flipped between measurements.
     """
-    r, t = specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu,
-                          b_top=b_top, b_bottom=b_bottom)
+    r, t = _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top, b_bottom)
 
     if not flip:
         return r, t
@@ -325,8 +372,7 @@ def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0, fli
     if n_top == n_bottom and b_top == b_bottom:
         return r, t
 
-    _, t = specular_nu_RT(n_bottom, n_slab, n_top, b_slab, nu,
-                          b_top=b_bottom, b_bottom=b_top)
+    _, t = _specular_nu_RT(n_bottom, n_slab, n_top, b_slab, nu, b_bottom, b_top)
 
     return r, t
 
