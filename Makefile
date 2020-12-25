@@ -24,7 +24,7 @@ pylint:
 	-pylint iadpython/test_start.py
 	-pylint iadpython/test_ur1_uru.py
 	-pylint iadpython/test_iadc.py
-	-pylint iadpython/test_time.py
+	-pylint iadpython/perf_test.py
 
 xpylint:
 	-pylint iadpython/iadc.py
@@ -44,7 +44,7 @@ pydoc:
 	-pydocstyle iadpython/test_start.py
 	-pydocstyle iadpython/test_ur1_uru.py
 	-pydocstyle iadpython/test_iadc.py
-	-pydocstyle iadpython/test_time.py
+	-pydocstyle iadpython/perf_test.py
 
 xpydoc:
 	-pydocstyle iadpython/iadc.py
@@ -59,11 +59,13 @@ test:
 	python -m unittest iadpython/test_combo.py
 	python -m unittest iadpython/test_ur1_uru.py
 	python -m unittest iadpython/test_iadc.py
-	python -m unittest iadpython/test_time.py
 
 xtest:
 	python -m unittest iadpython/test_iadpython.py
 	
+perf:
+	python -m unittest iadpython/perf_test.py
+
 clean:
 	rm -rf dist
 	rm -rf iadpython.egg-info
