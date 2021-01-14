@@ -76,13 +76,8 @@ clean:
 	rm -rf .tox
 	rm -rf docs/_build 
 	rm -rf docs/api 
-	rm -rf docs/_build/.buildinfo
-	rm -rf docs/_build/.doctrees
 
 realclean:
 	make clean
 
-html:
-	$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
-	
-.PHONY: clean realclean test check pylint pep257 html
+.PHONY: clean realclean test check pylint pydoc html
