@@ -9,6 +9,9 @@ check:
 	make pylint
 	make pydoc
 
+html:
+	$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
+
 pylint:
 	-pylint iadpython/ad.py
 	-pylint iadpython/combine.py
@@ -71,6 +74,10 @@ clean:
 	rm -rf iadpython.egg-info
 	rm -rf iadpython/__pycache__
 	rm -rf .tox
+	rm -rf docs/_build 
+	rm -rf docs/api 
+	rm -rf docs/_build/.buildinfo
+	rm -rf docs/_build/.doctrees
 
 realclean:
 	make clean

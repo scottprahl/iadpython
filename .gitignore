@@ -6,3 +6,4 @@ docs/.ipynb_checkpoints/
 iadpython.egg-info/*
 .tox/*
 dist/*
+docs/_build/*

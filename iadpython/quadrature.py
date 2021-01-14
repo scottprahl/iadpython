@@ -7,7 +7,7 @@ Three types of gaussian quadrature are supported: normal Gaussian,
 Radau quadrature, and Lobatto quadrature.  The first method does not
 include either endpoint of integration, Radau quadrature includes one
 endpoint of the integration range, and Lobatto quadrature includes both
-endpoints.
+endpoints.::
 
     import iad.quadrature
 

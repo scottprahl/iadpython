@@ -72,9 +72,8 @@ def starting_thickness(sample):
     when type 2 and 3 errors are comparable, or when d ≈ µ.
 
     Note that round-off is important when the starting thickness is less than
-    |1e-4| for diamond initialization and less than
-    |1e-8| for infinitesimal generator initialization assuming
-    about 14 significant digits of accuracy.
+    1e-4 for diamond initialization and less than 1e-8 for infinitesimal 
+    generator initialization assuming about 14 significant digits of accuracy.
 
     Since the final thickness is determined by repeated doubling, the
     starting thickness is found by dividing by 2 until the starting thickness is
@@ -226,7 +225,8 @@ def boundary_layer(s, top=True):
     for the bottom surface and the labels are backwards i.e. 'T01 == T32'
     and 'T10 == T23', where 0 is the first air slide surface, 1 is the
     slide/slab surface, 2 is the second slide/slab surface, and 3 is the
-    bottom slide/air surface
+    bottom slide/air surface.
+
     Args:
         s: slab
         top: True if this is the top slide
