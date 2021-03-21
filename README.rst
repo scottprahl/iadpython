@@ -1,6 +1,20 @@
 iadpython
 =========
 
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+   :target: https://colab.research.google.com/github/scottprahl/iadpython/blob/master
+
+.. image:: https://img.shields.io/badge/readthedocs-latest-blue.svg
+   :target: https://iadpython.readthedocs.io
+
+.. image:: https://img.shields.io/badge/github-code-green.svg
+   :target: https://github.com/scottprahl/iadpython
+
+.. image:: https://img.shields.io/badge/BSD-license-yellow.svg
+   :target: https://github.com/scottprahl/iadpython/blob/master/LICENSE.txt
+
+__________
+
 iadpython is a Python module to calculate multiple light scattering (radiative
 transport) of layered materials.  This is a python interface to the inverse 
 adding-doubling package written
@@ -13,6 +27,7 @@ propagation through layered media.  It was extended to handle Fresnel
 reflection at boundaries as well as interactions with integrating spheres. 
 Finally, the code was further extended to handle lost light by including 
 Monte Carlo techniques.
+
 
 Usage
 -----
@@ -40,15 +55,11 @@ First install the `iad` library
 
 Then install this python module using `pip`
 
-    pip install iadpython
-
-Alternatively you can install from github
-
-    git clone https://github.com/scottprahl/iadpython.git
+    pip install --user iadpython
 
 Test by changing the iadpython directory and doing
 
-    make test
+    prompt> ad -a 0.5
 
 Then, add the iadpython directory to your PYTHONPATH or somehow
 
