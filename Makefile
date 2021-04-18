@@ -3,16 +3,10 @@ SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = docs
 BUILDDIR      = docs/_build
 
-check:
-	-pyroma -d .
-	-check-manifest
-	make pylint
-	make pydoc
-
 html:
 	$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
 
-pylint:
+lintcheck:
 	-pylint iadpython/ad.py
 	-pylint iadpython/combine.py
 	-pylint iadpython/fresnel.py
@@ -32,7 +26,7 @@ pylint:
 xpylint:
 	-pylint iadpython/iadc.py
 	
-pydoc:
+doccheck:
 	-pydocstyle iadpython/ad.py
 	-pydocstyle iadpython/combine.py
 	-pydocstyle iadpython/fresnel.py
@@ -51,6 +45,18 @@ pydoc:
 
 xpydoc:
 	-pydocstyle iadpython/iadc.py
+
+notecheck:
+	make clean
+	pytest --verbose -n 4 test_all_notebooks.py
+
+rcheck:
+	make doccheck
+	make lintcheck
+	make notecheck
+	make test
+	-pyroma -d .
+	-check-manifest
 
 test:
 	python -m unittest iadpython/test_fresnel.py
@@ -76,6 +82,7 @@ clean:
 	rm -rf .tox
 	rm -rf docs/_build 
 	rm -rf docs/api 
+	rm -rf __pycache__
 
 realclean:
 	make clean

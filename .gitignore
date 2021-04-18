@@ -7,3 +7,5 @@ iadpython.egg-info/*
 .tox/*
 dist/*
 docs/_build/*
+docs/ad-classes.graffle
+iadpython/.ipynb_checkpoints/
