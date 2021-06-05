@@ -320,6 +320,11 @@ def _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
     Returns
         r, t: unscattered reflectance(s) and transmission(s)
     """
+    # simplest case of no glass slides
+    if (n_top == 1 and n_bottom == 1) or (n_top == n_slab and n_bottom == n_slab):
+        return absorbing_glass_RT(1, n_slab, 1, nu, b_slab)
+
+    # backwards because nu is measured in the slab
     r_top, t_top = absorbing_glass_RT(n_slab, n_top, 1.0, nu, b_top)
 
     # avoid underflow errors and division by zero.
