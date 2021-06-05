@@ -2,7 +2,7 @@
 # pylint: disable=no-member
 
 """
-Calculation of the redistribution function.
+Module for calculating the redistribution function.
 
 The single scattering phase function p(nu) for a tissue determines the
 amount of light scattered at an angle nu=cos(theta) from the direction of
