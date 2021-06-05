@@ -1,7 +1,7 @@
 # pylint: disable=invalid-name
 
 """
-Module for obtaining quadrature points and w.
+Module for obtaining quadrature points and weights.
 
 Three types of gaussian quadrature are supported: normal Gaussian,
 Radau quadrature, and Lobatto quadrature.  The first method does not
