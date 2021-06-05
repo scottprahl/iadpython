@@ -20,12 +20,10 @@ must be figured out.
 "
 Two types of starting methods are possible.
 
-    import iadpython.start
+    import iadpython as iad
 
-    n=4
-    sample = iadpython.start.Slab(a=0.9, b=10, g=0.9, n=1.5)
-    method = iadpython.start.Method(slab)
-    r, t = iad.start.init_layer(slab, method)
+    s = iad.Sample(a=0.9, b=10, g=0.9, n=1.5)
+    r, t = iad.start.init_layer(s)
     print(r)
     print(t)
 
