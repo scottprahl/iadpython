@@ -3,7 +3,7 @@
 BIG_A_VALUE = 999999.0
 SMALL_A_VALUE = 0.000001
 
-def What_Is_B(slab, Tc):
+def what_is_b(slab, Tc):
     """
     Finding optical thickness.
 
@@ -108,7 +108,7 @@ def What_Is_B(slab, Tc):
     return (-slab.cos_angle*log(2 * Tc /(B+sqrt(B*B+ 4*Tc * Tc * r1 * r2))))
 
 
-def Estimate_RT(m, r):
+def estimate_rt(m, r):
     """
     Estimating R and T.
 
@@ -141,7 +141,7 @@ def Estimate_RT(m, r):
     # 
     # If there are three measurements, the optical thickness of the sample
     # is required.  Of course if there are three measurements then the 
-    # illumination must be collimated and we can call |What_Is_B| to
+    # illumination must be collimated and we can call |what_is_b| to
     # find out the optical thickness.  We pass this value to a routine
     # in the \.{fresnel.h} unit and sit back and wait.
     # 
@@ -409,7 +409,7 @@ def quick_guess(m, r):
     Guessing an inverse.
 
     """
-    UR1, UT1, rd, rc, td, tc = Estimate_RT(m, r)
+    UR1, UT1, rd, rc, td, tc = estimate_rt(m, r)
 
     # Estimate aprime
     if UT1 == 1: 
@@ -438,7 +438,7 @@ def quick_guess(m, r):
     if m.num_measures == 2:  # R and T are known
         # Estimate |bprime|
         if rd < 0.01:
-            bprime = What_Is_B(r.slab, UT1)
+            bprime = what_is_b(r.slab, UT1)
         elif UT1 <= 0:
             bprime = HUGE_VAL
         elif UT1 > 0.1:
@@ -460,13 +460,13 @@ def quick_guess(m, r):
     if r.search == 'find_a':  # Guess when finding albedo
         g = r.default_g
         a = aprime / (1 - g + aprime * g)
-        b = What_Is_B(r.slab, m.m_u)
+        b = what_is_b(r.slab, m.m_u)
         return a, b, g
 
     if r.search == 'find_b':  # Guess when finding optical depth
         g = r.default_g
         a = 0.0
-        b = What_Is_B(r.slab, m.m_u)
+        b = what_is_b(r.slab, m.m_u)
         return a, b, g
 
     if r.search == 'find_ab':  # Guess when finding albedo and optical depth
@@ -483,8 +483,8 @@ def quick_guess(m, r):
             b = bprime / (1 - a * g)
         return a, b, g
 
-    # Guess when finding anisotropy and albedo@>=
-    b = What_Is_B(r.slab, m.m_u)
+    # Guess when finding anisotropy and albedo
+    b = what_is_b(r.slab, m.m_u)
     if b == HUGE_VAL or b == 0:
         a = aprime
         g = r.default_g
@@ -510,7 +510,7 @@ def quick_guess(m, r):
     return a, b, g
 
 
-def Print_Invert_Type(r):
+def print_invert_type(r):
     s = "\n"
     s += "default  a=%10.5f   b=%10.5f    g=%10.5f\n" % (r.default_a, r.default_b,r.default_g)
     s += "slab     a=%10.5f   b=%10.5f    g=%10.5f\n" % (r.slab.a, r.slab.b,r.slab.g)
@@ -519,7 +519,7 @@ def Print_Invert_Type(r):
     s += "search = %d quadrature points = %d\n" % (r.search,r.method.quad_pts )
     return s
 
-def Print_Measure_Type(m):
+def print_measure_type(m):
     s = "\n"
     s += "#                        Beam diameter = %7.1f mm\n" % (m.d_beam)
     s += "#                     Sample thickness = %7.1f mm\n" % (m.slab_thickness )
