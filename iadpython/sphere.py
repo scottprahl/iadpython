@@ -2,8 +2,6 @@
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
 
-import numpy as np
-
 """
 Class for managing integrating spheres.
 
@@ -11,7 +9,9 @@ Class for managing integrating spheres.
 
     s = iadpython.sphere.Sphere(250,20)
     print(s)
-s"""
+"""
+
+import numpy as np
 
 class Sphere():
     """Container class for an integrating sphere."""
@@ -26,7 +26,7 @@ class Sphere():
         self.a_sample = self.relative_cap_area(d_sample)
         self.a_detector = self.relative_cap_area(d_detector)
         self.a_entrance = self.relative_cap_area(d_entrance)
-        self.a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
+        self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
         self.r_detector = r_detector
         self.r_wall = r_wall
 
@@ -36,7 +36,7 @@ class Sphere():
         r = d_port/2
         h = R - np.sqrt(R**2-r**2)
         return 2*np.pi*R*h
-   
+
     def approx_relative_cap_area(self, d_port):
         """Calculate approx relative area of spherical cap."""
         R = self.d_sphere/2
@@ -65,7 +65,7 @@ class Sphere():
         s += "       detector = %.1f%%\n" % self.r_detector
         return s
 
-    def gain(self, r_wall=None):
+    def gain(self, URU, r_wall=None):
         """
         Determine the gain for this integrating sphere.
 
@@ -86,53 +86,52 @@ class Sphere():
             r_wall = self.r_wall
 
         tmp = self.a_detector*self.r_detector + self.a_sample*URU
-        tmp = r_wall*(self.a_wall + (1 - self.a_entrance) * tmp)
+        tmp = r_wall*(self._a_wall + (1 - self.a_entrance) * tmp)
         if tmp == 1.0:
             G = r_wall
         else:
             G = r_wall * (1.0 + tmp / (1.0 - tmp))
         return G
 
-    def multiplier(self, r_wall=None):
+    def multiplier(self, UR1=None, URU=None, r_wall=None):
         """
-        Determine the sphere multiplier.
+        Determine the average reflectance of a sphere.
+
+        The idea here is that UR1 is the reflection of the incident light
+        for the first bounce.  Three cases come to mind
+
+        1. If the light hits the sample first, then UR1 should be
+        the sample reflectance for collimated illumination.
+
+        2. If light hits the sphere wall first, then UR1 should be the wall
+        reflectance.
+
+        3. If light is enters the sphere completely diffuse then UR1=1
 
         As defined by LabSphere, "Technical Guide: integrating Sphere Theory
-        and application" using equation 13
-        
-        This assumes the reflectance of all ports is zero.
+        and application" using equation 14
 
         Args:
-            r_wall: fractional wall reflectivity
+            UR1: sample reflectance for normal irradiance
+            URU: sample reflectance for diffuse irradiance
+            r_wall: wall reflectance
         Returns:
             sphere muliplier
         """
         if r_wall is None:
             r_wall = self.r_wall
 
-        return r_wall/(1-r_wall*self.a_wall)
+        if UR1 is None:
+            UR1 = r_wall
 
-    def average_reflectance(self, R, r_wall=None):
-        """
-        Determine the average reflectance of a sphere.
-
-        As defined by LabSphere, "Technical Guide: integrating Sphere Theory
-        and application" using equation 14
-
-        Args:
-            R: the initial reflectance of the sample
-            r_wall: fractional wall reflectivity
-        Returns:
-            average reflectance of the sphere
-        """
-        if r_wall is None:
-            r_wall = self.r_wall
+        if URU is None:
+            URU = UR1
 
         denom = 1
-        denom -= r_wall*self.a_wall
-        denom -= self.r_detector * self.a_detector
-        denom -= self.r_sample * R
-        return R/denom
+        denom -= self._a_wall * r_wall
+        denom -= self.a_sample * URU
+        denom -= self.a_detector * self.r_detector
+        return UR1/denom
 
     @property
     def d_sphere(self):
@@ -146,7 +145,7 @@ class Sphere():
         self.a_sample = self.relative_cap_area(self._d_sample)
         self.a_detector = self.relative_cap_area(self._d_detector)
         self.a_entrance = self.relative_cap_area(self._d_entrance)
-        self.a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
+        self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
 
     @property
     def d_sample(self):
@@ -158,7 +157,7 @@ class Sphere():
         """When size is changed ratios become invalid."""
         self._d_sample = value
         self.a_sample = self.relative_cap_area(value)
-        self.a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
+        self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
 
     @property
     def d_entrance(self):
@@ -170,7 +169,7 @@ class Sphere():
         """When size is changed ratios become invalid."""
         self._d_entrance = value
         self.a_entrance = self.relative_cap_area(value)
-        self.a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
+        self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
 
     @property
     def d_detector(self):
@@ -182,7 +181,25 @@ class Sphere():
         """When size is changed ratios become invalid."""
         self._d_detector = value
         self.a_detector = self.relative_cap_area(value)
-        self.a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
+        self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
+
+    @property
+    def a_wall(self):
+        """Getter property for detector port diameter."""
+        return self._a_wall
+
+    @a_wall.setter
+    def a_wall(self, value):
+        """Changing the wall area is a bit crazy."""
+        # Find the diameter of a spherical cap assuming all non-wall
+        # port area is assigned to a single sample port
+        self._d_sample = 2*self._d_sphere*np.sqrt(value-value**2)
+        self._d_entrance = 0
+        self._d_detector = 0
+        self.a_entrance = 0
+        self.a_detector = 0
+        self._a_wall = value
+        self.a_sample = 1 - value
 
 def Gain_11(RS, TS, URU, tdiffuse):
     """
