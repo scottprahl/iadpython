@@ -12,6 +12,7 @@ lintcheck:
 	-pylint iadpython/fresnel.py
 	-pylint iadpython/quadrature.py
 	-pylint iadpython/redistribution.py
+	-pylint iadpython/sphere.py
 	-pylint iadpython/start.py
 	-pylint iadpython/test_boundary.py
 	-pylint iadpython/test_combo.py
@@ -32,6 +33,7 @@ doccheck:
 	-pydocstyle iadpython/fresnel.py
 	-pydocstyle iadpython/quadrature.py
 	-pydocstyle iadpython/redistribution.py
+	-pydocstyle iadpython/sphere.py
 	-pydocstyle iadpython/start.py
 	-pydocstyle iadpython/test_boundary.py
 	-pydocstyle iadpython/test_combo.py
