@@ -141,6 +141,9 @@ class Sphere():
     @d_sphere.setter
     def d_sphere(self, value):
         """When size is changed ratios become invalid."""
+        assert self.d_sample <= value, "sphere must be bigger than sample port"
+        assert self.d_entrance <= value, "sphere must be bigger than entrance port"
+        assert self.d_detector <= value, "sphere must be bigger than detector port"
         self._d_sphere = value
         self.a_sample = self.relative_cap_area(self._d_sample)
         self.a_detector = self.relative_cap_area(self._d_detector)
@@ -155,6 +158,7 @@ class Sphere():
     @d_sample.setter
     def d_sample(self, value):
         """When size is changed ratios become invalid."""
+        assert 0 <= value <= self._d_sphere, "sample port must be between 0 and sphere diameter"
         self._d_sample = value
         self.a_sample = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
@@ -167,6 +171,7 @@ class Sphere():
     @d_entrance.setter
     def d_entrance(self, value):
         """When size is changed ratios become invalid."""
+        assert 0 <= value <= self._d_sphere, "entrance port must be between 0 and sphere diameter"
         self._d_entrance = value
         self.a_entrance = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
@@ -179,6 +184,7 @@ class Sphere():
     @d_detector.setter
     def d_detector(self, value):
         """When size is changed ratios become invalid."""
+        assert 0 <= value <= self._d_sphere, "detector port must be between 0 and sphere diameter"
         self._d_detector = value
         self.a_detector = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
@@ -190,9 +196,11 @@ class Sphere():
 
     @a_wall.setter
     def a_wall(self, value):
-        """Changing the wall area is a bit crazy."""
+        """Changing the relative wall area is a bit crazy."""
+        assert 0 <= value <= 1, "relative wall are must be between 0 and 1"
         # Find the diameter of a spherical cap assuming all non-wall
         # port area is assigned to a single sample port
+        assert 0 < value < 1, "0 < relative wall area < 1"
         self._d_sample = 2*self._d_sphere*np.sqrt(value-value**2)
         self._d_entrance = 0
         self._d_detector = 0
