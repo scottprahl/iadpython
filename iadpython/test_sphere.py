@@ -49,6 +49,21 @@ class A_nothing_sandwich(unittest.TestCase):
         np.testing.assert_allclose(acap1, a_cap1, atol=1e-5)
 
 
+    def test_04_multiplier(self):
+        """Multiplier calculations."""
+        R = 100
+        s = iadpython.sphere.Sphere(2*R,5)
+        s.a_wall = 0.98
+        r_wall = 0.8/s.a_wall
+        M = s.multiplier(UR1=1, URU=0, r_wall = r_wall)
+        np.testing.assert_allclose(5, M, atol=1e-5)
+ 
+        M = s.multiplier(UR1=0.8, URU=0, r_wall = r_wall)
+        np.testing.assert_allclose(0.8*5, M, atol=1e-5)
 
+        M = s.multiplier(UR1=1, URU=1, r_wall = r_wall)
+        M1 = 1/(1-s.a_wall*r_wall-s.a_sample)
+        np.testing.assert_allclose(M, M1, atol=1e-5)
+       
 if __name__ == '__main__':
     unittest.main()
