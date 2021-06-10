@@ -30,7 +30,7 @@ class Sphere():
         self.r_detector = r_detector
         self.r_wall = r_wall
 
-    def spherical_cap_area(self, d_port):
+    def cap_area(self, d_port):
         """Calculate area of spherical cap."""
         R = self.d_sphere/2
         r = d_port/2
