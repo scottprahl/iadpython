@@ -48,7 +48,6 @@ class A_nothing_sandwich(unittest.TestCase):
         a_cap1 = s.approx_relative_cap_area(20)
         np.testing.assert_allclose(acap1, a_cap1, atol=1e-5)
 
-
     def test_04_multiplier(self):
         """Multiplier calculations."""
         R = 100
@@ -64,6 +63,6 @@ class A_nothing_sandwich(unittest.TestCase):
         M = s.multiplier(UR1=1, URU=1, r_wall = r_wall)
         M1 = 1/(1-s.a_wall*r_wall-s.a_sample)
         np.testing.assert_allclose(M, M1, atol=1e-5)
-       
+
 if __name__ == '__main__':
     unittest.main()
