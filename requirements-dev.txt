@@ -10,7 +10,6 @@ matplotlib
 scipy
 nbconvert
 nbformat
-numba
 #
 # Lint
 rstcheck

@@ -76,9 +76,6 @@ test:
 
 xtest:
 	python3 -m unittest tests/test_iadpython.py
-	
-perf:
-	python3 -m unittest tests/perf_test.py
 
 clean:
 	rm -rf dist
@@ -89,6 +86,7 @@ clean:
 	rm -rf docs/api 
 	rm -rf __pycache__
 	rm -rf .pytest_cache
+	rm -rf test/__pycache__
 
 realclean:
 	make clean

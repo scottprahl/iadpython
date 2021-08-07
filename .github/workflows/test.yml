@@ -30,4 +30,14 @@ jobs:
           pip install -r requirements-dev.txt
         
       - name: Test with pytest
-        run: pytest -v --notebooks
+        run: |
+          pytest tests/test_fresnel.py
+          pytest tests/test_quadrature.py
+          pytest tests/test_redistribution.py
+          pytest tests/test_start.py
+          pytest tests/test_layer.py
+          pytest tests/test_boundary.py
+          pytest tests/test_combo.py
+          pytest tests/test_ur1_uru.py
+          pytest tests/test_iadc.py
+
