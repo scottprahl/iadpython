@@ -51,7 +51,8 @@ xpydoc:
 
 notecheck:
 	make clean
-	pytest --verbose -n 4 test_all_notebooks.py
+	pytest --verbose -n 4 tests/test_all_notebooks.py
+	rm -rf __pycache__
 
 rcheck:
 	make doccheck
@@ -63,21 +64,21 @@ rcheck:
 	check-manifest
 
 test:
-	python -m unittest iadpython/test_fresnel.py
-	python -m unittest iadpython/test_quadrature.py
-	python -m unittest iadpython/test_redistribution.py
-	python -m unittest iadpython/test_start.py
-	python -m unittest iadpython/test_layer.py
-	python -m unittest iadpython/test_boundary.py
-	python -m unittest iadpython/test_combo.py
-	python -m unittest iadpython/test_ur1_uru.py
-	python -m unittest iadpython/test_iadc.py
+	python3 -m unittest tests/test_fresnel.py
+	python3 -m unittest tests/test_quadrature.py
+	python3 -m unittest tests/test_redistribution.py
+	python3 -m unittest tests/test_start.py
+	python3 -m unittest tests/test_layer.py
+	python3 -m unittest tests/test_boundary.py
+	python3 -m unittest tests/test_combo.py
+	python3 -m unittest tests/test_ur1_uru.py
+	python3 -m unittest tests/test_iadc.py
 
 xtest:
-	python -m unittest iadpython/test_iadpython.py
+	python3 -m unittest tests/test_iadpython.py
 	
 perf:
-	python -m unittest iadpython/perf_test.py
+	python3 -m unittest tests/perf_test.py
 
 clean:
 	rm -rf dist
@@ -87,6 +88,7 @@ clean:
 	rm -rf docs/_build 
 	rm -rf docs/api 
 	rm -rf __pycache__
+	rm -rf .pytest_cache
 
 realclean:
 	make clean

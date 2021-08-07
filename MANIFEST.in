@@ -4,4 +4,4 @@ exclude .gitignore
 exclude release.txt
 exclude Makefile
 exclude docs/*
-exclude test_all_notebooks.py
+exclude tests/*
