@@ -5,3 +5,5 @@ exclude release.txt
 exclude Makefile
 exclude docs/*
 exclude tests/*
+exclude requirements.txt
+exclude requirements-dev.txt
