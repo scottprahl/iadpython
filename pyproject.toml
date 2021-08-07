@@ -9,22 +9,23 @@ build-backend = "setuptools.build_meta"
 legacy_tox_ini = """
 
 [tox]
-envlist = py37
+envlist = py39
 
 [testenv]
 deps = pytest
        numpy
        scipy
+       functools
 
 commands =
-    python -m unittest iadpython/test_fresnel.py
-    python -m unittest iadpython/test_quadrature.py
-    python -m unittest iadpython/test_redistribution.py
-    python -m unittest iadpython/test_start.py
-    python -m unittest iadpython/test_layer.py
-    python -m unittest iadpython/test_boundary.py
-    python -m unittest iadpython/test_combo.py
-    python -m unittest iadpython/test_ur1_uru.py
-    python -m unittest iadpython/test_iadc.py
-    python -m unittest iadpython/test_time.py
+    python -m unittest tests/test_fresnel.py
+    python -m unittest tests/test_quadrature.py
+    python -m unittest tests/test_redistribution.py
+    python -m unittest tests/test_start.py
+    python -m unittest tests/test_layer.py
+    python -m unittest tests/test_boundary.py
+    python -m unittest tests/test_combo.py
+    python -m unittest tests/test_ur1_uru.py
+    python -m unittest tests/test_iadc.py
+    python -m unittest tests/test_time.py
 """

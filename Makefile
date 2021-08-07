@@ -5,6 +5,7 @@ BUILDDIR      = docs/_build
 
 html:
 	$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
+	open docs/_build/index.html
 
 lintcheck:
 	-pylint iadpython/ad.py
@@ -57,8 +58,9 @@ rcheck:
 	make lintcheck
 	make notecheck
 	make test
-	-pyroma -d .
-	-check-manifest
+	flake8
+	pyroma -d .
+	check-manifest
 
 test:
 	python -m unittest iadpython/test_fresnel.py

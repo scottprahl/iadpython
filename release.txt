@@ -1,31 +1,26 @@
 A checklist for releasing a new version
 
 # sanity test the release
-  make check
-  tox
+  make rcheck
   
-# update the version in setup.cfg
-  git commit setup.cfg -m 'update version'
+# update the version in setup.cfg and docs/conf.py
+  git commit setup.cfg docs/conf.py -m 'update version'
   git push
 
-# update CHANGELOG.rst using `git shortlog`
+# update CHANGELOG
+  git shortlog v0.3.0..HEAD
   git commit CHANGELOG.rst -m 'update recent changes' 
   git push
 
 # create release tag on github
-  git tag v0.3.0
-  git push origin v0.3.0
+  git tag v0.4.0
+  git push origin v0.4.0
 
 # upload source to pypi
-  rm -rf dist/*
-  python3 setup.py sdist
+  python3 -m build
   python3 -m twine upload dist/*
 
-# test the install by removing local developer version
-# installing, then uninstalling, then restoring developer version
-  conda develop -u .
-  pip install iadpython
-  pip uninstall iadpython
-  conda develop .
-
-# Create a new release on github to hide previous releases
+# update/check releases
+  open https://github.com/scottprahl/iadpython
+  open https://pypi.org/project/iadpython/
+  open https://iadpython.readthedocs.io

@@ -25,7 +25,7 @@ import os.path
 import pathlib
 import pytest
 import nbformat
-from nbconvert.preprocessors import ExecutePreprocessor, CellExecutionError
+from nbconvert.preprocessors import ExecutePreprocessor
 
 # Default search path is the current directory
 searchpath = pathlib.Path('.')
@@ -44,6 +44,7 @@ notebooks = [notebook for notebook in searchpath.glob('**/*.ipynb')
 
 notebooks.sort()
 ids = [str(n) for n in notebooks]
+
 
 @pytest.mark.parametrize("notebook", notebooks, ids=ids)
 def test_run_notebook(notebook):
