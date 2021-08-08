@@ -78,7 +78,7 @@ clean:
 	rm -rf docs/api 
 	rm -rf __pycache__
 	rm -rf .pytest_cache
-	rm -rf test/__pycache__
+	rm -rf tests/__pycache__
 
 realclean:
 	make clean
