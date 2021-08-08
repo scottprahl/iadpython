@@ -51,7 +51,7 @@ xpydoc:
 
 notecheck:
 	make clean
-	pytest --verbose -n 4 tests/test_all_notebooks.py
+	pytest --notebooks tests/test_all_notebooks.py
 	rm -rf __pycache__
 
 rcheck:
@@ -59,7 +59,7 @@ rcheck:
 	make lintcheck
 	make notecheck
 	make test
-	flake8
+	flake8 .
 	pyroma -d .
 	check-manifest
 
