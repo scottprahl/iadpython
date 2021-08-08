@@ -221,7 +221,7 @@ def a2acalc(a):
 def acalc2a(acalc):
     """
     Convert albedo from calculation space to actual albedo.
-    
+
     |acalc2a| is used for the albedo transformations
     Now when we solve
     $$
@@ -252,7 +252,7 @@ def acalc2a(acalc):
 def g2gcalc(g):
     """
     Convert anisotropy to calculation space.
-    
+
     |g2gcalc| is used for the anisotropy transformations
     according to
     $$

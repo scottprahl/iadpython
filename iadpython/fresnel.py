@@ -31,7 +31,7 @@ __all__ = ('cos_critical',
            )
 
 
-def cos_critical(ni, nt):
+def cos_critical(n_i, n_t):
     """
     Calculate the cosine of the critical angle.
 
@@ -43,8 +43,15 @@ def cos_critical(ni, nt):
     The cosine of this angle is then
 
     cos(theta_c) = cos(arcsin(n_t / n_i)) = sqrt(1-(n_t/n_i)**2)
+
+    Args:
+        n_i: index of refraction of incident medium
+        n_t: index of refraction of transmitted medium
+
+    Returns:
+        cosine of the critical angle
     """
-    temp = 1.0 - (nt/ni)**2
+    temp = 1.0 - (n_t / n_i)**2
 
     if not np.isscalar(temp):
         np.place(temp, temp < 0, 0)
@@ -77,10 +84,12 @@ def cos_snell(n_i, nu, n_t):
 
     Args:
         n_i: index of refraction of incident medium
-
         n_t: index of refraction of transmitted medium
+
+    Returns:
+        cosine of transmitted angle
     """
-    temp = 1.0-(n_i/n_t)**2*(1.0 - nu**2)
+    temp = 1.0 - (n_i / n_t)**2 * (1.0 - nu**2)
 
     if not np.isscalar(temp):
         np.place(temp, temp < 0, 0)
@@ -161,12 +170,12 @@ def reflection(n_i, nu_i, n_t):
     if np.isscalar(sum1):
         if nu_i == 0:       # angle is greater than critical angle
             return 1
-        return (dif1/sum1+dif2/sum2)/2
+        return (dif1 / sum1 + dif2 / sum2) / 2
 
     # when dif1==sum1==0, then ratio should be one
     out1 = np.divide(dif1, sum1, out=np.ones_like(dif1), where=dif1 != sum1)
     out2 = np.divide(dif2, sum2, out=np.ones_like(dif2), where=dif2 != sum2)
-    return (out1+out2)/2
+    return (out1 + out2) / 2
 
 
 def glass(n_i, n_g, n_t, nu_i):
@@ -222,7 +231,7 @@ def glass(n_i, n_g, n_t, nu_i):
     if np.isscalar(denom):
         if numer == denom:
             return 1
-        return numer/denom
+        return numer / denom
 
     return np.divide(numer, denom, out=np.ones_like(numer), where=numer != denom)
 
@@ -272,7 +281,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     """
     if b == 0:
         r = glass(n_i, n_g, n_t, nu_i)
-        return r, 1-r
+        return r, 1 - r
 
     r1 = reflection(n_i, nu_i, n_g)
     nu_g = cos_snell(n_i, nu_i, n_g)
@@ -283,10 +292,10 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
 
     r2 = reflection(n_g, nu_g, n_t)
 
-    expo = np.exp(-b/nu_g)
-    denom = 1.0-r1*r2*expo**2
-    r = (r1 + (1.0 - 2.0 * r1)*r2*expo**2) / denom
-    t = (1.0 - r1)*(1.0 - r2)*expo / denom
+    expo = np.exp(-b / nu_g)
+    denom = 1.0 - r1 * r2 * expo**2
+    r = (r1 + (1.0 - 2.0 * r1) * r2 * expo**2) / denom
+    t = (1.0 - r1) * (1.0 - r2) * expo / denom
 
     return r, t
 
@@ -340,14 +349,14 @@ def _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
         elif nu == 0:
             expo = 0
         else:
-            expo = np.exp(-b_slab/nu)
+            expo = np.exp(-b_slab / nu)
     else:
         if b_slab == 0:
             expo = np.ones_like(nu)
         else:
-            ratio = nu/b_slab
+            ratio = nu / b_slab
             np.place(ratio, ratio == 0, 0.01)
-            expo = np.exp(-1/ratio)
+            expo = np.exp(-1 / ratio)
 
     denom = 1 - r_top * r_bottom * expo**2
     numer = r_bottom * t_top**2 * expo**2
@@ -410,20 +419,20 @@ def R1(ni, nt):
         return 0.0
 
     if ni < nt:
-        m = nt/ni
+        m = nt / ni
     else:
-        m = ni/nt
+        m = ni / nt
 
     m2 = m * m
     m4 = m2 * m2
     mm1 = m - 1
     mp1 = m + 1
-    temp = (m2 - 1)/(m2 + 1)
+    temp = (m2 - 1) / (m2 + 1)
 
     r = 0.5 + mm1 * (3 * m + 1) / 6 / mp1 / mp1
     r += m2 * temp**2 / (m2 + 1) * np.log(mm1 / mp1)
     r -= 2 * m * m2 * (m2 + 2 * m - 1) / (m2 + 1) / (m4 - 1)
-    r += 8 * m4 * (m4 + 1) / (m2 + 1) / (m4-1)/(m4-1) * np.log(m)
+    r += 8 * m4 * (m4 + 1) / (m2 + 1) / (m4 - 1) / (m4 - 1) * np.log(m)
 
     if ni < nt:
         return r

@@ -1,7 +1,7 @@
 """
 This file is intended to be the target of a pytest run.
 
-It will recursively find all .ipynb files in the current directory, ignoring 
+It will recursively find all .ipynb files in the current directory, ignoring
 directories that start with . and any files matching patterins found in the file
 .testignore
 
@@ -48,7 +48,7 @@ ids = [str(n) for n in notebooks]
 
 @pytest.mark.parametrize("notebook", notebooks, ids=ids)
 def test_run_notebook(notebook):
-    """Read and execute notebook
+    """Read and execute notebook.
 
     The method here is directly from the nbconvert docs
 

@@ -9,6 +9,7 @@ import unittest
 import numpy as np
 import iadpython.fresnel
 
+
 class Fresnel(unittest.TestCase):
     """Starting layer calculations."""
 
@@ -62,7 +63,6 @@ class Fresnel(unittest.TestCase):
         t = np.array([0, 0, 0, 0.756637, 1.0])
         np.testing.assert_allclose(nut, t, atol=1e-5)
 
-
     def test_02_critical(self):
         """Critical angle."""
         n_i = 1
@@ -79,7 +79,6 @@ class Fresnel(unittest.TestCase):
         n_t = 1
         nu_c = iadpython.fresnel.cos_critical(n_i, n_t)
         np.testing.assert_approx_equal(nu_c, 0.7453559)
-
 
     def test_03_fresnel_matched(self):
         """Fresnel reflection with matched boundaries."""
@@ -186,7 +185,7 @@ class Fresnel(unittest.TestCase):
         n_g = 1.5
         n_t = 1.0
         nu_i = 1
-        rr= 2* 0.04*0.96 / (1 - 0.04**2)
+        rr = 2 * 0.04 * 0.96 / (1 - 0.04**2)
         r = iadpython.fresnel.glass(n_i, n_g, n_t, nu_i)
         np.testing.assert_approx_equal(r, rr)
 
@@ -194,7 +193,7 @@ class Fresnel(unittest.TestCase):
         n_g = 1.5
         n_t = 1.3
         nu_i = 1
-        rr= 0.0447030
+        rr = 0.0447030
         r = iadpython.fresnel.glass(n_i, n_g, n_t, nu_i)
         np.testing.assert_approx_equal(r, rr)
 
@@ -202,7 +201,7 @@ class Fresnel(unittest.TestCase):
         n_g = 1.5
         n_t = 1.3
         nu_i = 0
-        rr= 1
+        rr = 1
         r = iadpython.fresnel.glass(n_i, n_g, n_t, nu_i)
         np.testing.assert_approx_equal(r, rr)
 
@@ -221,7 +220,7 @@ class Fresnel(unittest.TestCase):
         n_t = 1.0
         nu_i = np.array([0, 0.2, 0.5, 0.8, 1.0])
         r = iadpython.fresnel.glass(n_i, n_g, n_t, nu_i)
-        rr = np.array([1, 0.50623 , 0.163768, 0.084098, 0.076923])
+        rr = np.array([1, 0.50623, 0.163768, 0.084098, 0.076923])
         np.testing.assert_allclose(r, rr, atol=1e-5)
 
         n_i = 1.0

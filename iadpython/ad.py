@@ -23,6 +23,7 @@ import iadpython.start
 
 AD_MAX_THICKNESS = 1e6
 
+
 class Sample():
     """Container class for details of a sample."""
 
@@ -90,7 +91,7 @@ class Sample():
 
     def mu_a(self):
         """Absorption coefficient for the sample."""
-        return (1-self.a) * self.b / self.d
+        return (1 - self.a) * self.b / self.d
 
     def mu_s(self):
         """Scattering coefficient for the sample."""
@@ -107,7 +108,7 @@ class Sample():
     def a_delta_M(self):
         """Reduced albedo in delta-M approximation."""
         af = self.a * (self.g ** self.quad_pts)
-        return (self.a - af)/(1 - af)
+        return (self.a - af) / (1 - af)
 
     def b_delta_M(self):
         """Reduced thickness in delta-M approximation."""
@@ -152,7 +153,7 @@ class Sample():
         """Print matrix and sums."""
         n = self.quad_pts
 
-        #header line
+        # header line
         if title is not None:
             print(title)
         print("cos_theta |", end='')
@@ -164,7 +165,7 @@ class Sample():
             print("---------", end='')
         print("-+---------")
 
-        #contents + row fluxes
+        # contents + row fluxes
         for i in range(n):
             print("%9.5f |" % self.nu[i], end='')
             for j in range(n):
@@ -183,7 +184,7 @@ class Sample():
         UXx = np.dot(self.twonuw[k:], a[k:, k:])
         tflux = np.dot(self.twonuw[k:], UXx) * self.n**2
 
-        #column fluxes
+        # column fluxes
         print("----------+", end='')
         for i in range(n):
             print("---------", end='')
@@ -202,21 +203,21 @@ class Sample():
             print(title)
         n = self.quad_pts
 
-        #first row
+        # first row
         print("[[", end='')
-        for j in range(n-1):
+        for j in range(n - 1):
             print("%9.5f," % a[0, j], end='')
         print("%9.5f]," % a[0, -1])
 
-        for i in range(1, n-1):
+        for i in range(1, n - 1):
             print(" [", end='')
-            for j in range(n-1):
+            for j in range(n - 1):
                 print("%9.5f," % a[i, j], end='')
             print("%9.5f]," % a[i, -1])
 
-        #last row
+        # last row
         print(" [", end='')
-        for j in range(n-1):
+        for j in range(n - 1):
             print("%9.5f," % a[-1, j], end='')
         print("%9.5f]]" % a[-1, -1])
 
@@ -280,7 +281,6 @@ class Sample():
         self.nu = np.append(a1, a2)
         self.twonuw = 2 * self.nu * np.append(w1, w2)
 
-
     def rt_matrices(self):
         """
         Total reflection and transmission.
@@ -309,7 +309,7 @@ class Sample():
 
         # cone not implemented yet
         if self.nu_0 != 1.0:
-#            RT_Cone(n,sample,OBLIQUE,UR1,UT1,URU,UTU);
+            #            RT_Cone(n,sample,OBLIQUE,UR1,UT1,URU,UTU);
             r, t = iadpython.start.zero_layer(self.quad_pts)
             return r, r, t, t
 
@@ -317,7 +317,7 @@ class Sample():
 
         # all done if boundaries are not an issue
         if self.n == 1 and self.n_above == 1 and self.n_below == 1 and \
-            self.b_above == 0 and self.b_below == 0:
+                self.b_above == 0 and self.b_below == 0:
             return R12, R12, T12, T12
 
         # reflection/transmission arrays for top boundary
@@ -332,11 +332,12 @@ class Sample():
         R23, R32, T23, T32 = iadpython.start.boundary_layer(self, top=False)
 
         # different boundaries on top and bottom
-        R02, R20, T02, T20 = iadpython.add_slide_above(self, R01, R10, T01, T10, R12, R12, T12, T12)
-        R03, R30, T03, T30 = iadpython.add_slide_below(self, R02, R20, T02, T20, R23, R32, T23, T32)
+        R02, R20, T02, T20 = iadpython.add_slide_above(
+            self, R01, R10, T01, T10, R12, R12, T12, T12)
+        R03, R30, T03, T30 = iadpython.add_slide_below(
+            self, R02, R20, T02, T20, R23, R32, T23, T32)
 
         return R03, R30, T03, T30
-
 
     def UX1_and_UXU(self, R, T):
         """

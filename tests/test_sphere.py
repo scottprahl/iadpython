@@ -9,12 +9,13 @@ import unittest
 import numpy as np
 import iadpython
 
+
 class A_nothing_sandwich(unittest.TestCase):
     """Empty layer in air."""
 
     def test_01_object_creation(self):
         """Simple sphere creation."""
-        s = iadpython.sphere.Sphere(200,20)
+        s = iadpython.sphere.Sphere(200, 20)
         np.testing.assert_allclose(s.d_sphere, 200, atol=1e-5)
         np.testing.assert_allclose(s.d_sample, 20, atol=1e-5)
         np.testing.assert_allclose(s.d_entrance, 0, atol=1e-5)
@@ -22,7 +23,7 @@ class A_nothing_sandwich(unittest.TestCase):
 
     def test_02_portsize(self):
         """Test setting ."""
-        s = iadpython.sphere.Sphere(200,20)
+        s = iadpython.sphere.Sphere(200, 20)
         s.d_entrance = 10
         s.d_detector = 5
         s.d_sample = 18
@@ -38,31 +39,32 @@ class A_nothing_sandwich(unittest.TestCase):
     def test_03_cap(self):
         """Spherical cap calculations."""
         R = 100
-        s = iadpython.sphere.Sphere(2*R,5)
+        s = iadpython.sphere.Sphere(2 * R, 5)
         r = 10
-        acap = s.cap_area(2*r)/(4*np.pi*R**2)
-        a_cap = s.relative_cap_area(2*r)
+        acap = s.cap_area(2 * r) / (4 * np.pi * R**2)
+        a_cap = s.relative_cap_area(2 * r)
         np.testing.assert_allclose(acap, a_cap, atol=1e-5)
-        
-        acap1 = np.pi*r**2/(4*np.pi*R**2)
+
+        acap1 = np.pi * r**2 / (4 * np.pi * R**2)
         a_cap1 = s.approx_relative_cap_area(20)
         np.testing.assert_allclose(acap1, a_cap1, atol=1e-5)
 
     def test_04_multiplier(self):
         """Multiplier calculations."""
         R = 100
-        s = iadpython.sphere.Sphere(2*R,5)
+        s = iadpython.sphere.Sphere(2 * R, 5)
         s.a_wall = 0.98
-        r_wall = 0.8/s.a_wall
-        M = s.multiplier(UR1=1, URU=0, r_wall = r_wall)
+        r_wall = 0.8 / s.a_wall
+        M = s.multiplier(UR1=1, URU=0, r_wall=r_wall)
         np.testing.assert_allclose(5, M, atol=1e-5)
- 
-        M = s.multiplier(UR1=0.8, URU=0, r_wall = r_wall)
-        np.testing.assert_allclose(0.8*5, M, atol=1e-5)
 
-        M = s.multiplier(UR1=1, URU=1, r_wall = r_wall)
-        M1 = 1/(1-s.a_wall*r_wall-s.a_sample)
+        M = s.multiplier(UR1=0.8, URU=0, r_wall=r_wall)
+        np.testing.assert_allclose(0.8 * 5, M, atol=1e-5)
+
+        M = s.multiplier(UR1=1, URU=1, r_wall=r_wall)
+        M1 = 1 / (1 - s.a_wall * r_wall - s.a_sample)
         np.testing.assert_allclose(M, M1, atol=1e-5)
+
 
 if __name__ == '__main__':
     unittest.main()

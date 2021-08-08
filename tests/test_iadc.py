@@ -6,6 +6,7 @@
 import unittest
 import iadpython as iad
 
+
 class basic_forward(unittest.TestCase):
     """Forward adding-doubling calculations."""
 

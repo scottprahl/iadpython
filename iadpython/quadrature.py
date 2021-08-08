@@ -39,17 +39,21 @@ __all__ = ('gauss',
            'lobatto',
            )
 
+
 def _gauss_func(n, x):
     """Zeroes of this function are the Gaussian quadrature points."""
     return scipy.special.legendre(n)(x)
 
+
 def _radau_func(n, x):
     """Zeros of this function are the Radau quadrature points."""
-    return (scipy.special.eval_legendre(n-1, x) + scipy.special.eval_legendre(n, x))/(1+x)
+    return (scipy.special.eval_legendre(n - 1, x) + scipy.special.eval_legendre(n, x)) / (1 + x)
+
 
 def _lobatto_func(n, x):
     """Zeros of this function are the Lobatto quadrature points."""
-    return scipy.special.legendre(n-1).deriv(1)(x)
+    return scipy.special.legendre(n - 1).deriv(1)(x)
+
 
 def gauss(n, a=-1, b=1):
     """
@@ -82,6 +86,7 @@ def gauss(n, a=-1, b=1):
 
     return np.flip(x), np.flip(w)
 
+
 def radau(n, a=-1, b=1):
     """
     Return abscissas and weights for Radau quadrature.
@@ -110,12 +115,12 @@ def radau(n, a=-1, b=1):
     brackets = scipy.special.roots_legendre(n)[0]
 
     f = functools.partial(_radau_func, n)
-    for i in range(n-1):
-        x[i+1] = scipy.optimize.brentq(f, brackets[i], brackets[i+1])
+    for i in range(n - 1):
+        x[i + 1] = scipy.optimize.brentq(f, brackets[i], brackets[i + 1])
 
-    pp = scipy.special.legendre(n-1).deriv(1)
-    w[0] = 2/n**2
-    w[1:] = 1/pp(x[1:])**2/(1-x[1:])
+    pp = scipy.special.legendre(n - 1).deriv(1)
+    w[0] = 2 / n**2
+    w[1:] = 1 / pp(x[1:])**2 / (1 - x[1:])
 
     # scale for desired interval
     x *= 0.5 * (a - b)
@@ -123,6 +128,7 @@ def radau(n, a=-1, b=1):
     w *= 0.5 * (b - a)
 
     return np.flip(x), np.flip(w)
+
 
 def lobatto(n, a=-1, b=1):
     """
@@ -147,19 +153,19 @@ def lobatto(n, a=-1, b=1):
         w: array of weights of length n
     """
     x = np.zeros(n)
-    w = np.full(n, 2/n/(n-1))
+    w = np.full(n, 2 / n / (n - 1))
     x[0] = -1
     x[-1] = 1
 
     # The roots of P_{n-1} bracket the roots of P_{n-1}':
-    brackets = scipy.special.roots_legendre(n-1)[0]
+    brackets = scipy.special.roots_legendre(n - 1)[0]
 
     f = functools.partial(_lobatto_func, n)
-    for i in range(n-2):
-        x[i+1] = scipy.optimize.brentq(f, brackets[i], brackets[i+1])
+    for i in range(n - 2):
+        x[i + 1] = scipy.optimize.brentq(f, brackets[i], brackets[i + 1])
 
-    pp = scipy.special.legendre(n-1)(x)
-    w[1:-1] = w[1:-1]/pp[1:-1]**2
+    pp = scipy.special.legendre(n - 1)(x)
+    w[1:-1] = w[1:-1] / pp[1:-1]**2
 
     # scale for desired interval
     x *= 0.5 * (a - b)

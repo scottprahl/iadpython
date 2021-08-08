@@ -52,7 +52,7 @@ def zero_layer(sample):
     """
     if sample.twonuw is None:
         sample.update_quadrature()
-    t = np.diagflat(1/sample.twonuw)
+    t = np.diagflat(1 / sample.twonuw)
     r = np.zeros_like(t)
     return r, t
 
@@ -70,7 +70,7 @@ def starting_thickness(sample):
     when type 2 and 3 errors are comparable, or when d ≈ µ.
 
     Note that round-off is important when the starting thickness is less than
-    1e-4 for diamond initialization and less than 1e-8 for infinitesimal 
+    1e-4 for diamond initialization and less than 1e-8 for infinitesimal
     generator initialization assuming about 14 significant digits of accuracy.
 
     Since the final thickness is determined by repeated doubling, the
@@ -126,9 +126,10 @@ def igi(sample):
     temp = sample.a_delta_M() * d / 4 / sample.nu
     R = temp * (sample.hm / sample.nu).T
     T = temp * (sample.hp / sample.nu).T
-    T += (1 - d/sample.nu)/sample.twonuw * np.identity(n)
+    T += (1 - d / sample.nu) / sample.twonuw * np.identity(n)
 
     return R, T
+
 
 def diamond(sample):
     """
@@ -146,24 +147,24 @@ def diamond(sample):
 
     n = sample.quad_pts
     d = sample.b_thinnest
-    I = np.identity(n)
+    II = np.identity(n)
 
     if sample.hp is None:
         sample.hp, sample.hm = iadpython.redistribution.hg_legendre(sample)
 
-    w = sample.twonuw/sample.nu/2
+    w = sample.twonuw / sample.nu / 2
     temp = sample.a_delta_M() * d * w / 4
     r_hat = temp * (sample.hm / sample.nu).T
-    t_hat = d/(2*sample.nu) * I - temp * (sample.hp / sample.nu).T
+    t_hat = d / (2 * sample.nu) * II - temp * (sample.hp / sample.nu).T
 
-    C = np.linalg.solve((I+t_hat).T, r_hat.T)
-    G = 0.5 * (I + t_hat - C.T @ r_hat).T
+    C = np.linalg.solve((II + t_hat).T, r_hat.T)
+    G = 0.5 * (II + t_hat - C.T @ r_hat).T
     lu, piv = scipy.linalg.lu_factor(G)
 
-    D = 1/sample.twonuw * (C * sample.twonuw).T
-    R = scipy.linalg.lu_solve((lu, piv), D).T/sample.twonuw
-    T = scipy.linalg.lu_solve((lu, piv), I).T/sample.twonuw
-    T -= I.T/sample.twonuw
+    D = 1 / sample.twonuw * (C * sample.twonuw).T
+    R = scipy.linalg.lu_solve((lu, piv), D).T / sample.twonuw
+    T = scipy.linalg.lu_solve((lu, piv), II).T / sample.twonuw
+    T -= II.T / sample.twonuw
     return R, T
 
 
@@ -260,12 +261,13 @@ def boundary_matrices(s, top=True):
         T10: transmission array from slab to air
     """
     R01, R10, T01, T10 = boundary_layer(s, top=top)
-    rr01 = np.diagflat(R01/s.twonuw**2)
-    rr10 = np.diagflat(R10/s.twonuw**2)
-    tt01 = np.diagflat(T01/s.twonuw)
-    tt10 = np.diagflat(T10/s.twonuw)
+    rr01 = np.diagflat(R01 / s.twonuw**2)
+    rr10 = np.diagflat(R10 / s.twonuw**2)
+    tt01 = np.diagflat(T01 / s.twonuw)
+    tt10 = np.diagflat(T10 / s.twonuw)
 
     return rr01, rr10, tt01, tt10
+
 
 def unscattered_rt(s):
     """
@@ -309,6 +311,7 @@ def unscattered_rt(s):
     tt10 = np.diagflat(t10) / s.twonuw
 
     return rr01, rr10, tt01, tt10
+
 
 def unscattered(s):
     """

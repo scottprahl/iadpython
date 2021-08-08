@@ -308,23 +308,23 @@ def rt(nslab, nslide, a, b, g):
     """
     N_QUADRATURE = 16  # should be a multiple of 16
 
-    try:
-        len_a = len(a)
-    except:
+    if np.isscalar(a):
         len_a = 0
         aa = a
+    else:
+        len_a = len(a)
 
-    try:
-        len_b = len(b)
-    except:
+    if np.isscalar(b):
         len_b = 0
         bb = b
+    else:
+        len_b = len(b)
 
-    try:
-        len_g = len(g)
-    except:
+    if np.isscalar(g):
         len_g = 0
         gg = g
+    else:
+        len_g = len(g)
 
     thelen = max(len_a, len_b, len_g)
 
@@ -381,23 +381,23 @@ def rt_unscattered(nslab, nslide, a, b, g):
     """
     N_QUADRATURE = 16  # should be a multiple of 16
 
-    try:
-        len_a = len(a)
-    except:
+    if np.isscalar(a):
         len_a = 0
         aa = a
+    else:
+        len_a = len(a)
 
-    try:
-        len_b = len(b)
-    except:
+    if np.isscalar(b):
         len_b = 0
         bb = b
+    else:
+        len_b = len(b)
 
-    try:
-        len_g = len(g)
-    except:
+    if np.isscalar(g):
         len_g = 0
         gg = g
+    else:
+        len_g = len(g)
 
     thelen = max(len_a, len_b, len_g)
 
@@ -460,29 +460,29 @@ def rt_cone(nslab, nslide, a, b, g, cos_cone):
     """
     N_QUADRATURE = 16  # should be a multiple of 16
 
-    try:
-        len_a = len(a)
-    except:
+    if np.isscalar(a):
         len_a = 0
         aa = a
+    else:
+        len_a = len(a)
 
-    try:
-        len_b = len(b)
-    except:
+    if np.isscalar(b):
         len_b = 0
         bb = b
+    else:
+        len_b = len(b)
 
-    try:
-        len_g = len(g)
-    except:
+    if np.isscalar(g):
         len_g = 0
         gg = g
+    else:
+        len_g = len(g)
 
-    try:
-        len_mu = len(cos_cone)
-    except:
+    if np.isscalar(cos_cone):
         len_mu = 0
         mu = cos_cone
+    else:
+        len_mu = len(cos_cone)
 
     thelen = max(len_a, len_b, len_g, len_mu)
 
@@ -553,29 +553,29 @@ def rt_oblique(nslab, nslide, a, b, g, cos_oblique):
     """
     N_QUADRATURE = 16  # should be a multiple of 16
 
-    try:
-        len_a = len(a)
-    except:
+    if np.isscalar(a):
         len_a = 0
         aa = a
+    else:
+        len_a = len(a)
 
-    try:
-        len_b = len(b)
-    except:
+    if np.isscalar(b):
         len_b = 0
         bb = b
+    else:
+        len_b = len(b)
 
-    try:
-        len_g = len(g)
-    except:
+    if np.isscalar(g):
         len_g = 0
         gg = g
+    else:
+        len_g = len(g)
 
-    try:
-        len_mu = len(cos_oblique)
-    except:
+    if np.isscalar(cos_oblique):
         len_mu = 0
         mu = cos_oblique
+    else:
+        len_mu = len(cos_oblique)
 
     thelen = max(len_a, len_b, len_g, len_mu)
 
@@ -634,21 +634,21 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
 
     ur1, ut1, and t_unscattered may be scalars or arrays.
     """
-    try:
-        len_r1 = len(ur1)
-    except:
+    if np.isscalar(ur1):
         len_r1 = 0
+    else:
+        len_r1 = len(ur1)
 
-    try:
-        len_t1 = len(ut1)
-    except:
+    if np.isscalar(ut1):
         len_t1 = 0
+    else:
+        len_t1 = len(ut1)
 
-    try:
-        len_tc = len(t_unscattered)
-    except:
+    if np.isscalar(t_unscattered):
         len_tc = 0
         tc = t_unscattered
+    else:
+        len_tc = len(t_unscattered)
 
     thelen = max(len_r1, len_t1, len_tc)
 
@@ -877,8 +877,10 @@ libiad.Spheres_Inverse_RT2.argtypes = (
     ctypes.POINTER(ctypes.c_double)    # g
 )
 
+
 def _indent(s):
     return '    ' + s.replace('\n', '\n    ')
+
 
 class Experiment():
     def __init__(self):

@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 import iadpython.quadrature as quad
 
+
 class gauss(unittest.TestCase):
     """Tests for Gaussian-Legendre quadrature."""
 
@@ -84,7 +85,7 @@ class radau(unittest.TestCase):
         xx[1] = 0.7706418936781916
         xx[0] = 0.9550412271225750
 
-        ww[7] = 2/(8*8)
+        ww[7] = 2 / (8 * 8)
         ww[6] = 0.1853581548029793
         ww[5] = 0.3041306206467856
         ww[4] = 0.3765175453891186
