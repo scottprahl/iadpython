@@ -15,12 +15,12 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'ofiber'
+project = 'iadpython'
 copyright = '2018-2021 Scott Prahl'
 author = 'Scott Prahl'
 
 # The full version, including alpha/beta/rc tags
-release = '0.6.0'
+release = '0.3.0'
 
 master_doc = 'index'
 
