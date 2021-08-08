@@ -4,15 +4,16 @@
 """Tests for C-library Inverse Adding-Doubling."""
 
 import unittest
-import iadpython as iad
+import pytest
 
-
+@pytest.mark.iadc
 class basic_forward(unittest.TestCase):
     """Forward adding-doubling calculations."""
 
     def test_01_thick_non_scattering(self):
         """Thick non-scattering."""
-        ur1, ut1, uru, utu = iad.rt(1.0, 1.0, 0.0, 100000.0, 0.0)
+        import iadpython.iadc as iadc
+        ur1, ut1, uru, utu = iadc.rt(1.0, 1.0, 0.0, 100000.0, 0.0)
         self.assertAlmostEqual(ur1, 0.00000, delta=0.0001)
         self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)
         self.assertAlmostEqual(uru, 0.00000, delta=0.0001)
@@ -20,7 +21,8 @@ class basic_forward(unittest.TestCase):
 
     def test_02_thick(self):
         """Thick scattering."""
-        ur1, ut1, uru, utu = iad.rt(1.0, 1.0, 0.8, 100000.0, 0.0)
+        import iadpython.iadc as iadc
+        ur1, ut1, uru, utu = iadc.rt(1.0, 1.0, 0.8, 100000.0, 0.0)
         self.assertAlmostEqual(ur1, 0.28525, delta=0.0001)
         self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)
         self.assertAlmostEqual(uru, 0.34187, delta=0.0001)
@@ -28,7 +30,8 @@ class basic_forward(unittest.TestCase):
 
     def test_03_thick_non_absorbing(self):
         """Thick non-absorbing."""
-        ur1, ut1, uru, utu = iad.rt(1.0, 1.0, 1.0, 100000.0, 0.0)
+        import iadpython.iadc as iadc
+        ur1, ut1, uru, utu = iadc.rt(1.0, 1.0, 1.0, 100000.0, 0.0)
         self.assertAlmostEqual(ur1, 1.0000, delta=0.0001)
         self.assertAlmostEqual(ut1, 0.0000, delta=0.0001)
         self.assertAlmostEqual(uru, 1.0000, delta=0.0001)
@@ -36,67 +39,76 @@ class basic_forward(unittest.TestCase):
 
     def test_04_finite(self):
         """Finite isotropic scattering."""
-        ur1, ut1, uru, utu = iad.rt(1.0, 1.0, 0.8, 1.0, 0.0)
+        import iadpython.iadc as iadc
+        ur1, ut1, uru, utu = iadc.rt(1.0, 1.0, 0.8, 1.0, 0.0)
         self.assertAlmostEqual(ur1, 0.21085, delta=0.0001)
         self.assertAlmostEqual(ut1, 0.54140, delta=0.0001)
         self.assertAlmostEqual(uru, 0.28015, delta=0.0001)
         self.assertAlmostEqual(utu, 0.41624, delta=0.0001)
 
     def test_05_finite_anisotropic(self):
+        import iadpython.iadc as iadc
         """Finite anisotropic scattering."""
-        ur1, ut1, uru, utu = iad.rt(1.0, 1.0, 0.8, 1.0, 0.8)
+        ur1, ut1, uru, utu = iadc.rt(1.0, 1.0, 0.8, 1.0, 0.8)
         self.assertAlmostEqual(ur1, 0.03041, delta=0.0001)
         self.assertAlmostEqual(ut1, 0.76388, delta=0.0001)
         self.assertAlmostEqual(uru, 0.08416, delta=0.0001)
         self.assertAlmostEqual(utu, 0.61111, delta=0.0001)
 
 
+@pytest.mark.iadc
 class basic_inverse(unittest.TestCase):
     """Simple inverse adding-doubling calculations."""
 
     def test_01_no_sphere(self):
         """No scattering case."""
+        import iadpython.iadc as iadc
         UR1 = 0
-        a, _, _, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, 0, 0)
+        a, _, _, _ = iadc.basic_rt_inverse(1.0, 1.0, UR1, 0, 0)
         self.assertAlmostEqual(a, 0, delta=0.0001)
 
     def test_02_no_sphere(self):
         """No absorption case."""
+        import iadpython.iadc as iadc
         UR1 = 0.99999
-        a, _, _, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, 0, 0)
+        a, _, _, _ = iadc.basic_rt_inverse(1.0, 1.0, UR1, 0, 0)
         print(a)
         self.assertAlmostEqual(a, 1, delta=0.0001)
 
     def test_03_no_sphere(self):
         """Scattering and absorption case, no transmission."""
+        import iadpython.iadc as iadc
         UR1 = 0.4
-        a, _, _, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, 0, 0)
+        a, _, _, _ = iadc.basic_rt_inverse(1.0, 1.0, UR1, 0, 0)
         self.assertAlmostEqual(a, 0.8915, delta=0.0001)
 
     def test_04_no_sphere(self):
         """Scattering and absorption case with transmission."""
+        import iadpython.iadc as iadc
         UR1 = 0.4
         UT1 = 0.1
-        a, b, _, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, UT1, 0)
+        a, b, _, _ = iadc.basic_rt_inverse(1.0, 1.0, UR1, UT1, 0)
         self.assertAlmostEqual(a, 0.8938, delta=0.0001)
         self.assertAlmostEqual(b, 4.3978, delta=0.0001)
 
     def test_05_no_sphere(self):
         """Reflection, transmission, and unscattered transmission."""
+        import iadpython.iadc as iadc
         UR1 = 0.4
         UT1 = 0.1
         tc = 0.002
-        a, b, g, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, UT1, tc)
+        a, b, g, _ = iadc.basic_rt_inverse(1.0, 1.0, UR1, UT1, tc)
         self.assertAlmostEqual(a, 0.9301, delta=0.0001)
         self.assertAlmostEqual(b, 6.2146, delta=0.0001)
         self.assertAlmostEqual(g, 0.3116, delta=0.0001)
 
     def test_06_no_sphere(self):
         """Reflection, transmission, and unscattered transmission."""
+        import iadpython.iadc as iadc
         UR1 = 0.4
         UT1 = 0.1
         tc = 0.049787
-        a, b, g, _ = iad.basic_rt_inverse(1.0, 1.0, UR1, UT1, tc)
+        a, b, g, _ = iadc.basic_rt_inverse(1.0, 1.0, UR1, UT1, tc)
         self.assertAlmostEqual(a, 0.7926, delta=0.0001)
         self.assertAlmostEqual(b, 3.0000, delta=0.0001)
         self.assertAlmostEqual(g, -0.6694, delta=0.0001)

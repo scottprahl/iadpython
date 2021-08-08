@@ -64,18 +64,10 @@ rcheck:
 	check-manifest
 
 test:
-	python3 -m unittest tests/test_fresnel.py
-	python3 -m unittest tests/test_quadrature.py
-	python3 -m unittest tests/test_redistribution.py
-	python3 -m unittest tests/test_start.py
-	python3 -m unittest tests/test_layer.py
-	python3 -m unittest tests/test_boundary.py
-	python3 -m unittest tests/test_combo.py
-	python3 -m unittest tests/test_ur1_uru.py
-	python3 -m unittest tests/test_iadc.py
+	pytest tests
 
 xtest:
-	python3 -m unittest tests/test_iadpython.py
+	pytest --runbinary tests
 
 clean:
 	rm -rf dist

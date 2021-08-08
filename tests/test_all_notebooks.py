@@ -28,7 +28,7 @@ import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 
 # Default search path is the current directory
-searchpath = pathlib.Path('.')
+searchpath = pathlib.Path('./docs/')  # all notebooks are in here
 
 # Read patterns from .testignore file
 ignores = ''
@@ -46,6 +46,7 @@ notebooks.sort()
 ids = [str(n) for n in notebooks]
 
 
+@pytest.mark.notebooks
 @pytest.mark.parametrize("notebook", notebooks, ids=ids)
 def test_run_notebook(notebook):
     """Read and execute notebook.
