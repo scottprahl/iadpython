@@ -6,15 +6,28 @@ Example Usage
    :maxdepth: 2
    
 .. toctree::
-   :caption: Example Usage
+   :caption: Introduction
    :hidden:
 
-   Adding-Doubling-Basics.ipynb
-   quadrature-examples.ipynb
-   redistribution.ipynb
-   thin-layer.ipynb
-   sphere.ipynb
-   impossible.ipynb
+   Adding-Doubling-Basics
+   
+.. toctree::
+   :caption: Gory Details
+   :hidden:
+
+   quadrature-examples
+   
+   redistribution
+   
+   thin-layer
+   
+.. toctree::
+   :caption: Integrating Spheres
+   :hidden:
+
+   sphere
+   
+   impossible
 
 .. toctree::
    :caption: API
