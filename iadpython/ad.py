@@ -164,10 +164,10 @@ class Sample():
         s += "   thickness         = %.3f mm\n" % self.d
         s += "   sample index      = %.3f\n" % self.n
         s += "   top slide index   = %.3f\n" % self.n_above
-        if slide.b_above != 0:
+        if self.b_above != 0:
             s += "   top slide OD      = %.3f\n" % self.b_above
         s += "   bottom slide index= %.3f\n" % self.n_below
-        if slide.b_below != 0:
+        if self.b_below != 0:
             s += "   bottom slide OD   = %.3f\n" % self.b_below
         s += " cos(theta incident) = %.3f\n" % self.nu_0
         s += "   quadrature points = %d\n" % self.quad_pts
