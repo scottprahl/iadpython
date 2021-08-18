@@ -10,6 +10,8 @@ Example Usage
    :hidden:
 
    Adding-Doubling-Basics
+
+   sample
    
 .. toctree::
    :caption: Gory Details
