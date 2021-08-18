@@ -27,15 +27,43 @@ AD_MAX_THICKNESS = 1e6
 class Sample():
     """Container class for details of a sample."""
 
-    def __init__(self, a=0, b=1, g=0, n=1, n_above=1, n_below=1, quad_pts=4):
-        """Object initialization."""
+    def __init__(self, a=0, b=1, g=0, d=1, n=1, n_above=1, n_below=1, quad_pts=4):
+        """
+        Object initialization.
+        
+        Most things can be changed later by just assigning to the element.  
+        
+        The angle of incidence is assumed to be perpendicular to the
+        surface.  This is stored as the cosine of the angle and therefore to 
+        change it to 60° from the normal, one does `sample.nu_0 = 0.5`.
+        
+        To avoid needing to calculate the quadrature angles each time a
+        calculation is done, the object stores the quadrature angles as
+        well as the redistribution function.  A bit of trouble is taken
+        to ensure that these values get updated when something changes 
+        e.g., the anisotropy, the angle of incidence, or the number of
+        quadrature points.
+        
+        Args:
+            a: albedo
+            b: optical thickness
+            b: physical thickness [mm]
+            g: scattering anisotropy [-]
+            n: index of refraction of sample
+            n_above: index of refraction of slide above
+            n_below: index of refraction of slide below
+            quad_pts: number of quadrature points
+            
+        Returns:
+            object with all details needed to do a radiative calculation
+        """
         self.a = a
         self.b = b
         self._g = g
+        self.d = d
         self._n = n
         self.n_above = n_above
         self.n_below = n_below
-        self.d = 1.0
         self.nu_0 = 1.0
         self.b_above = 0
         self.b_below = 0
@@ -81,7 +109,7 @@ class Sample():
 
     @quad_pts.setter
     def quad_pts(self, value):
-        """When quadrature points are change everything is invalid."""
+        """When quadrature points are changed everything is invalid."""
         if value != self._quad_pts:
             self.nu = None
             self.twonuw = None
@@ -129,23 +157,28 @@ class Sample():
 
     def __str__(self):
         """Return basic details as a string for printing."""
-        s = ""
-        s += "albedo            = %.3f\n" % self.a
-        s += "optical thickness = %.3f\n" % self.b
-        s += "anisotropy        = %.3f\n" % self.g
+        s = "Intrinsic Properties\n"
+        s += "   albedo            = %.3f\n" % self.a
+        s += "   optical thickness = %.3f\n" % self.b
+        s += "   anisotropy        = %.3f\n" % self.g
+        s += "   thickness         = %.3f mm\n" % self.d
+        s += "   sample index      = %.3f\n" % self.n
+        s += "   top slide index   = %.3f\n" % self.n_above
+        if slide.b_above != 0:
+            s += "   top slide OD      = %.3f\n" % self.b_above
+        s += "   bottom slide index= %.3f\n" % self.n_below
+        if slide.b_below != 0:
+            s += "   bottom slide OD   = %.3f\n" % self.b_below
+        s += " cos(theta incident) = %.3f\n" % self.nu_0
+        s += "   quadrature points = %d\n" % self.quad_pts
+        
         s += "\n"
-        s += "  n sample          = %.4f\n" % self.n
-        s += "  n top slide     = %.4f\n" % self.n_above
-        s += "  n bottom slide  = %.4f\n" % self.n_below
-        s += "\n"
-        s += "d                 = %.3f mm\n" % self.d
-        s += "mu_a              = %.3f /mm\n" % self.mu_a()
-        s += "mu_s              = %.3f /mm\n" % self.mu_s()
-        s += "mu_s*(1-g)        = %.3f /mm\n" % self.mu_sp()
-        s += "Light angles\n"
-        s += " cos(theta incident) = %.5f\n" % self.nu_0
+        s += "Derived quantities\n"
+        s += "   mu_a              = %.3f 1/mm\n" % self.mu_a()
+        s += "   mu_s              = %.3f 1/mm\n" % self.mu_s()
+        s += "   mu_s*(1-g)        = %.3f 1/mm\n" % self.mu_sp()
         s += "      theta incident = %.1f°\n" % np.degrees(np.arccos(self.nu_0))
-        s += " cos(theta critical) = %.5f\n" % self.nu_c()
+        s += " cos(theta critical) = %.4f\n" % self.nu_c()
         s += "      theta critical = %.1f°\n" % np.degrees(np.arccos(self.nu_c()))
         return s
 
