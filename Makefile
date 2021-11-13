@@ -79,6 +79,7 @@ clean:
 	rm -rf __pycache__
 	rm -rf .pytest_cache
 	rm -rf tests/__pycache__
+	rm -rf docs/doi.org/
 
 realclean:
 	make clean
