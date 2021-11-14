@@ -47,8 +47,8 @@ class basic_forward(unittest.TestCase):
         self.assertAlmostEqual(utu, 0.41624, delta=0.0001)
 
     def test_05_finite_anisotropic(self):
-        import iadpython.iadc as iadc
         """Finite anisotropic scattering."""
+        import iadpython.iadc as iadc
         ur1, ut1, uru, utu = iadc.rt(1.0, 1.0, 0.8, 1.0, 0.8)
         self.assertAlmostEqual(ur1, 0.03041, delta=0.0001)
         self.assertAlmostEqual(ut1, 0.76388, delta=0.0001)

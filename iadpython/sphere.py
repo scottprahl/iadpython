@@ -197,7 +197,7 @@ class Sphere():
 
     @a_wall.setter
     def a_wall(self, value):
-        """Changing the relative wall area is a bit crazy."""
+        """Change the relative wall area: a bit crazy."""
         assert 0 <= value <= 1, "relative wall are must be between 0 and 1"
         # Find the diameter of a spherical cap assuming all non-wall
         # port area is assigned to a single sample port

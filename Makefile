@@ -32,19 +32,21 @@ doccheck:
 	-pydocstyle iadpython/ad.py
 	-pydocstyle iadpython/combine.py
 	-pydocstyle iadpython/fresnel.py
+	-pydocstyle iadpython/nist.py
 	-pydocstyle iadpython/quadrature.py
 	-pydocstyle iadpython/redistribution.py
 	-pydocstyle iadpython/sphere.py
 	-pydocstyle iadpython/start.py
-	-pydocstyle iadpython/test_boundary.py
-	-pydocstyle iadpython/test_combo.py
-	-pydocstyle iadpython/test_fresnel.py
-	-pydocstyle iadpython/test_quadrature.py
-	-pydocstyle iadpython/test_redistribution.py
-	-pydocstyle iadpython/test_start.py
-	-pydocstyle iadpython/test_ur1_uru.py
-	-pydocstyle iadpython/test_iadc.py
-	-pydocstyle iadpython/perf_test.py
+	-pydocstyle tests/test_boundary.py
+	-pydocstyle tests/test_combo.py
+	-pydocstyle tests/test_fresnel.py
+	-pydocstyle tests/test_quadrature.py
+	-pydocstyle tests/test_redistribution.py
+	-pydocstyle tests/test_start.py
+	-pydocstyle tests/test_ur1_uru.py
+	-pydocstyle tests/test_iadc.py
+	-pydocstyle tests/test_nist.py
+	-pydocstyle tests/test_performance.py
 
 xpydoc:
 	-pydocstyle iadpython/iadc.py
