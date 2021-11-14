@@ -3,7 +3,7 @@
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-branches
 # pylint: disable=bare-except
-
+# pylint: disable=consider-using-f-string
 """
 Module for direct and inverse adding-doubling calculations.
 

@@ -10,6 +10,7 @@ html:
 lintcheck:
 	-pylint iadpython/ad.py
 	-pylint iadpython/combine.py
+	-pylint iadpython/constants.py
 	-pylint iadpython/fresnel.py
 	-pylint iadpython/nist.py
 	-pylint iadpython/quadrature.py
@@ -32,6 +33,7 @@ xpylint:
 doccheck:
 	-pydocstyle iadpython/ad.py
 	-pydocstyle iadpython/combine.py
+	-pydocstyle iadpython/constants.py
 	-pydocstyle iadpython/fresnel.py
 	-pydocstyle iadpython/nist.py
 	-pydocstyle iadpython/quadrature.py

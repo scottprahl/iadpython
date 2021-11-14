@@ -1,13 +1,14 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
+# pylint: disable=consider-using-f-string
 
 """
 Class for managing integrating spheres.
 
-    import iadpython.sphere
+    import iadpython
 
-    s = iadpython.sphere.Sphere(250,20)
+    s = iadpython.Sphere(250,20)
     print(s)
 """
 

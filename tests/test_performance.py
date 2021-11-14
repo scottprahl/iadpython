@@ -1,6 +1,7 @@
 # pylint: disable=invalid-name
 # pylint: disable=no-self-use
 # pylint: disable=too-many-locals
+# pylint: disable=consider-using-f-string
 
 """Compare speed of pure python implementation with c-library."""
 
@@ -10,7 +11,7 @@ import pytest
 import scipy.optimize
 import numpy as np
 import iadpython
-import iadpython.iadc as iadc
+from iadpython import iadc
 
 
 @pytest.mark.iadc

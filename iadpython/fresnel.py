@@ -20,7 +20,7 @@ Two types of starting methods are possible.
 
 """
 import numpy as np
-import iadpython
+import iadpython.constants
 
 __all__ = ('cos_critical',
            'cos_snell',

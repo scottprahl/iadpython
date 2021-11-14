@@ -1,7 +1,8 @@
 # pylint: disable=invalid-name
 # pylint: disable=no-self-use
 # pylint: disable=too-many-locals
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=import-outside-toplevel
 
 """Tests for slide-sample-slide combinations."""
 
@@ -27,36 +28,36 @@ class A_nothing_sandwich(unittest.TestCase):
 #         """Empty layer calculation with boundary but no slides."""
 #         s = iadpython.Sample(a=0.5, b=0, g=0.0, n=1.5, quad_pts=4)
 #         rr, _, tt, _ = s.rt_matrices()
-# 
+#
 #         R = np.array([[8.51769, 0.00000, 0.00000, 0.00000],
 #                       [0.00000, 2.28231, 0.00000, 0.00000],
 #                       [0.00000, 0.00000, 0.44244, 0.00000],
 #                       [0.00000, 0.00000, 0.00000, 0.60416]])
-# 
+#
 #         T = np.array([[0.00000, 0.00000, 0.00000, 0.00000],
 #                       [0.00000, 0.00000, 0.00000, 0.00000],
 #                       [0.00000, 0.00000, 2.71091, 0.00000],
 #                       [0.00000, 0.00000, 0.00000, 7.24994]])
-# 
+#
 #         np.testing.assert_allclose(R, rr, atol=1e-5)
 #         np.testing.assert_allclose(T, tt, atol=1e-5)
-# 
+#
 #     @pytest.mark.skip(reason="not sure why this fails")
 #     def test_03_nothing(self):
 #         """Empty layer calculation with matching slides ."""
 #         s = iadpython.Sample(a=0.5, b=0, g=0.0, n=1.5, quad_pts=4, n_above=1.5, n_below=1.5)
 #         rr, _, tt, _ = s.rt_matrices()
-# 
+#
 #         R = np.array([[8.51769, 0.00000, 0.00000, 0.00000],
 #                       [0.00000, 2.28231, 0.00000, 0.00000],
 #                       [0.00000, 0.00000, 0.44244, 0.00000],
 #                       [0.00000, 0.00000, 0.00000, 0.60416]])
-# 
+#
 #         T = np.array([[0.00000, 0.00000, 0.00000, 0.00000],
 #                       [0.00000, 0.00000, 0.00000, 0.00000],
 #                       [0.00000, 0.00000, 2.71091, 0.00000],
 #                       [0.00000, 0.00000, 0.00000, 7.24994]])
-# 
+#
 #         np.testing.assert_allclose(R, rr, atol=1e-5)
 #         np.testing.assert_allclose(T, tt, atol=1e-5)
 

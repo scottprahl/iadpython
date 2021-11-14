@@ -1,6 +1,5 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-arguments
-# pylint: disable=too-many-locals
 
 """
 Module for adding layers together.
@@ -22,7 +21,8 @@ Two types of starting methods are possible.
 
 import scipy
 import numpy as np
-import iadpython
+import iadpython.constants
+import iadpython.start
 
 __all__ = ('add_layers',
            'add_layers_basic',

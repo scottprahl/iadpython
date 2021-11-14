@@ -2,14 +2,15 @@
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-arguments
+# pylint: disable=consider-using-f-string
 
 """
 Class for doing adding-doubling calculations for a sample.
 
-    import iadpython.ad as ad
+    import iadpython
 
     n=4
-    sample = ad.Sample(a=0.9, b=10, g=0.9, n=1.5, quad_pts=4)
+    sample = iadpython.Sample(a=0.9, b=10, g=0.9, n=1.5, quad_pts=4)
     r, t = sample.rt()
     print(r)
     print(t)
@@ -17,12 +18,10 @@ Class for doing adding-doubling calculations for a sample.
 
 import copy
 import numpy as np
+import iadpython.fresnel
 import iadpython.quadrature
-import iadpython.combine
 import iadpython.start
-
-AD_MAX_THICKNESS = 1e6
-
+import iadpython.combine
 
 class Sample():
     """Container class for details of a sample."""
@@ -338,7 +337,7 @@ class Sample():
         bottom slides are similar, then quickly calculate these.
         """
         if self.b == 0:
-            return iadpython.unscattered_rt(self)
+            return iadpython.start.unscattered_rt(self)
 
         # cone not implemented yet
         if self.nu_0 != 1.0:

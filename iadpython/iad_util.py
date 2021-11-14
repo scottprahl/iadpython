@@ -1,4 +1,5 @@
 # pylint: disable=invalid-name
+# pylint: disable=consider-using-f-string
 
 """IAD Utilities."""
 

@@ -1,7 +1,3 @@
-# pylint: disable=invalid-name
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-locals
-
 """
 Module for importing reflection spectra from NIST database.
 

@@ -1,7 +1,4 @@
 # pylint: disable=invalid-name
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=too-many-arguments
 
 """
 Module for generating the starting thinnest_layer for adding-doubling.
