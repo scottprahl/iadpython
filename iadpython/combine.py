@@ -7,16 +7,16 @@ Module for adding layers together.
 
 Two types of starting methods are possible.
 
-    import iadpython.start
-    import iadpython.layer
+    import iadpython
 
-    n=4
-    slab = iadpython.start.Slab(a=0.9, b=10, g=0.9, n=1.5)
-    method = iadpython.start.Method(slab)
-    r_init, t_init = iad.start.init_layer(slab, method)
-    r, t = iad.layer.double_until(r_init, t_init, method.b_thinnest, method.b)
-    print(r)
-    print(t)
+    # Isotropic finite layer with mismatched slides the hard way.
+    s = iadpython.Sample(a=0.5, b=1, g=0.0, n=1.4, n_above=1.5, n_below=1.6)
+    s.quad_pts = 4
+    R01, R10, T01, T10 = iadpython.boundary_matrices(s, top=True)
+    R23, R32, T23, T32 = iadpython.boundary_matrices(s, top=False)
+    R12, T12 = iadpython.simple_layer_matrices(s)
+    R02, R20, T02, T20 = iadpython.add_layers(s, R01, R10, T01, T10, R12, R12, T12, T12)
+    rr03, rr30, tt03, tt30 = iadpython.add_layers(s, R02, R20, T02, T20, R23, R32, T23, T32)
 
 """
 
