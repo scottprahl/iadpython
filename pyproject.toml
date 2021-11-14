@@ -17,14 +17,14 @@ deps = pytest
        scipy
 
 commands =
-    python -m unittest tests/test_fresnel.py
-    python -m unittest tests/test_quadrature.py
-    python -m unittest tests/test_redistribution.py
-    python -m unittest tests/test_start.py
-    python -m unittest tests/test_layer.py
     python -m unittest tests/test_boundary.py
     python -m unittest tests/test_combo.py
+    python -m unittest tests/test_fresnel.py
+    python -m unittest tests/test_layer.py
+    python -m unittest tests/test_nist.py
+    python -m unittest tests/test_quadrature.py
+    python -m unittest tests/test_redistribution.py
+    python -m unittest tests/test_sphere.py
+    python -m unittest tests/test_start.py
     python -m unittest tests/test_ur1_uru.py
-    python -m unittest tests/test_iadc.py
-    python -m unittest tests/test_performance.py
 """
