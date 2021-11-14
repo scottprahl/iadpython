@@ -7,6 +7,7 @@ import unittest
 import pytest
 import iadpython.iadc as iadc
 
+
 @pytest.mark.iadc
 class basic_forward(unittest.TestCase):
     """Forward adding-doubling calculations."""

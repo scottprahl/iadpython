@@ -1,5 +1,6 @@
 import pytest
 
+
 def pytest_addoption(parser):
     parser.addoption(
         "--runbinary", action="store_true", default=False,
@@ -10,9 +11,11 @@ def pytest_addoption(parser):
         help="test notebooks by running them"
     )
 
+
 def pytest_configure(config):
     config.addinivalue_line("markers", "iadc: mark test as needing libiad")
     config.addinivalue_line("markers", "notebooks: mark test as needing notebooks")
+
 
 def pytest_collection_modifyitems(config, items):
 

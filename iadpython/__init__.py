@@ -1,3 +1,4 @@
+"""Package details for adding-doubling technique."""
 from .fresnel import *
 from .start import *
 from .ad import *

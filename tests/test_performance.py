@@ -12,6 +12,7 @@ import numpy as np
 import iadpython
 import iadpython.iadc as iadc
 
+
 @pytest.mark.iadc
 class speed(unittest.TestCase):
     """Performance testing."""
@@ -29,7 +30,8 @@ class speed(unittest.TestCase):
         deltaC = time.perf_counter() - start_time
 
         start_time = time.perf_counter()
-        s = iadpython.Sample(a=a, b=b, g=g, n=n_slab, n_above=n_slide, n_below=n_slide, quad_pts=16)
+        s = iadpython.Sample(a=a, b=b, g=g, n=n_slab, n_above=n_slide,
+                             n_below=n_slide, quad_pts=16)
         _, _, _, _ = s.rt()
         deltaP = time.perf_counter() - start_time
         print("#     C    python  ratio")
@@ -48,7 +50,8 @@ class speed(unittest.TestCase):
         deltaC = time.perf_counter() - start_time
 
         start_time = time.perf_counter()
-        s = iadpython.Sample(a=a, b=b, g=g, n=n_slab, n_above=n_slide, n_below=n_slide, quad_pts=16)
+        s = iadpython.Sample(a=a, b=b, g=g, n=n_slab, n_above=n_slide,
+                             n_below=n_slide, quad_pts=16)
         _, _, _, _ = s.rt()
         deltaP = time.perf_counter() - start_time
         print("2 %7.2f %7.2f %5.0f%%" % (deltaC, deltaP, 100 * deltaP / deltaC))
@@ -66,7 +69,8 @@ class speed(unittest.TestCase):
         deltaC = time.perf_counter() - start_time
 
         start_time = time.perf_counter()
-        s = iadpython.Sample(a=a, b=b, g=g, n=n_slab, n_above=n_slide, n_below=n_slide, quad_pts=16)
+        s = iadpython.Sample(a=a, b=b, g=g, n=n_slab,
+                             n_above=n_slide, n_below=n_slide, quad_pts=16)
         _, _, _, _ = s.rt()
         deltaP = time.perf_counter() - start_time
         print("3 %7.2f %7.2f %5.0f%%" % (deltaC, deltaP, 100 * deltaP / deltaC))
@@ -100,7 +104,8 @@ class speed(unittest.TestCase):
         deltaC = time.perf_counter() - start_time
 
         start_time = time.perf_counter()
-        s = iadpython.Sample(a=a, b=b, g=g, n=n_slab, n_above=n_slide, n_below=n_slide, quad_pts=16)
+        s = iadpython.Sample(a=a, b=b, g=g, n=n_slab,
+                             n_above=n_slide, n_below=n_slide, quad_pts=16)
 
         for i in range(N):
             s.a = a[i]
@@ -109,7 +114,6 @@ class speed(unittest.TestCase):
             bmin[i] = scipy.optimize.brent(ff)
         deltaP = time.perf_counter() - start_time
         print("4 %7.2f %7.2f %5.0f%%" % (deltaC, deltaP, 100 * deltaP / deltaC))
-
 
     def test_speed_05(self):
         """Fifth Speed Test."""
@@ -127,7 +131,8 @@ class speed(unittest.TestCase):
         deltaC = time.perf_counter() - start_time
 
         start_time = time.perf_counter()
-        s = iadpython.Sample(b=b, n=n_slab, n_above=n_slide, n_below=n_slide, quad_pts=16)
+        s = iadpython.Sample(b=b, n=n_slab,
+                             n_above=n_slide, n_below=n_slide, quad_pts=16)
         for i in range(3):
             s.a = ap / (1 - g[i] + ap * g[i])
             s.g = g[i]

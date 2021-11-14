@@ -2,6 +2,7 @@
 # pylint: disable=no-self-use
 # pylint: disable=too-many-locals
 
+
 """Tests for slide-sample-slide combinations."""
 
 import unittest
@@ -9,6 +10,7 @@ import pytest
 import numpy as np
 import iadpython
 import iadpython.iadc
+
 
 class A_nothing_sandwich(unittest.TestCase):
     """Empty layer in air."""

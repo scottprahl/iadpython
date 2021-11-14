@@ -27,7 +27,7 @@ def what_is_b(slab, Tc):
     # calculating the bottom reflection.  Most of the time the |r1==r2|,
     # but there are always those annoying special cases.
     #
-    r1, t1 = Absorbing_Glass_RT(1.0, slab.n_top_slide, slab.n_slab,
+    r1, t1 = iadpython.fresnel.absorbing_glass_RT(1.0, slab.n_top_slide, slab.n_slab,
                                 slab.cos_angle, slab.b_top_slide)
 
     mu_in_slab = Cos_Snell(1.0, slab.cos_angle, slab.n_slab)
