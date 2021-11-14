@@ -26,5 +26,5 @@ commands =
     python -m unittest tests/test_combo.py
     python -m unittest tests/test_ur1_uru.py
     python -m unittest tests/test_iadc.py
-    python -m unittest tests/test_time.py
+    python -m unittest tests/test_performance.py
 """

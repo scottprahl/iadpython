@@ -10,6 +10,10 @@ def pytest_addoption(parser):
         "--notebooks", action="store_true", default=False, dest="notebooks",
         help="test notebooks by running them"
     )
+    parser.addoption(
+        "--skip", action="store_true", default=False,
+        help="run tests marked by @skip"
+    )
 
 
 def pytest_configure(config):
