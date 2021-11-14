@@ -23,11 +23,11 @@ lintcheck:
 	-pylint tests/test_redistribution.py
 	-pylint tests/test_start.py
 	-pylint tests/test_ur1_uru.py
-	-pylint tests/test_iadc.py
 	-pylint tests/test_performance.py
 
 xpylint:
 	-pylint iadpython/iadc.py
+	-pylint tests/test_iadc.py
 	
 doccheck:
 	-pydocstyle iadpython/ad.py
@@ -45,12 +45,12 @@ doccheck:
 	-pydocstyle tests/test_redistribution.py
 	-pydocstyle tests/test_start.py
 	-pydocstyle tests/test_ur1_uru.py
-	-pydocstyle tests/test_iadc.py
 	-pydocstyle tests/test_nist.py
 	-pydocstyle tests/test_performance.py
 
 xpydoc:
 	-pydocstyle iadpython/iadc.py
+	-pydocstyle tests/test_iadc.py
 
 notecheck:
 	make clean

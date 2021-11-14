@@ -687,7 +687,10 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
 
 
 class CSample():
+    """Class for samples."""
+
     def __init__(self):
+        """Initialize class."""
         self.sample_index = 1.4
         self.top_slide_index = 1.5
         self.bot_slide_index = 1.5
@@ -696,10 +699,12 @@ class CSample():
         self.bot_slide_thickness = 1    # mm
 
     def as_array(self):
+        """Representation class as an array."""
         return [self.sample_index, self.top_slide_index, self.bot_slide_index,
                 self.sample_thickness, self.top_slide_thickness, self.bot_slide_thickness]
 
     def init_from_array(self, a):
+        """Initialize with an array."""
         self.sample_index = a[0]
         self.top_slide_index = a[1]
         self.bot_slide_index = a[2]
@@ -708,10 +713,12 @@ class CSample():
         self.bot_slide_thickness = a[5]
 
     def as_c_array(self):
+        """Represent class as C array."""
         pyarr = self.as_array()
         return (ctypes.c_double * len(pyarr))(*pyarr)
 
     def __str__(self):
+        """Represent class as string."""
         s = ""
         s += "sample index           = %.3f\n" % self.sample_index
         s += "top slide index        = %.3f\n" % self.top_slide_index
@@ -724,7 +731,10 @@ class CSample():
 
 
 class CSphere():
+    """Class for spheres."""
+
     def __init__(self):
+        """Initialize class."""
         self.d_sphere = 8.0 * 25.4
         self.d_sample = 1.0 * 25.4
         self.d_entrance = 1.0 * 25.4
@@ -733,6 +743,7 @@ class CSphere():
         self.refl_detector = 0.05
 
     def init_from_array(self, a):
+        """Initialize with an array."""
         self.d_sphere = a[0]
         self.d_sample = a[1]
         self.d_entrance = a[2]
@@ -741,14 +752,17 @@ class CSphere():
         self.refl_detector = a[5]
 
     def as_array(self):
+        """Representation class as an array."""
         return [self.d_sphere, self.d_sample, self.d_entrance,
                 self.d_detector, self.refl_wall, self.refl_detector]
 
     def as_c_array(self):
+        """Represent class as C array."""
         pyarr = self.as_array()
         return (ctypes.c_double * len(pyarr))(*pyarr)
 
     def __str__(self):
+        """Represent class as string."""
         s = ""
         s += "sphere diameter        = %.1f mm\n" % self.d_sphere
         s += "sample port diameter   = %.1f mm\n" % self.d_sample
@@ -760,7 +774,10 @@ class CSphere():
 
 
 class CIllumination():
+    """Class for illumination."""
+
     def __init__(self):
+        """Initialize class."""
         self.beam_diameter = 5  # mm
         self.specular_reflection_excluded = 0
         self.direct_transmission_excluded = 0
@@ -769,6 +786,7 @@ class CIllumination():
         self.lambda0 = 632.8  # nm      (unused, tracks wavelength)
 
     def init_from_array(self, a):
+        """Initialize with an array."""
         self.beam_diameter = a[0]
         self.specular_reflection_excluded = a[1]
         self.direct_transmission_excluded = a[2]
@@ -777,15 +795,18 @@ class CIllumination():
         self.num_spheres = a[5]
 
     def as_array(self):
+        """Representation class as an array."""
         return [self.beam_diameter, self.specular_reflection_excluded,
                 self.direct_transmission_excluded, self.diffuse_illumination,
                 self.lambda0, self.num_spheres]
 
     def as_c_array(self):
+        """Represent class as C array."""
         pyarr = self.as_array()
         return (ctypes.c_double * len(pyarr))(*pyarr)
 
     def __str__(self):
+        """Represent class as string."""
         s = ""
         s += "diameter of beam       = %.1f mm\n" % self.beam_diameter
         s += "wavelength             = %.1f nm\n" % self.lambda0
@@ -800,24 +821,31 @@ class CIllumination():
 
 
 class CAnalysis():
+    """Class for analysis."""
+
     def __init__(self):
+        """Initialize class."""
         self.quadrature_points = 8
         self.monte_carlo_runs = 0
         self.num_photons = 10000
 
     def init_from_array(self, a):
+        """Initialize with an array."""
         self.quadrature_points = a[0]
         self.monte_carlo_runs = a[1]
         self.num_photons = a[2]
 
     def as_array(self):
+        """Representation class as an array."""
         return [self.quadrature_points, self.monte_carlo_runs, self.num_photons]
 
     def as_c_array(self):
+        """Represent class as C array."""
         pyarr = self.as_array()
         return (ctypes.c_double * len(pyarr))(*pyarr)
 
     def __str__(self):
+        """Represent class as string."""
         s = ""
         s += "quadrature points      = %.0f\n" % self.quadrature_points
         s += "monte carlo runs       = %.0f\n" % self.monte_carlo_runs
@@ -826,27 +854,34 @@ class CAnalysis():
 
 
 class CMeasurement():
+    """Class for a measurement."""
+
     def __init__(self):
+        """Initialize class."""
         self.standard_reflectance = 0.98
         self.reflectance = 0.5
         self.transmittance = 0.1
         self.unscattered_transmittance = 0
 
     def init_from_array(self, a):
+        """Initialize with an array."""
         self.standard_reflectance = a[0]
         self.reflectance = a[1]
         self.transmittance = a[2]
         self.unscattered_transmittance = a[3]
 
     def as_array(self):
+        """Representation class as an array."""
         return [self.standard_reflectance, self.reflectance, self.transmittance,
                 self.unscattered_transmittance]
 
     def as_c_array(self):
+        """Represent class as C array."""
         pyarr = self.as_array()
         return (ctypes.c_double * len(pyarr))(*pyarr)
 
     def __str__(self):
+        """Represent class as string."""
         s = ""
         s += "standard reflectance   = %8.5f\n" % self.standard_reflectance
         s += "reflectance            = %8.5f\n" % self.reflectance
@@ -883,7 +918,10 @@ def _indent(s):
 
 
 class Experiment():
+    """Class for experiments."""
+
     def __init__(self):
+        """Initialize class."""
         self.illumination = CIllumination()
         self.sample = CSample()
         self.r_sphere = CSphere()
@@ -892,6 +930,7 @@ class Experiment():
         self.measurement = CMeasurement()
 
     def __str__(self):
+        """Represent class as string."""
         s = "e.sample.\n"
         s += _indent(self.sample.__str__())
         s += "\n\ne.illumination.\n"
@@ -907,6 +946,7 @@ class Experiment():
         return s
 
     def invert(self):
+        """Calculate optical properties than match experiment."""
         a_s = self.sample.as_c_array()
         a_i = self.illumination.as_c_array()
         a_r = self.r_sphere.as_c_array()
