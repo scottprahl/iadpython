@@ -9,7 +9,6 @@ import unittest
 import pytest
 import numpy as np
 import iadpython
-import iadpython.iadc
 
 
 class A_nothing_sandwich(unittest.TestCase):
@@ -250,6 +249,7 @@ class B_finite_sandwich(unittest.TestCase):
     @pytest.mark.iadc
     def test_07_thick_non_scattering(self):
         """Thick non-scattering."""
+        import iadpython.iadc
         s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, n=1.0, n_above=1.0, n_below=1.0)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.00000, delta=0.0001)
@@ -278,6 +278,7 @@ class B_finite_sandwich(unittest.TestCase):
     @pytest.mark.iadc
     def test_10_thick_non_scattering(self):
         """Thick non-scattering with slide."""
+        import iadpython.iadc
         ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 0, 100000, 0)
         s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, n=1.4,
                              n_above=1.5, n_below=1.5, quad_pts=16)
@@ -290,6 +291,7 @@ class B_finite_sandwich(unittest.TestCase):
     @pytest.mark.iadc
     def test_11_thick(self):
         """Thick scattering with slide."""
+        import iadpython.iadc
         ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 0.8, 100000, 0)
         s = iadpython.Sample(a=0.8, b=100000.0, g=0.0, n=1.4,
                              n_above=1.5, n_below=1.5, quad_pts=16)
@@ -302,6 +304,7 @@ class B_finite_sandwich(unittest.TestCase):
     @pytest.mark.iadc
     def test_12_thick(self):
         """Thick anisotropic scattering with slide."""
+        import iadpython.iadc
         ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 0.8, 100000, 0.9)
         s = iadpython.Sample(a=0.8, b=100000.0, g=0.9, n=1.4,
                              n_above=1.5, n_below=1.5, quad_pts=16)
@@ -314,6 +317,7 @@ class B_finite_sandwich(unittest.TestCase):
     @pytest.mark.iadc
     def test_13_thick_non_absorbing(self):
         """Thick non-absorbing with slide."""
+        import iadpython.iadc
         ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 1.0, 100000, 0)
         s = iadpython.Sample(a=1.0, b=100000.0, g=0.0, n=1.4,
                              n_above=1.5, n_below=1.5, quad_pts=16)
