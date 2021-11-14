@@ -30,20 +30,20 @@ class Sample():
     def __init__(self, a=0, b=1, g=0, d=1, n=1, n_above=1, n_below=1, quad_pts=4):
         """
         Object initialization.
-        
-        Most things can be changed later by just assigning to the element.  
-        
+
+        Most things can be changed later by just assigning to the element.
+
         The angle of incidence is assumed to be perpendicular to the
-        surface.  This is stored as the cosine of the angle and therefore to 
+        surface.  This is stored as the cosine of the angle and therefore to
         change it to 60° from the normal, one does `sample.nu_0 = 0.5`.
-        
+
         To avoid needing to calculate the quadrature angles each time a
         calculation is done, the object stores the quadrature angles as
         well as the redistribution function.  A bit of trouble is taken
-        to ensure that these values get updated when something changes 
+        to ensure that these values get updated when something changes
         e.g., the anisotropy, the angle of incidence, or the number of
         quadrature points.
-        
+
         Args:
             a: albedo
             b: optical thickness
@@ -53,7 +53,7 @@ class Sample():
             n_above: index of refraction of slide above
             n_below: index of refraction of slide below
             quad_pts: number of quadrature points
-            
+
         Returns:
             object with all details needed to do a radiative calculation
         """
@@ -171,7 +171,7 @@ class Sample():
             s += "   bottom slide OD   = %.3f\n" % self.b_below
         s += " cos(theta incident) = %.3f\n" % self.nu_0
         s += "   quadrature points = %d\n" % self.quad_pts
-        
+
         s += "\n"
         s += "Derived quantities\n"
         s += "   mu_a              = %.3f 1/mm\n" % self.mu_a()

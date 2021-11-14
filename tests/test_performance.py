@@ -1,14 +1,16 @@
 # pylint: disable=invalid-name
 # pylint: disable=no-self-use
+# pylint: disable=too-many-locals
 
 """Compare speed of pure python implementation with c-library."""
 
 import time
+import unittest
+import pytest
 import scipy.optimize
 import numpy as np
 import iadpython
-import pytest
-import unittest
+import iadpython.iadc as iadc
 
 @pytest.mark.iadc
 class speed(unittest.TestCase):
@@ -16,7 +18,6 @@ class speed(unittest.TestCase):
 
     def test_speed_01(self):
         """First Speed Test."""
-        import iadpython.iadc as iadc
         n_slab = 1.5                  # slab with boundary reflection
         n_slide = 1.0                 # no glass slides above and below the sample
         b = 1                         # this is pretty much infinite
@@ -24,19 +25,18 @@ class speed(unittest.TestCase):
         a = np.linspace(0, 1, 5000)   # albedo varies between 0 and 1
 
         start_time = time.perf_counter()
-        ur1, ut1, uru, utu = iadc.rt(n_slab, n_slide, a, b, g)
+        _, _, _, _ = iadc.rt(n_slab, n_slide, a, b, g)
         deltaC = time.perf_counter() - start_time
 
         start_time = time.perf_counter()
         s = iadpython.Sample(a=a, b=b, g=g, n=n_slab, n_above=n_slide, n_below=n_slide, quad_pts=16)
-        ur1, ut1, uru, utu = s.rt()
+        _, _, _, _ = s.rt()
         deltaP = time.perf_counter() - start_time
         print("#     C    python  ratio")
         print("1 %7.2f %7.2f %5.0f%%" % (deltaC, deltaP, 100 * deltaP / deltaC))
 
     def test_speed_02(self):
         """Second Speed Test."""
-        import iadpython.iadc as iadc
         n_slab = 1.0                  # ignore boundary reflection
         n_slide = 1.0                 # no glass slides above and below the sample
         b = 10000                     # this is pretty much infinite
@@ -44,18 +44,17 @@ class speed(unittest.TestCase):
         a = np.linspace(0, 1, 2000)   # albedo varies between 0 and 1
 
         start_time = time.perf_counter()
-        ur1, ut1, uru, utu = iadc.rt(n_slab, n_slide, a, b, g)
+        _, _, _, _ = iadc.rt(n_slab, n_slide, a, b, g)
         deltaC = time.perf_counter() - start_time
 
         start_time = time.perf_counter()
         s = iadpython.Sample(a=a, b=b, g=g, n=n_slab, n_above=n_slide, n_below=n_slide, quad_pts=16)
-        ur1, ut1, uru, utu = s.rt()
+        _, _, _, _ = s.rt()
         deltaP = time.perf_counter() - start_time
         print("2 %7.2f %7.2f %5.0f%%" % (deltaC, deltaP, 100 * deltaP / deltaC))
 
     def test_speed_03(self):
         """Third Speed Test."""
-        import iadpython.iadc as iadc
         n_slab = 1.4                  # sample has refractive index
         n_slide = 1.5                 # glass slides above and below the sample
         g = 0.0                       # isotropic scattering is fine
@@ -63,18 +62,17 @@ class speed(unittest.TestCase):
         b = np.linspace(0, 10, 4000)  # opstart_timeal thickness
 
         start_time = time.perf_counter()
-        ur1, ut1, uru, utu = iadc.rt(n_slab, n_slide, a, b, g)
+        _, _, _, _ = iadc.rt(n_slab, n_slide, a, b, g)
         deltaC = time.perf_counter() - start_time
 
         start_time = time.perf_counter()
         s = iadpython.Sample(a=a, b=b, g=g, n=n_slab, n_above=n_slide, n_below=n_slide, quad_pts=16)
-        ur1, ut1, uru, utu = s.rt()
+        _, _, _, _ = s.rt()
         deltaP = time.perf_counter() - start_time
         print("3 %7.2f %7.2f %5.0f%%" % (deltaC, deltaP, 100 * deltaP / deltaC))
 
     def test_speed_04(self):
         """Fourth Speed Test."""
-        import iadpython.iadc as iadc
         N = 201
         n_slab = 1.0                    # ignore boundary reflection
         n_slide = 1.0                   # no glass slides above and below the sample
@@ -115,7 +113,6 @@ class speed(unittest.TestCase):
 
     def test_speed_05(self):
         """Fifth Speed Test."""
-        import iadpython.iadc as iadc
         n_slab = 1.0                 # ignore boundaries
         n_slide = 1.0                # no glass slides above and below the sample
         b = 1000                     # relatively thin sample

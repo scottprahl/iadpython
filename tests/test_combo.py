@@ -1,14 +1,14 @@
 # pylint: disable=invalid-name
-# pylint: disable=bad-whitespace
 # pylint: disable=no-self-use
 # pylint: disable=too-many-locals
 
 """Tests for slide-sample-slide combinations."""
 
 import unittest
+import pytest
 import numpy as np
 import iadpython
-import pytest
+import iadpython.iadc
 
 class A_nothing_sandwich(unittest.TestCase):
     """Empty layer in air."""
@@ -276,7 +276,6 @@ class B_finite_sandwich(unittest.TestCase):
     @pytest.mark.iadc
     def test_10_thick_non_scattering(self):
         """Thick non-scattering with slide."""
-        import iadpython.iadc
         ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 0, 100000, 0)
         s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, n=1.4,
                              n_above=1.5, n_below=1.5, quad_pts=16)
@@ -289,7 +288,6 @@ class B_finite_sandwich(unittest.TestCase):
     @pytest.mark.iadc
     def test_11_thick(self):
         """Thick scattering with slide."""
-        import iadpython.iadc
         ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 0.8, 100000, 0)
         s = iadpython.Sample(a=0.8, b=100000.0, g=0.0, n=1.4,
                              n_above=1.5, n_below=1.5, quad_pts=16)
@@ -302,7 +300,6 @@ class B_finite_sandwich(unittest.TestCase):
     @pytest.mark.iadc
     def test_12_thick(self):
         """Thick anisotropic scattering with slide."""
-        import iadpython.iadc
         ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 0.8, 100000, 0.9)
         s = iadpython.Sample(a=0.8, b=100000.0, g=0.9, n=1.4,
                              n_above=1.5, n_below=1.5, quad_pts=16)
@@ -315,7 +312,6 @@ class B_finite_sandwich(unittest.TestCase):
     @pytest.mark.iadc
     def test_13_thick_non_absorbing(self):
         """Thick non-absorbing with slide."""
-        import iadpython.iadc
         ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 1.0, 100000, 0)
         s = iadpython.Sample(a=1.0, b=100000.0, g=0.0, n=1.4,
                              n_above=1.5, n_below=1.5, quad_pts=16)

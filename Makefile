@@ -11,19 +11,20 @@ lintcheck:
 	-pylint iadpython/ad.py
 	-pylint iadpython/combine.py
 	-pylint iadpython/fresnel.py
+	-pylint iadpython/nist.py
 	-pylint iadpython/quadrature.py
 	-pylint iadpython/redistribution.py
 	-pylint iadpython/sphere.py
 	-pylint iadpython/start.py
-	-pylint iadpython/test_boundary.py
-	-pylint iadpython/test_combo.py
-	-pylint iadpython/test_fresnel.py
-	-pylint iadpython/test_quadrature.py
-	-pylint iadpython/test_redistribution.py
-	-pylint iadpython/test_start.py
-	-pylint iadpython/test_ur1_uru.py
-	-pylint iadpython/test_iadc.py
-	-pylint iadpython/perf_test.py
+	-pylint tests/test_boundary.py
+	-pylint tests/test_combo.py
+	-pylint tests/test_fresnel.py
+	-pylint tests/test_quadrature.py
+	-pylint tests/test_redistribution.py
+	-pylint tests/test_start.py
+	-pylint tests/test_ur1_uru.py
+	-pylint tests/test_iadc.py
+	-pylint tests/test_performance.py
 
 xpylint:
 	-pylint iadpython/iadc.py

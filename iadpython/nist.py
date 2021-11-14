@@ -16,8 +16,8 @@ Two types of starting methods are possible.
     # Retrieve and plot subject 5
 
     subject_number = 5
-    λ, R = iadpython.nist.subject_average_reflectance(subject_number)
-    plt.plot(λ, R)
+    lambda0, R = iadpython.nist.subject_average_reflectance(subject_number)
+    plt.plot(lambda0, R)
     plt.xlabel("Wavelength (nm)")
     plt.ylabel("Total Reflectance")
     plt.title("Subject #%d" % subject_number)
@@ -25,9 +25,9 @@ Two types of starting methods are possible.
 
     # Retrieve and plot all subjects
 
-    λ, R = iadpython.nist.all_average_reflectances()
+    lambda0, R = iadpython.nist.all_average_reflectances()
     for i in range(100):
-        plt.plot(λ, R[:,i])
+        plt.plot(lambda0, R[:,i])
     plt.xlabel("Wavelength (nm)")
     plt.ylabel("Total Reflectance")
     plt.title("All Subjects")
@@ -56,13 +56,13 @@ def subject_reflectances(subject_number):
     nist_db = pkg_resources.resource_filename(__name__, 'data/M38597.csv')
     data = np.loadtxt(nist_db, skiprows=8, usecols=cols, delimiter=',', encoding='latin1')
 
-    λ = data[:,0]
+    lambda0 = data[:,0]
     r_1 = data[:,1]
     r_2 = data[:,2]
     r_3 = data[:,3]
     r_ave = data[:,4]
 
-    return λ, r_1, r_2, r_3, r_ave
+    return lambda0, r_1, r_2, r_3, r_ave
 
 
 def subject_average_reflectance(subject_number):
@@ -77,10 +77,10 @@ def subject_average_reflectance(subject_number):
     nist_db = pkg_resources.resource_filename(__name__, 'data/M38597.csv')
     data = np.loadtxt(nist_db, skiprows=8, usecols=cols, delimiter=',', encoding='latin1')
 
-    λ = data[:,0]
+    lambda0 = data[:,0]
     r_ave = data[:,1]
 
-    return λ, r_ave
+    return lambda0, r_ave
 
 
 def all_average_reflectances():
@@ -90,9 +90,7 @@ def all_average_reflectances():
     nist_db = pkg_resources.resource_filename(__name__, 'data/M38597.csv')
     data = np.loadtxt(nist_db, skiprows=8, usecols=cols, delimiter=',', encoding='latin1')
 
-    λ = data[:,0]
+    lambda0 = data[:,0]
     r_ave = data[:,1:]
 
-    return λ, r_ave
-
-
+    return lambda0, r_ave
