@@ -1,5 +1,6 @@
 import pytest
 
+collect_ignore = ["test_iadc.py", "test_performance.py"]
 
 def pytest_addoption(parser):
     parser.addoption(
