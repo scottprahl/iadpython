@@ -1,7 +1,5 @@
 import pytest
 
-collect_ignore = ["test_iadc.py", "test_performance.py"]
-
 def pytest_addoption(parser):
     parser.addoption(
         "--runbinary", action="store_true", default=False,
