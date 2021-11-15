@@ -72,7 +72,7 @@ test:
 	pytest tests
 
 xtest:
-	pytest --runbinary tests
+	pytest tests_iadc
 
 clean:
 	rm -rf dist

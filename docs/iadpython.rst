@@ -59,3 +59,11 @@ iadpython.start module
    :members:
    :undoc-members:
    :show-inheritance:
+
+iadpython.nist module
+----------------------
+
+.. automodule:: iadpython.nist
+   :members:
+   :undoc-members:
+   :show-inheritance:

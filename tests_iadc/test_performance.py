@@ -14,7 +14,6 @@ import iadpython
 from iadpython import iadc
 
 
-@pytest.mark.iadc
 class speed(unittest.TestCase):
     """Performance testing."""
 
