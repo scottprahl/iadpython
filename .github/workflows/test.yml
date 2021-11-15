@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.6', '3.9']
+        python-version: ['3.7', '3.9']
     
     steps:
       - uses: actions/checkout@v2
@@ -31,13 +31,14 @@ jobs:
         
       - name: Test with pytest
         run: |
-          pytest tests/test_fresnel.py
-          pytest tests/test_quadrature.py
-          pytest tests/test_redistribution.py
-          pytest tests/test_start.py
-          pytest tests/test_layer.py
           pytest tests/test_boundary.py
           pytest tests/test_combo.py
+          pytest tests/test_fresnel.py
+          pytest tests/test_layer.py
+          pytest tests/test_nist.py
+          pytest tests/test_quadrature.py
+          pytest tests/test_redistribution.py
+          pytest tests/test_sphere.py
+          pytest tests/test_start.py
           pytest tests/test_ur1_uru.py
-          pytest tests/test_iadc.py
 
