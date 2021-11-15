@@ -24,6 +24,12 @@ Example Usage
    thin-layer
    
 .. toctree::
+   :caption: NIST Spectra
+   :hidden:
+
+   nist
+
+.. toctree::
    :caption: Integrating Spheres
    :hidden:
 
