@@ -105,6 +105,7 @@ def double_until(sample, r_start, t_start, b_start, b_end):
 
 def simple_layer_matrices(sample):
     """Create R and T matrices for layer without boundaries."""
+    # avoid b=0 calculation which leads to singular matrices
     if sample.b <= 0:
         sample.b = 1e-9
     r_start, t_start = iadpython.start.thinnest_layer(sample)
