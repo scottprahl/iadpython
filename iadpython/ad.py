@@ -229,6 +229,10 @@ class Sample():
             print("%9.5f" % flux, end='')
         print(" |%9.5f\n" % tflux)
 
+    def wrarray(self, a, title=None):
+        b = np.diag(a)
+        self.wrmatrix(b, title)
+        
     def prmatrix(self, a, title=None):
         """Print matrix and sums."""
         if title is not None:
@@ -336,9 +340,6 @@ class Sample():
         integrated reflection and transmission.   Similarly, if the top and
         bottom slides are similar, then quickly calculate these.
         """
-        if self.b == 0:
-            return iadpython.start.unscattered_rt(self)
-
         # cone not implemented yet
         if self.nu_0 != 1.0:
             #            RT_Cone(n,sample,OBLIQUE,UR1,UT1,URU,UTU);
