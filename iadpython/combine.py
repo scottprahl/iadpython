@@ -105,6 +105,8 @@ def double_until(sample, r_start, t_start, b_start, b_end):
 
 def simple_layer_matrices(sample):
     """Create R and T matrices for layer without boundaries."""
+    if sample.b <= 0:
+        sample.b = 1e-9
     r_start, t_start = iadpython.start.thinnest_layer(sample)
     b_start = sample.b_thinnest
     b_end = sample.b_delta_M()
@@ -150,9 +152,9 @@ def _add_boundary_config_b(sample, R12, T21, R01, R10, T01, T10):
     on top of an inhomogeneous layer characterized by 'R12', 'R21', 'T12',
     'T21' using:
 
-    T_20=T_10 (E-R_12R_10 )**-1 T_21
+    T_20=T_10 (E-R_12R_10)**(-1) T_21
 
-    R_02=T_10 (E-R_12R_10)**-1 R_12 T_01 + R_01
+    R_02=T_10 (E-R_12R_10)**(-1) R_12 T_01 + R_01
 
     Args:
         R12: reflection matrix for light moving downwards 1->2
