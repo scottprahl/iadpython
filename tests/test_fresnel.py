@@ -84,20 +84,20 @@ class Fresnel(unittest.TestCase):
         n_i = 1
         n_t = 1
         nu_i = 0.5
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         np.testing.assert_approx_equal(r, 0)
 
         nu_i = 1
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         np.testing.assert_approx_equal(r, 0)
 
 #       90° incident light is tricky
         nu_i = 0.0
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         np.testing.assert_approx_equal(r, 0)
 
         nu_i = np.array([0.0, 0.2, 0.5, 1.0])
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         rr = np.array([0, 0, 0, 0])
         np.testing.assert_allclose(r, rr, atol=1e-5)
 
@@ -106,19 +106,19 @@ class Fresnel(unittest.TestCase):
         n_i = 1
         n_t = 1.5
         nu_i = 1
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         np.testing.assert_approx_equal(r, 0.04)
 
         nu_i = 1
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         np.testing.assert_approx_equal(r, 0.04)
 
         nu_i = 0.5
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         np.testing.assert_approx_equal(r, 0.0891867128)
 
         nu_i = np.array([0, 0.2, 0.5, 1.0])
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         rr = np.array([1, 0.338894, 0.0891867128, 0.04])
         np.testing.assert_allclose(r, rr, atol=1e-5)
 
@@ -127,23 +127,23 @@ class Fresnel(unittest.TestCase):
         n_i = 1.5
         n_t = 1
         nu_i = 0.5
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         np.testing.assert_approx_equal(r, 1)
 
         nu_i = 0.8
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         np.testing.assert_approx_equal(r, 0.11414110022)
 
         nu_i = 1.0
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         np.testing.assert_approx_equal(r, 0.04)
 
         nu_i = 0.0
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         np.testing.assert_approx_equal(r, 1)
 
         nu_i = np.array([0.2, 0.5, 0.8, 1.0])
-        r = iadpython.fresnel.reflection(n_i, nu_i, n_t)
+        r = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_t)
         rr = np.array([1, 1, 0.11414110022, 0.04])
         np.testing.assert_allclose(r, rr, atol=1e-5)
 
@@ -331,7 +331,7 @@ class Fresnel(unittest.TestCase):
         nu_i = np.array([0.0, 0.2, 0.5, 0.8, 1.0])
 
         r, _ = iadpython.fresnel.absorbing_glass_RT(n_i, n_g, n_t, nu_i, np.inf)
-        rr = iadpython.fresnel.reflection(n_i, nu_i, n_g)
+        rr = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_g)
         np.testing.assert_allclose(r, rr, atol=1e-5)
 
 #     def test_08_sandwich(self):
