@@ -61,7 +61,7 @@ def cos_critical(n_i, n_t):
     return np.sqrt(temp)
 
 
-def cos_snell(n_i, nu, n_t):
+def cos_snell(n_i, nu_i, n_t):
     """
     Return the cosine of the transmitted angle.
 
@@ -84,12 +84,13 @@ def cos_snell(n_i, nu, n_t):
 
     Args:
         n_i: index of refraction of incident medium
+        nu_i: cosine of angle of incidence
         n_t: index of refraction of transmitted medium
 
     Returns:
         cosine of transmitted angle
     """
-    temp = 1.0 - (n_i / n_t)**2 * (1.0 - nu**2)
+    temp = 1.0 - (n_i / n_t)**2 * (1.0 - nu_i**2)
 
     if not np.isscalar(temp):
         np.place(temp, temp < 0, 0)
@@ -99,11 +100,11 @@ def cos_snell(n_i, nu, n_t):
     return np.sqrt(temp)
 
 
-def reflection(n_i, nu_i, n_t):
+def fresnel_reflection(n_i, nu_i, n_t):
     """
     Fresnel Reflection.
 
-    'Fresnel' calculates the specular reflection for light incident at
+    Calculates the specular reflection for light incident at
     an angle  theta_i from the normal (having a cosine equal to  nu_i)
     in a medium with index of
     refraction 'n_i' onto a medium with index of refraction 'n_t' .
@@ -220,11 +221,11 @@ def glass(n_i, n_g, n_t, nu_i):
     (once in the first call to 'Fresnel' and once directly).
     """
     if n_i == n_g or n_g == n_t:
-        return reflection(n_i, nu_i, n_t)
+        return fresnel_reflection(n_i, nu_i, n_t)
 
-    r1 = reflection(n_i, nu_i, n_g)
+    r1 = fresnel_reflection(n_i, nu_i, n_g)
     nu_g = cos_snell(n_i, nu_i, n_g)
-    r2 = reflection(n_g, nu_g, n_t)
+    r2 = fresnel_reflection(n_g, nu_g, n_t)
     denom = 1 - r1 * r2
     numer = r1 + r2 - 2 * r1 * r2
 
@@ -241,8 +242,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     Reflection from an absorbing slide.
 
     'absorbing_glass_RT' calculates the total specular reflection and transmission
-    (i.e., including
-    multiple internal reflections) based on
+    (i.e., including nmultiple internal reflections) based on
     the indices of refraction of the incident medium 'n_i', the glass 'n_g',
     and medium into which the light is transmitted 'n_t' for light incident at
     an angle from the normal having cosine 'nu_i'.  The optical thickness of
@@ -258,7 +258,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
 
     Here r_1 is the reflection at the sample-glass interface and r_2 is the
     reflection at the glass-air interface and  nu_g is the cosine of the
-    angle inside the glass.  Note that if b ne0 then the reflection depends
+    angle inside the glass.  Note that if b≠0 then the reflection depends
     on the order of the indices of refraction, otherwise 'n_i' and 'n_t'
     can be switched and the result should be the same.
 
@@ -267,7 +267,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     t = (1-r_1)*(1-r_2)*exp(-b/nu_g) / [1 - r_1*r_2*exp(-2b/nu_g)]
 
     There are two potential pitfalls in the calculation.  The first is
-    when the angle of incidence exceeds the critical angle then the formula above causes
+    when the angle of incidence exceeds the critical angle then the formula causes
     division by zero.  If this is the case, 'Fresnel' will return r_1 = 1 and
     this routine responds appropriately.  The second case is when the optical
     thickness of the slide is too large.
@@ -279,23 +279,23 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
 
     I also check to make sure that the exponent is not too small.
     """
-    if b == 0:
-        r = glass(n_i, n_g, n_t, nu_i)
-        return r, 1 - r
-
-    r1 = reflection(n_i, nu_i, n_g)
+    r1 = fresnel_reflection(n_i, nu_i, n_g)
     nu_g = cos_snell(n_i, nu_i, n_g)
 
     # too thick for any light to make it through the sample
     if b > iadpython.AD_MAX_THICKNESS:
         return r1, np.zeros_like(r1)
 
-    r2 = reflection(n_g, nu_g, n_t)
+    r2 = fresnel_reflection(n_g, nu_g, n_t)
 
-    expo = np.exp(-b / nu_g)
+    # make sure exponential is zero when nu_g == 0
+    d = np.divide(b, nu_g, out=np.zeros_like(nu_g), where=nu_g!=0)
+    expo = np.exp(-d)
     denom = 1.0 - r1 * r2 * expo**2
-    r = (r1 + (1.0 - 2.0 * r1) * r2 * expo**2) / denom
-    t = (1.0 - r1) * (1.0 - r2) * expo / denom
+    numer = r1 + (1.0 - 2.0 * r1) * r2 * expo**2
+    r = np.divide(numer, denom, out=np.ones_like(numer), where=denom!=0)
+    numer = (1.0 - r1) * (1.0 - r2) * expo 
+    t = np.divide(numer, denom, out=np.zeros_like(numer), where=denom!=0)
 
     return r, t
 
@@ -403,7 +403,7 @@ def R1(ni, nt):
 
     R_1 & = 1 / 2 + (m-1)(3m+1) / 6(m+1)**2
             + [ m**2(m**2-1)**2 / (m**2+1)**3 ] log( m-1 / m+1) cr
-            - 2m**3 (m**2+2m-1) / (m**2+1)(m**4-1) +
+            - 2m**3 (m**2+2m-1) / (m**2+1)(m**4-1)
             + [ 8m**4(m**4+1) / (m**2+1)(m**4-1)**2 ] log(m)
 
     where Walsh's parameter m = n_t/n_i.    This equation is only valid when
