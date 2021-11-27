@@ -199,13 +199,11 @@ def _boundary(sample, n_i, n_g, n_t, b):
     don't work.  So punted and took all that code out.
 
     """
-    if sample.nu is None:
-        sample.update_quadrature()
-
     if n_i == 1.0:
         nu = iadpython.fresnel.cos_snell(n_t, sample.nu, n_i)
     else:
         nu = sample.nu
+
     r, t = iadpython.fresnel.absorbing_glass_RT(n_i, n_g, n_t, nu, b)
     r *= sample.twonuw
     return r, t
@@ -232,6 +230,9 @@ def boundary_layer(s, top=True):
         T01: transmission array from air to slab
         T10: transmission array from slab to air
     """
+    if s.nu is None:
+        s.update_quadrature()
+
     if top:
         R01, T01 = _boundary(s, 1.0, s.n_above, s.n, s.b_above)
         R10, T10 = _boundary(s, s.n, s.n_above, 1.0, s.b_above)
