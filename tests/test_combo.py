@@ -2,12 +2,10 @@
 # pylint: disable=no-self-use
 # pylint: disable=too-many-locals
 # pylint: disable=redefined-outer-name
-# pylint: disable=import-outside-toplevel
 
 """Tests for slide-sample-slide combinations."""
 
 import unittest
-import pytest
 import numpy as np
 import iadpython
 
@@ -308,9 +306,10 @@ class B_finite_sandwich(unittest.TestCase):
         np.testing.assert_allclose(T30, tt30, atol=1e-5)
 
 class ThickSamples(unittest.TestCase):
+    """Tests for effectively infinitely thick slabs."""
+
     def test_01_non_scattering(self):
         """Thick non-scattering."""
-        import iadpython.iadc
         s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, n=1.0, n_above=1.0, n_below=1.0)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.00000, delta=0.0001)
@@ -338,7 +337,7 @@ class ThickSamples(unittest.TestCase):
 
     def test_04_non_scattering(self):
         """Thick non-scattering with index but no slide."""
-        s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, 
+        s = iadpython.Sample(a=0.0, b=100000.0, g=0.0,
                              n=1.4, n_above=1.0, n_below=1.0, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.02778, delta=0.0001)
@@ -348,7 +347,7 @@ class ThickSamples(unittest.TestCase):
 
     def test_05_non_scattering(self):
         """Thick non-scattering with slide."""
-        s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, 
+        s = iadpython.Sample(a=0.0, b=100000.0, g=0.0,
                              n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.04110, delta=0.0001)
@@ -358,7 +357,7 @@ class ThickSamples(unittest.TestCase):
 
     def test_06_scattering(self):
         """Thick non-scattering with index but no slide."""
-        s = iadpython.Sample(a=0.8, b=100000.0, g=0.0, 
+        s = iadpython.Sample(a=0.8, b=100000.0, g=0.0,
                              n=1.4, n_above=1.0, n_below=1.0, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.18095, delta=0.0001)
@@ -368,7 +367,7 @@ class ThickSamples(unittest.TestCase):
 
     def test_07_scattering(self):
         """Thick isotropic scattering with slide."""
-        s = iadpython.Sample(a=0.8, b=100000.0, g=0.0, 
+        s = iadpython.Sample(a=0.8, b=100000.0, g=0.0,
                              n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.18994, delta=0.0001)
@@ -378,7 +377,7 @@ class ThickSamples(unittest.TestCase):
 
     def test_08_scattering(self):
         """Thick aniotropic scattering with slide."""
-        s = iadpython.Sample(a=0.8, b=100000.0, g=0.9, 
+        s = iadpython.Sample(a=0.8, b=100000.0, g=0.9,
                              n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.05184, delta=0.0001)
