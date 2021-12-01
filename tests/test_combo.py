@@ -307,8 +307,8 @@ class B_finite_sandwich(unittest.TestCase):
         np.testing.assert_allclose(T03, tt03, atol=1e-5)
         np.testing.assert_allclose(T30, tt30, atol=1e-5)
 
-    @pytest.mark.iadc
-    def test_07_thick_non_scattering(self):
+class ThickSamples(unittest.TestCase):
+    def test_01_non_scattering(self):
         """Thick non-scattering."""
         import iadpython.iadc
         s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, n=1.0, n_above=1.0, n_below=1.0)
@@ -318,7 +318,7 @@ class B_finite_sandwich(unittest.TestCase):
         self.assertAlmostEqual(uru, 0.00000, delta=0.0001)
         self.assertAlmostEqual(utu, 0.00000, delta=0.0001)
 
-    def test_08_thick(self):
+    def test_02_thick(self):
         """Thick scattering."""
         s = iadpython.Sample(a=0.8, b=100000.0, g=0.0, n=1.0, n_above=1.0, n_below=1.0)
         ur1, ut1, uru, utu = s.rt()
@@ -327,7 +327,7 @@ class B_finite_sandwich(unittest.TestCase):
         self.assertAlmostEqual(uru, 0.34187, delta=0.0001)
         self.assertAlmostEqual(utu, 0.00000, delta=0.0001)
 
-    def test_09_thick_non_absorbing(self):
+    def test_03_non_absorbing(self):
         """Thick non-absorbing."""
         s = iadpython.Sample(a=1.0, b=100000.0, g=0.0, n=1.0, n_above=1.0, n_below=1.0)
         ur1, ut1, uru, utu = s.rt()
@@ -336,58 +336,55 @@ class B_finite_sandwich(unittest.TestCase):
         self.assertAlmostEqual(uru, 1.0000, delta=0.0001)
         self.assertAlmostEqual(utu, 0.0000, delta=0.0001)
 
-    @pytest.mark.iadc
-    def test_10_thick_non_scattering(self):
+    def test_04_non_scattering(self):
+        """Thick non-scattering with index but no slide."""
+        s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, 
+                             n=1.4, n_above=1.0, n_below=1.0, quad_pts=16)
+        ur1, ut1, uru, utu = s.rt()
+        self.assertAlmostEqual(ur1, 0.02778, delta=0.0001)
+        self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)
+        self.assertAlmostEqual(uru, 0.07597, delta=0.0001)
+        self.assertAlmostEqual(utu, 0.00000, delta=0.0001)
+
+    def test_05_non_scattering(self):
         """Thick non-scattering with slide."""
-        import iadpython.iadc
-        ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 0, 100000, 0)
-        s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, n=1.4,
-                             n_above=1.5, n_below=1.5, quad_pts=16)
+        s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, 
+                             n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
-        self.assertAlmostEqual(ur1, ur1c, delta=0.0001)
-        self.assertAlmostEqual(ut1, ut1c, delta=0.0001)
-        self.assertAlmostEqual(uru, uruc, delta=0.0001)
-        self.assertAlmostEqual(utu, utuc, delta=0.0001)
+        self.assertAlmostEqual(ur1, 0.04110, delta=0.0001)
+        self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)
+        self.assertAlmostEqual(uru, 0.09212, delta=0.0001)
+        self.assertAlmostEqual(utu, 0.00000, delta=0.0001)
 
-    @pytest.mark.iadc
-    def test_11_thick(self):
-        """Thick scattering with slide."""
-        import iadpython.iadc
-        ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 0.8, 100000, 0)
-        s = iadpython.Sample(a=0.8, b=100000.0, g=0.0, n=1.4,
-                             n_above=1.5, n_below=1.5, quad_pts=16)
+    def test_06_scattering(self):
+        """Thick non-scattering with index but no slide."""
+        s = iadpython.Sample(a=0.8, b=100000.0, g=0.0, 
+                             n=1.4, n_above=1.0, n_below=1.0, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
-        self.assertAlmostEqual(ur1, ur1c, delta=0.0001)
-        self.assertAlmostEqual(ut1, ut1c, delta=0.0001)
-        self.assertAlmostEqual(uru, uruc, delta=0.0001)
-        self.assertAlmostEqual(utu, utuc, delta=0.0001)
+        self.assertAlmostEqual(ur1, 0.18095, delta=0.0001)
+        self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)
+        self.assertAlmostEqual(uru, 0.22984, delta=0.0001)
+        self.assertAlmostEqual(utu, 0.00000, delta=0.0001)
 
-    @pytest.mark.iadc
-    def test_12_thick(self):
-        """Thick anisotropic scattering with slide."""
-        import iadpython.iadc
-        ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 0.8, 100000, 0.9)
-        s = iadpython.Sample(a=0.8, b=100000.0, g=0.9, n=1.4,
-                             n_above=1.5, n_below=1.5, quad_pts=16)
+    def test_07_scattering(self):
+        """Thick isotropic scattering with slide."""
+        s = iadpython.Sample(a=0.8, b=100000.0, g=0.0, 
+                             n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
-        self.assertAlmostEqual(ur1, ur1c, delta=0.0001)
-        self.assertAlmostEqual(ut1, ut1c, delta=0.0001)
-        self.assertAlmostEqual(uru, uruc, delta=0.0001)
-        self.assertAlmostEqual(utu, utuc, delta=0.0001)
+        self.assertAlmostEqual(ur1, 0.18994, delta=0.0001)
+        self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)
+        self.assertAlmostEqual(uru, 0.24105, delta=0.0001)
+        self.assertAlmostEqual(utu, 0.00000, delta=0.0001)
 
-    @pytest.mark.iadc
-    def test_13_thick_non_absorbing(self):
-        """Thick non-absorbing with slide."""
-        import iadpython.iadc
-        ur1c, ut1c, uruc, utuc = iadpython.iadc.rt(1.4, 1.5, 1.0, 100000, 0)
-        s = iadpython.Sample(a=1.0, b=100000.0, g=0.0, n=1.4,
-                             n_above=1.5, n_below=1.5, quad_pts=16)
+    def test_08_scattering(self):
+        """Thick aniotropic scattering with slide."""
+        s = iadpython.Sample(a=0.8, b=100000.0, g=0.9, 
+                             n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
-        self.assertAlmostEqual(ur1, ur1c, delta=0.0001)
-        self.assertAlmostEqual(ut1, ut1c, delta=0.0001)
-        self.assertAlmostEqual(uru, uruc, delta=0.0001)
-        self.assertAlmostEqual(utu, utuc, delta=0.0001)
-
+        self.assertAlmostEqual(ur1, 0.05184, delta=0.0001)
+        self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)
+        self.assertAlmostEqual(uru, 0.10429, delta=0.0001)
+        self.assertAlmostEqual(utu, 0.00000, delta=0.0001)
 
 if __name__ == '__main__':
     unittest.main()
