@@ -1,11 +1,11 @@
 # pylint: disable=invalid-name
 # pylint: disable=no-self-use
+# pylint: disable=consider-using-f-string
 
 """Tests for C-library Inverse Adding-Doubling."""
 
 import unittest
-import pytest
-import iadpython.iadc as iadc
+from iadpython import iadc
 
 
 class basic_forward(unittest.TestCase):
@@ -155,7 +155,7 @@ class mismatched_sample_no_slides(unittest.TestCase):
     def test_04a_mismatched_sample_no_slides(self):
         """Scattering and absorption case with transmission."""
         UR1 = 0.25312
-        UT1 = 0.28882 
+        UT1 = 0.28882
         a, b, g, error = iadc.rt_inverse(1.5, 1.0, UR1, UT1, 0)
         print("%8.5f %8.5f %8.5f" % (a,b,g))
         print(error)
@@ -178,6 +178,7 @@ class mismatched_sample_no_slides(unittest.TestCase):
 
 class sample_with_slides(unittest.TestCase):
     """Slab with n=1.4 and slides=1.5."""
+
     def test_01_mismatched_sample_and_slides(self):
         """No scattering case."""
         UR1 = 0.07894
@@ -217,7 +218,6 @@ class sample_with_slides(unittest.TestCase):
         tc = 0.12444
         a, b, g, _ = iadc.rt_inverse(1.4, 1.5, UR1, UT1, tc)
         ur1x, ut1x, _, _ = iadc.rt(1.4, 1.5, a, b, g)
-        _, tcx, _, _ = iadc.rt_unscattered(1.4, 1.5, a, b, g)
         self.assertAlmostEqual(UR1, ur1x, delta=0.002)
         self.assertAlmostEqual(UT1, ut1x, delta=0.002)
 

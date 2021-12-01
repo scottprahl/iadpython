@@ -230,9 +230,10 @@ class Sample():
         print(" |%9.5f\n" % tflux)
 
     def wrarray(self, a, title=None):
+        """Print diagonal array as matric with sums."""
         b = np.diag(a)
         self.wrmatrix(b, title)
-        
+
     def prmatrix(self, a, title=None):
         """Print matrix and sums."""
         if title is not None:

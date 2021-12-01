@@ -24,7 +24,8 @@ lintcheck:
 	-pylint tests/test_redistribution.py
 	-pylint tests/test_start.py
 	-pylint tests/test_ur1_uru.py
-	-pylint tests/test_performance.py
+	-pylint tests_iadc/test_iadc.py
+	-pylint tests_iadc/test_performance.py
 
 xpylint:
 	-pylint iadpython/iadc.py
@@ -48,7 +49,8 @@ doccheck:
 	-pydocstyle tests/test_start.py
 	-pydocstyle tests/test_ur1_uru.py
 	-pydocstyle tests/test_nist.py
-	-pydocstyle tests/test_performance.py
+	-pydocstyle tests_iadc/test_iadc.py
+	-pydocstyle tests_iadc/test_performance.py
 
 xpydoc:
 	-pydocstyle iadpython/iadc.py

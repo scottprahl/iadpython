@@ -7,7 +7,6 @@
 
 import time
 import unittest
-import pytest
 import scipy.optimize
 import numpy as np
 import iadpython
