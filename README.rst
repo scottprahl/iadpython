@@ -81,30 +81,23 @@ The following will do a forward calculation::
 Installation
 ------------
 
-If you just want the pure python version to do forward calculations then::
+To install::
 
     pip3 install iadpython
 
-If you want to use the `iadc` module that allows both forward and inverse
-calculations, then you will need to first install and build the `iad` library::
+If you just want to do forward calculations then you're done.
+
+If you want to do inverse calculations, then you'll need to build and
+install the `libiad` library::
 
     git clone https://github.com/scottprahl/iad.git
     cd iad
     # edit Makefile as needed
     make install-lib
 
-Then install this python module using `pip`::
-
-    pip3 install iadpython
-
-Test by changing the iadpython directory and try doing::
-
-    ad -a 0.5
-
 
 Dependencies
 ------------
-For installation: setuptools
 
 Required Python modules: numpy, matplotlib, ctypes, scipy
 
