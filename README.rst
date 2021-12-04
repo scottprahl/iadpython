@@ -21,19 +21,20 @@ iadpython
 
 __________
 
-iadpython will be a pure Python module to do forward and inverse multiple light
+`iadpython` will be a pure Python module to do forward and inverse multiple light
 scattering (radiative transport) in layered materials.  Calculations are done using 
 van de Hulst's adding-doubling technique.
 
 The original adding-doubling algorithm was developed by van de Hulst to model light
 propagation through layered media.  I extended it to handle Fresnel 
 reflection at boundaries as well as interactions with integrating spheres. 
+
 Finally, the code was further extended to handle lost light using
-Monte Carlo techniques.
+Monte Carlo techniques for inverse calculations.
 
 Version v0.4.0 started the migration to a pure-python implementation.  This 
-version includes a tested forward calculation of light transport through
-a layered 1D structure.  
+version includes the ability to do forward calculations of light transport through
+layered 1D structures.  
 
 The long-term goal is rewrite the integrating sphere, inverse algorithm, and
 lost light calculations in pure python so that one can do 
@@ -44,10 +45,10 @@ Both inverse and forward calculations are currently possible using the `iadc` fr
 This is a python interface to the inverse 
 adding-doubling package written in C by Scott Prahl 
 <https://github.com/scottprahl/iad>.  This works now
-but is a nuisance to install an maintain because of the dependence on the 
-C library.
+but is a nuisance to install and maintain because of its dependence on compiling
+and installing a C library.
 
-See <https://iadpython.readthedocs.io> for full documentation.
+See <https://iadpython.readthedocs.io> for full documentation of `iadpython`.
 
 Usage
 -----
@@ -80,24 +81,23 @@ The following will do a forward calculation::
 Installation
 ------------
 
-If you want the pure python version then just do
+If you just want the pure python version to do forward calculations then::
 
-    pip install iadpython
-    
+    pip3 install iadpython
+
 If you want to use the `iadc` module that allows both forward and inverse
-calculation, then you will need to first install the `iad` library and build
-the library.
+calculations, then you will need to first install and build the `iad` library::
 
     git clone https://github.com/scottprahl/iad.git
     cd iad
-    # edit Makefile as neede
+    # edit Makefile as needed
     make install-lib
 
-Then install this python module using `pip`
+Then install this python module using `pip`::
 
-    pip install --user iadpython
+    pip3 install iadpython
 
-Test by changing the iadpython directory and try doing
+Test by changing the iadpython directory and try doing::
 
     ad -a 0.5
 
@@ -112,4 +112,4 @@ Required Python modules: numpy, matplotlib, ctypes, scipy
 License
 -------
 
-iadpython is licensed under the terms of the MIT license.
+`iadpython` is licensed under the terms of the MIT license.
