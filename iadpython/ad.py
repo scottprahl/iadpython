@@ -96,10 +96,12 @@ class Sample():
     @g.setter
     def g(self, value):
         """When anisotropy is changed phi is invalid."""
-        if value != self._g:
-            self.hp = None
-            self.hm = None
-            self._g = value
+        if np.isscalar(value) and np.isscalar(self._g) and value == self._g:
+            return
+
+        self.hp = None
+        self.hm = None
+        self._g = value
 
     @property
     def quad_pts(self):

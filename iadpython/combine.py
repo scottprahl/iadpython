@@ -19,6 +19,7 @@ Two types of starting methods are possible.
 
 """
 
+import copy
 import scipy
 import numpy as np
 import iadpython.constants
@@ -103,8 +104,8 @@ def double_until(sample, r_start, t_start, b_start, b_end):
     return r, t
 
 
-def simple_layer_matrices(sample):
-    """Create R and T matrices for layer without boundaries."""
+def simple_single_layer_matrices(sample):
+    """Create R and T matrices for single layer without boundaries."""
     # avoid b=0 calculation which leads to singular matrices
     if sample.b <= 0:
         sample.b = 1e-9
@@ -112,6 +113,28 @@ def simple_layer_matrices(sample):
     b_start = sample.b_thinnest
     b_end = sample.b_delta_M()
     r, t = double_until(sample, r_start, t_start, b_start, b_end)
+    return r, t
+
+
+def simple_layer_matrices(sample):
+    """Create R and T matrices for multiple layers without boundaries."""
+    if np.isscalar(sample.a) and np.isscalar(sample.b) and np.isscalar(sample.g):
+        return simple_single_layer_matrices(sample)
+
+    s = copy.deepcopy(sample)
+    n_layers = len(sample.a)
+
+    for i in range(n_layers):
+        s.a = sample.a[i]
+        s.b = sample.b[i]
+        s.g = sample.g[i]
+
+        ri, ti = simple_single_layer_matrices(s)
+        if i==0:
+            r, t = ri, ti
+        else:
+            r, t = add_layers_basic(s, r, t, ri, ri, ti, ti)
+
     return r, t
 
 

@@ -9,7 +9,7 @@ import numpy as np
 import iadpython
 
 
-class Test_NIST(unittest.TestCase):
+class TestNIST(unittest.TestCase):
     """NIST Reflectance data."""
 
     def test_01_subj_refl(self):

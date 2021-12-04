@@ -20,6 +20,8 @@ lintcheck:
 	-pylint tests/test_boundary.py
 	-pylint tests/test_combo.py
 	-pylint tests/test_fresnel.py
+	-pylint tests/test_layer.py
+	-pylint tests/test_layers.py
 	-pylint tests/test_quadrature.py
 	-pylint tests/test_redistribution.py
 	-pylint tests/test_start.py
@@ -44,6 +46,8 @@ doccheck:
 	-pydocstyle tests/test_boundary.py
 	-pydocstyle tests/test_combo.py
 	-pydocstyle tests/test_fresnel.py
+	-pydocstyle tests/test_layer.py
+	-pydocstyle tests/test_layers.py
 	-pydocstyle tests/test_quadrature.py
 	-pydocstyle tests/test_redistribution.py
 	-pydocstyle tests/test_start.py
