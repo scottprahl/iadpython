@@ -30,7 +30,7 @@ import iadpython
 class Experiment():
     """Container class for details of an experiment."""
 
-    def __init__(self, mr=None, mt=None, mu=None, sample=None, r_sphere=None, t_sphere=None):
+    def __init__(self, r=None, t=None, u=None, sample=None, r_sphere=None, t_sphere=None):
         """Object initialization."""
         if sample == None:
             self.sample = iadpython.Sample()
@@ -45,9 +45,11 @@ class Experiment():
         if t_sphere == None:
             self.num_spheres -= 1
 
-        self.m_r = mr
-        self.m_t = mt
-        self.m_u = mu
+        self.m_r = r
+        self.m_t = t
+        self.m_u = u
+        
+        self.useful_measurements = 0
         
         # these will have to be eventually supported
         self.default_a = None
@@ -71,7 +73,7 @@ class Experiment():
         self.utu_lost = 0
 
     def invert():
-        method = iadpython.Analyis(self)
+        method = iadpython.Analysis(self)
         method.check_measurements()
         method.useful_measurements()
         method.determine_search()
@@ -90,8 +92,8 @@ class Analysis():
         self.found_b = None
         self.found_g = None
 
-        self.found = 1
-        self.search = 1
+        self.found = False
+        self.search = 'unknown'
         self.metric = 1
         self.tolerance = 1
         self.MC_tolerance = 1
@@ -99,16 +101,50 @@ class Analysis():
         self.iterations = 1
         self.error = 1
 
-    def check_measurements()
+    def check_measurements():
+        between = " Must be between 0 and 1."
+        if self.exp.r is not None:
+            if self.exp.r < 0 or self.exp.r > 1:
+                raise "Invalid refl. %.4f" % self.exp.r + between
+
+        if self.exp.t is not None:
+            if self.exp.t < 0 or self.exp.t > 1:
+                raise "Invalid trans. %.4f" % self.exp.t + between
+
+        if self.exp.u is not None:
+            if self.exp.u < 0 or self.exp.u > 1:
+                raise "Invalid unscattered trans. %.4f." % self.exp.u + between
+
+    def useful_measurements():
+        self.useful_measurements = 0
+        if self.exp.r is not None:
+            self.useful_measurements += 1
+        if self.exp.t is not None:
+            self.useful_measurements += 1
+        if self.exp.u is not None:
+            self.useful_measurements += 1
+
+    def determine_search():
+        if self.useful_measurements == 0:
+            raise "No useful measurements specified"
+            return
+        
+        if useful_measurements == 1:
+            if self.exp.r is not None:
+                self.search = 'find_a'
+                return
+            if self.exp.t is not None:
+                self.search = 'find_a'
+                return
+            if self.exp.u is not None:
+                self.search = 'find_b'
+                return
+        
+        
+
         return
 
-    def determine_measurements()
-        return
-
-    def determine_search()
-        return
-
-    def initialize_grid()
+    def initialize_grid():
         return
 
     def invert()
