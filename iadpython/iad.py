@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 """
-Class for doing inverse adding-doubling calculations for a sample.
+    Class for doing inverse adding-doubling calculations for a sample.
 
     import iadpython
 
@@ -25,7 +25,7 @@ Class for doing inverse adding-doubling calculations for a sample.
 import copy
 import numpy as np
 import iadpython
-
+import scipy.optimize
 
 class Experiment():
     """Container class for details of an experiment."""
@@ -52,14 +52,6 @@ class Experiment():
         self.useful_measurements = 0
 
         # these will have to be eventually supported
-        self.default_a = None
-        self.default_b = None
-        self.default_g = None
-        self.default_ba = None
-        self.default_bs = None
-        self.default_mua = None
-        self.default_mus = None
-
         self.d_beam = 1
         self.lambda0 = 633
 
@@ -72,14 +64,13 @@ class Experiment():
         self.ut1_lost = 0
         self.utu_lost = 0
 
-    def invert():
-        method = iadpython.Analysis(self)
-        method.check_measurements()
-        method.useful_measurements()
-        method.determine_search()
-        method.initialize_grid()
-        method.invert()
-        return method.found_a, method.found_b, method.found_g
+    def invert(self):
+        m = iadpython.Analysis(self)
+        m.check_measurements()
+        m.useful_measurements()
+        m.determine_search()
+        m.initialize_grid()
+        return m.invert()
 
 
 class Analysis():
@@ -88,9 +79,14 @@ class Analysis():
     def __init__(self, exp):
         """Object initialization."""
         self.exp = exp
-        self.found_a = None
-        self.found_b = None
-        self.found_g = None
+
+        self.default_a = None
+        self.default_b = None
+        self.default_g = None
+        self.default_ba = None
+        self.default_bs = None
+        self.default_mua = None
+        self.default_mus = None
 
         self.found = False
         self.search = 'unknown'
@@ -101,33 +97,33 @@ class Analysis():
         self.iterations = 1
         self.error = 1
 
-    def check_measurements():
+    def check_measurements(self):
         between = " Must be between 0 and 1."
-        if self.exp.r is not None:
-            if self.exp.r < 0 or self.exp.r > 1:
-                raise "Invalid refl. %.4f" % self.exp.r + between
+        if self.exp.m_r is not None:
+            if self.exp.m_r < 0 or self.exp.m_r > 1:
+                raise "Invalid refl. %.4f" % self.exp.m_r + between
 
-        if self.exp.t is not None:
-            if self.exp.t < 0 or self.exp.t > 1:
-                raise "Invalid trans. %.4f" % self.exp.t + between
+        if self.exp.m_t is not None:
+            if self.exp.m_t < 0 or self.exp.m_t > 1:
+                raise "Invalid trans. %.4f" % self.exp.m_t + between
 
-        if self.exp.u is not None:
-            if self.exp.u < 0 or self.exp.u > 1:
-                raise "Invalid unscattered trans. %.4f." % self.exp.u + between
+        if self.exp.m_u is not None:
+            if self.exp.m_u < 0 or self.exp.m_u > 1:
+                raise "Invalid unscattered trans. %.4f." % self.exp.m_u + between
 
 
-    def useful_measurements():
+    def useful_measurements(self):
         self.useful_measurements = 0
-        if self.exp.r is not None:
+        if self.exp.m_r is not None:
             self.useful_measurements += 1
-        if self.exp.t is not None:
+        if self.exp.m_t is not None:
             self.useful_measurements += 1
-        if self.exp.u is not None:
+        if self.exp.m_u is not None:
             self.useful_measurements += 1
 
 
-    def determine_one_parameter_search():
-    """Establish proper search when only one measurement is available."""
+    def determine_one_parameter_search(self):
+        """Establish proper search when only one measurement is available."""
         # default case
         self.search = 'find_a'
 
@@ -155,8 +151,8 @@ class Analysis():
             self.search = 'find_bs'
 
 
-    def determine_two_parameter_search():
-    """Establish proper search when two measurements are available."""
+    def determine_two_parameter_search(self):
+        """Establish proper search when two measurements are available."""
         # default case
         self.search = 'find_ab'
 
@@ -181,22 +177,59 @@ class Analysis():
             self.search = 'find_bsg'
 
 
-    def determine_search():
+    def determine_search(self):
+        """Determine type of search to do."""
         self.search = 'unknown'
 
         if self.useful_measurements == 0:
             raise "No useful measurements specified"
             return
 
-        if useful_measurements == 1:
+        elif self.useful_measurements == 1:
             self.determine_one_parameter_search()
 
-        else useful_measurements == 2:
+        else:
             self.determine_two_parameter_search()
 
 
-    def initialize_grid():
+    def initialize_grid(self):
+        """Precalculate a grid."""
         return
 
-    def invert()
-        return
+    def invert(self):
+        """Do the inversion."""
+        if self.search == 'find_a':
+            if self.default_b:
+                self.exp.sample.b = default_b
+            else:
+                self.exp.sample.b = np.inf
+
+            if self.default_g:
+                self.exp.sample.g = default_g
+            else:
+                self.exp.sample.g = 0
+
+            bnds = scipy.optimize.Bounds(np.array([0]),np.array([1]))
+            res = scipy.optimize.minimize(afun, 0.3, 
+                                          args=[self], 
+                                          method='Powell',
+                                          bounds=bnds,
+                                          tol=1e-5
+                                          )
+            print(res)
+            return self.exp.sample.a, self.exp.sample.b, self.exp.sample.g
+
+        return None, None, None
+
+def afun(x, *args):
+    """Vary the albedo."""
+    analysis = args[0][0]
+    analysis.exp.sample.a = x
+    ur1, ut1, _, _ = analysis.exp.sample.rt()
+
+    result = np.abs(ur1 - analysis.exp.m_r)
+    if analysis.exp.m_t is not None:
+        result += np.abs(ut1 - analysis.exp.m_t)
+
+    return result
+    
