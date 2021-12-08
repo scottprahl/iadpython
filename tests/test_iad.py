@@ -12,20 +12,23 @@ class IADTest(unittest.TestCase):
     """IAD tests calculations."""
 
     def test_01(self):
-        exp = iadpython.Experiment(0.5,0.1,0.01)
+        """No data returns None for optical properties."""
+        exp = iadpython.Experiment()
         a, b, g = exp.invert()
         self.assertIsNone(a)
         self.assertIsNone(b)
         self.assertIsNone(g)
 
     def test_02(self):
-        exp = iadpython.Experiment(r=0.11523)
+        """Matched slab with albedo=0.3."""
+        exp = iadpython.Experiment(r= 0.05721)
         a, b, g = exp.invert()
-        self.assertAlmostEqual(a,0.5,delta=1e-4)
+        self.assertAlmostEqual(a,0.3,delta=1e-4)
         self.assertAlmostEqual(b,np.inf)
         self.assertAlmostEqual(g,0,delta=1e-4)
 
     def test_03(self):
+        """Matched slab with albedo=0."""
         exp = iadpython.Experiment(r=0)
         a, b, g = exp.invert()
         self.assertAlmostEqual(a,0.0,delta=1e-4)
@@ -33,6 +36,7 @@ class IADTest(unittest.TestCase):
         self.assertAlmostEqual(g,0,delta=1e-4)
 
     def test_04(self):
+        """Matched slab with albedo=1."""
         exp = iadpython.Experiment(r=1)
         a, b, g = exp.invert()
         self.assertAlmostEqual(a,1.0,delta=1e-4)

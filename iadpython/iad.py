@@ -2,37 +2,37 @@
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-arguments
+# pylint: disable=consider-using-f-string
 
 """
-    Class for doing inverse adding-doubling calculations for a sample.
+Class for doing inverse adding-doubling calculations for a sample.
 
-    import iadpython
-
-    exp = iadpython.Experiment(0.5,0.1,0.01)
-    a, b, g = exp.invert()
-    print("a = %7.3f" % a)
-    print("b = %7.3f" % b)
-    print("g = %7.3f" % g)
-
-    s = iadpython.Sample(0.5,0.1,0.01,n=1.4, n_top=1.5, n_bottom=1.5)
-    exp = iadpython.Experiment(s)
-    a, b, g = exp.invert()
-    print("a = %7.3f" % a)
-    print("b = %7.3f" % b)
-    print("g = %7.3f" % g)
-"""
-
-import copy
-import numpy as np
 import iadpython
+
+exp = iadpython.Experiment(0.5,0.1,0.01)
+a, b, g = exp.invert()
+print("a = %7.3f" % a)
+print("b = %7.3f" % b)
+print("g = %7.3f" % g)
+
+s = iadpython.Sample(0.5,0.1,0.01,n=1.4, n_top=1.5, n_bottom=1.5)
+exp = iadpython.Experiment(s)
+a, b, g = exp.invert()
+print("a = %7.3f" % a)
+print("b = %7.3f" % b)
+print("g = %7.3f" % g)
+"""
+
+import numpy as np
 import scipy.optimize
+import iadpython
 
 class Experiment():
     """Container class for details of an experiment."""
 
     def __init__(self, r=None, t=None, u=None, sample=None, r_sphere=None, t_sphere=None):
         """Object initialization."""
-        if sample == None:
+        if sample is None:
             self.sample = iadpython.Sample()
         else:
             self.sample = sample
@@ -40,9 +40,9 @@ class Experiment():
         self.r_sphere = r_sphere
         self.t_sphere = t_sphere
         self.num_spheres = 2
-        if r_sphere == None:
+        if r_sphere is None:
             self.num_spheres -= 1
-        if t_sphere == None:
+        if t_sphere is None:
             self.num_spheres -= 1
 
         self.m_r = r
@@ -64,7 +64,28 @@ class Experiment():
         self.ut1_lost = 0
         self.utu_lost = 0
 
+    def __str__(self):
+        """Return basic details as a string for printing."""
+        s = "---------------- Sample ---------------\n"
+        s += self.sample.__str__()
+        s += "\n--------------- Spheres ---------------\n"
+        if self.num_spheres == 0:
+            s += "No spheres used.\n"
+        if self.r_sphere is not None:
+            s += "Reflectance Sphere--------\n"
+            s += self.r_sphere.__str__()
+        if self.t_sphere is not None:
+            s += "Transmission Sphere--------\n"
+            s += self.t_sphere.__str__()
+        s += "\n------------- Measurements ------------\n"
+
+        s += "   Reflection               = %.5f\n" % self.m_r
+        s += "   Transmission             = %.5f\n" % self.m_t
+        s += "   Unscattered Transmission = %.5f\n" % self.m_r
+        return s
+
     def invert(self):
+        """Find a,b,g for this experiment."""
         m = iadpython.Analysis(self)
         m.check_measurements()
         m.useful_measurements()
@@ -96,8 +117,11 @@ class Analysis():
         self.final_distance = 1
         self.iterations = 1
         self.error = 1
+        self.num_measurements = 0
+        self.grid = None
 
     def check_measurements(self):
+        """Make sure measurements are sane."""
         between = " Must be between 0 and 1."
         if self.exp.m_r is not None:
             if self.exp.m_r < 0 or self.exp.m_r > 1:
@@ -113,13 +137,14 @@ class Analysis():
 
 
     def useful_measurements(self):
-        self.useful_measurements = 0
+        """Count the number of useful measurements."""
+        self.num_measurements = 0
         if self.exp.m_r is not None:
-            self.useful_measurements += 1
+            self.num_measurements += 1
         if self.exp.m_t is not None:
-            self.useful_measurements += 1
+            self.num_measurements += 1
         if self.exp.m_u is not None:
-            self.useful_measurements += 1
+            self.num_measurements += 1
 
 
     def determine_one_parameter_search(self):
@@ -179,13 +204,10 @@ class Analysis():
 
     def determine_search(self):
         """Determine type of search to do."""
-        self.search = 'unknown'
+        if self.num_measurements == 0:
+            self.search = 'unknown'
 
-        if self.useful_measurements == 0:
-            raise "No useful measurements specified"
-            return
-
-        elif self.useful_measurements == 1:
+        if self.num_measurements == 1:
             self.determine_one_parameter_search()
 
         else:
@@ -194,24 +216,24 @@ class Analysis():
 
     def initialize_grid(self):
         """Precalculate a grid."""
-        return
+        self.grid = None
 
     def invert(self):
         """Do the inversion."""
         if self.search == 'find_a':
             if self.default_b:
-                self.exp.sample.b = default_b
+                self.exp.sample.b = self.default_b
             else:
                 self.exp.sample.b = np.inf
 
             if self.default_g:
-                self.exp.sample.g = default_g
+                self.exp.sample.g = self.default_g
             else:
                 self.exp.sample.g = 0
 
             bnds = scipy.optimize.Bounds(np.array([0]),np.array([1]))
-            res = scipy.optimize.minimize(afun, 0.3, 
-                                          args=[self], 
+            res = scipy.optimize.minimize(afun, 0.5,
+                                          args=[self],
                                           method='Powell',
                                           bounds=bnds,
                                           tol=1e-5
