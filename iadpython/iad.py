@@ -48,9 +48,9 @@ class Experiment():
         self.m_r = r
         self.m_t = t
         self.m_u = u
-        
+
         self.useful_measurements = 0
-        
+
         # these will have to be eventually supported
         self.default_a = None
         self.default_b = None
@@ -115,6 +115,7 @@ class Analysis():
             if self.exp.u < 0 or self.exp.u > 1:
                 raise "Invalid unscattered trans. %.4f." % self.exp.u + between
 
+
     def useful_measurements():
         self.useful_measurements = 0
         if self.exp.r is not None:
@@ -124,25 +125,75 @@ class Analysis():
         if self.exp.u is not None:
             self.useful_measurements += 1
 
+
+    def determine_one_parameter_search():
+    """Establish proper search when only one measurement is available."""
+        # default case
+        self.search = 'find_a'
+
+        # albedo is known
+        if self.default_a is not None:
+            if self.default_b is None:
+                self.search = 'find_b'
+            else:
+                self.search = 'find_g'
+
+        # optical thickness is known
+        elif self.default_b is not None:
+            self.search = 'find_a'
+
+        # anisotropy is known
+        elif self.default_g is not None:
+            self.search = 'find_a'
+
+        # scattering coefficient is known
+        elif self.default_bs is not None:
+            self.search = 'find_ba'
+
+        # absorption coefficient is known
+        elif self.default_ba is not None:
+            self.search = 'find_bs'
+
+
+    def determine_two_parameter_search():
+    """Establish proper search when two measurements are available."""
+        # default case
+        self.search = 'find_ab'
+
+        # albedo is known
+        if self.default_a is not None:
+            self.search = 'find_bg'
+
+        # optical thickness is known
+        elif self.default_b is not None:
+            self.search = 'find_ag'
+
+        # anisotropy is known
+        elif self.default_g is not None:
+            self.search = 'find_ab'
+
+        # scattering coefficient is known
+        elif self.default_bs is not None:
+            self.search = 'find_bag'
+
+        # absorption coefficient is known
+        elif self.default_ba is not None:
+            self.search = 'find_bsg'
+
+
     def determine_search():
+        self.search = 'unknown'
+
         if self.useful_measurements == 0:
             raise "No useful measurements specified"
             return
-        
-        if useful_measurements == 1:
-            if self.exp.r is not None:
-                self.search = 'find_a'
-                return
-            if self.exp.t is not None:
-                self.search = 'find_a'
-                return
-            if self.exp.u is not None:
-                self.search = 'find_b'
-                return
-        
-        
 
-        return
+        if useful_measurements == 1:
+            self.determine_one_parameter_search()
+
+        else useful_measurements == 2:
+            self.determine_two_parameter_search()
+
 
     def initialize_grid():
         return
