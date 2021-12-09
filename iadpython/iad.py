@@ -30,7 +30,10 @@ import iadpython
 class Experiment():
     """Container class for details of an experiment."""
 
-    def __init__(self, r=None, t=None, u=None, sample=None, r_sphere=None, t_sphere=None):
+    def __init__(self,
+                 r=None, t=None, u=None,
+                 sample=None, r_sphere=None, t_sphere=None,
+                 default_a=None, default_b=None, default_g=None):
         """Object initialization."""
         if sample is None:
             self.sample = iadpython.Sample()
@@ -49,8 +52,6 @@ class Experiment():
         self.m_t = t
         self.m_u = u
 
-        self.useful_measurements = 0
-
         # these will have to be eventually supported
         self.d_beam = 1
         self.lambda0 = 633
@@ -63,6 +64,25 @@ class Experiment():
         self.uru_lost = 0
         self.ut1_lost = 0
         self.utu_lost = 0
+
+        self.default_a = default_a
+        self.default_b = default_b
+        self.default_g = default_g
+        self.default_ba = None
+        self.default_bs = None
+        self.default_mua = None
+        self.default_mus = None
+
+        self.found = False
+        self.search = 'unknown'
+        self.metric = 1
+        self.tolerance = 1
+        self.MC_tolerance = 1
+        self.final_distance = 1
+        self.iterations = 1
+        self.error = 1
+        self.num_measurements = 0
+        self.grid = None
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -84,66 +104,30 @@ class Experiment():
         s += "   Unscattered Transmission = %.5f\n" % self.m_r
         return s
 
-    def invert(self):
-        """Find a,b,g for this experiment."""
-        m = iadpython.Analysis(self)
-        m.check_measurements()
-        m.useful_measurements()
-        m.determine_search()
-        m.initialize_grid()
-        return m.invert()
-
-
-class Analysis():
-    """Container class for how analysis is done."""
-
-    def __init__(self, exp):
-        """Object initialization."""
-        self.exp = exp
-
-        self.default_a = None
-        self.default_b = None
-        self.default_g = None
-        self.default_ba = None
-        self.default_bs = None
-        self.default_mua = None
-        self.default_mus = None
-
-        self.found = False
-        self.search = 'unknown'
-        self.metric = 1
-        self.tolerance = 1
-        self.MC_tolerance = 1
-        self.final_distance = 1
-        self.iterations = 1
-        self.error = 1
-        self.num_measurements = 0
-        self.grid = None
-
     def check_measurements(self):
         """Make sure measurements are sane."""
         between = " Must be between 0 and 1."
-        if self.exp.m_r is not None:
-            if self.exp.m_r < 0 or self.exp.m_r > 1:
-                raise "Invalid refl. %.4f" % self.exp.m_r + between
+        if self.m_r is not None:
+            if self.m_r < 0 or self.m_r > 1:
+                raise "Invalid refl. %.4f" % self.m_r + between
 
-        if self.exp.m_t is not None:
-            if self.exp.m_t < 0 or self.exp.m_t > 1:
-                raise "Invalid trans. %.4f" % self.exp.m_t + between
+        if self.m_t is not None:
+            if self.m_t < 0 or self.m_t > 1:
+                raise "Invalid trans. %.4f" % self.m_t + between
 
-        if self.exp.m_u is not None:
-            if self.exp.m_u < 0 or self.exp.m_u > 1:
-                raise "Invalid unscattered trans. %.4f." % self.exp.m_u + between
+        if self.m_u is not None:
+            if self.m_u < 0 or self.m_u > 1:
+                raise "Invalid unscattered trans. %.4f." % self.m_u + between
 
 
     def useful_measurements(self):
         """Count the number of useful measurements."""
         self.num_measurements = 0
-        if self.exp.m_r is not None:
+        if self.m_r is not None:
             self.num_measurements += 1
-        if self.exp.m_t is not None:
+        if self.m_t is not None:
             self.num_measurements += 1
-        if self.exp.m_u is not None:
+        if self.m_u is not None:
             self.num_measurements += 1
 
 
@@ -213,23 +197,28 @@ class Analysis():
         else:
             self.determine_two_parameter_search()
 
-
     def initialize_grid(self):
         """Precalculate a grid."""
         self.grid = None
 
     def invert(self):
-        """Do the inversion."""
+        """Find a,b,g for this experiment."""
+        self.check_measurements()
+        self.useful_measurements()
+        self.determine_search()
+        self.initialize_grid()
+
+
         if self.search == 'find_a':
             if self.default_b:
-                self.exp.sample.b = self.default_b
+                self.sample.b = self.default_b
             else:
-                self.exp.sample.b = np.inf
+                self.sample.b = np.inf
 
             if self.default_g:
-                self.exp.sample.g = self.default_g
+                self.sample.g = self.default_g
             else:
-                self.exp.sample.g = 0
+                self.sample.g = 0
 
             bnds = scipy.optimize.Bounds(np.array([0]),np.array([1]))
             res = scipy.optimize.minimize(afun, 0.5,
@@ -239,19 +228,19 @@ class Analysis():
                                           tol=1e-5
                                           )
             print(res)
-            return self.exp.sample.a, self.exp.sample.b, self.exp.sample.g
+            return self.sample.a, self.sample.b, self.sample.g
 
         return None, None, None
 
 def afun(x, *args):
     """Vary the albedo."""
     analysis = args[0][0]
-    analysis.exp.sample.a = x
-    ur1, ut1, _, _ = analysis.exp.sample.rt()
+    analysis.sample.a = x
+    ur1, ut1, _, _ = analysis.sample.rt()
 
-    result = np.abs(ur1 - analysis.exp.m_r)
-    if analysis.exp.m_t is not None:
-        result += np.abs(ut1 - analysis.exp.m_t)
+    result = np.abs(ur1 - analysis.m_r)
+    if analysis.m_t is not None:
+        result += np.abs(ut1 - analysis.m_t)
 
     return result
     
