@@ -1,3 +1,9 @@
+# pylint: disable=invalid-name
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-locals
+# pylint: disable=too-many-arguments
+# pylint: disable=consider-using-f-string
+
 """
 Module for reading rxt and txt files.
 
@@ -6,11 +12,15 @@ Two types of starting methods are possible.
     import iadpython
 
     filename = 'ink.rxt'
-    slab, method, data = iadpython.read_iad_input(filename);
+    exp = iadpython.read_iad_input(filename);
 
     filename = 'ink.txt'
-    slab, method, data = iadpython.read_iad_output(filename)
+    exp = iadpython.read_iad_output(filename)
 """
+
+import numpy as np
+import iadpython
+
 __all__ = ('read_iad_input',
            'read_iad_output',
            )
@@ -24,9 +34,10 @@ def read_iad_input(filename):
         filename: .rxt filename
 
     Returns:
-        slab, method, data
+        Experiment object
     """
-    return None, None, None
+    exp = iadpython.Experiment()
+    return exp
 
 
 def read_iad_output(filename):
@@ -37,6 +48,7 @@ def read_iad_output(filename):
         filename: .txt filename
 
     Returns:
-        slab, method, data
+        Experiment Object
     """
-    return None, None, None
+    exp = iadpython.Experiment()
+    return exp
