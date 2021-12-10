@@ -8,7 +8,7 @@ import numpy as np
 import iadpython
 
 
-class IADTest(unittest.TestCase):
+class IADTestAlbedo(unittest.TestCase):
     """IAD tests calculations."""
 
     def test_01(self):
@@ -92,6 +92,44 @@ class IADTest(unittest.TestCase):
         aa = [0.3, 0.5, 0.95]
         bb = [np.inf, np.inf, np.inf]
         gg = [0, 0, 0]
+        np.testing.assert_allclose(a, aa, atol=1e-4)
+        np.testing.assert_allclose(b, bb)
+        np.testing.assert_allclose(g, gg)
+
+    def test_10(self):
+        """Matched slab with arrays with b=1."""
+        rr = [0.05125,0.09912,0.30172]
+        exp = iadpython.Experiment(r=rr, default_b=1)
+        a, b, g = exp.invert()
+        aa = [0.3, 0.5, 0.95]
+        bb = [1, 1, 1]
+        gg = [0, 0, 0]
+        np.testing.assert_allclose(a, aa, atol=1e-4)
+        np.testing.assert_allclose(b, bb)
+        np.testing.assert_allclose(g, gg)
+
+    def test_11(self):
+        """Matched slab with arrays with b=1 and g=0.5."""
+        s = iadpython.Sample(quad_pts=16)
+        rr = [0.01786,0.03824,0.15098]
+        exp = iadpython.Experiment(r=rr, sample=s, default_b=1, default_g=0.5)
+        a, b, g = exp.invert()
+        aa = [0.3, 0.5, 0.95]
+        bb = [1, 1, 1]
+        gg = [0.5, 0.5, 0.5]
+        np.testing.assert_allclose(a, aa, atol=1e-4)
+        np.testing.assert_allclose(b, bb)
+        np.testing.assert_allclose(g, gg)
+
+    def test_12(self):
+        """Mismatched slab with arrays with b=1 and g=0.5."""
+        s = iadpython.Sample(n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
+        rr = [0.05486,0.06722,0.20618]
+        exp = iadpython.Experiment(r=rr, sample=s, default_b=1, default_g=0.5)
+        a, b, g = exp.invert()
+        aa = [0.3, 0.5, 0.95]
+        bb = [1, 1, 1]
+        gg = [0.5, 0.5, 0.5]
         np.testing.assert_allclose(a, aa, atol=1e-4)
         np.testing.assert_allclose(b, bb)
         np.testing.assert_allclose(g, gg)
