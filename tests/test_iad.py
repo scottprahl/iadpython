@@ -20,14 +20,6 @@ class IADTest(unittest.TestCase):
         self.assertIsNone(g)
 
     def test_02(self):
-        """Matched slab with albedo=0.3."""
-        exp = iadpython.Experiment(r= 0.05721)
-        a, b, g = exp.invert()
-        self.assertAlmostEqual(a,0.3,delta=1e-4)
-        self.assertAlmostEqual(b,np.inf)
-        self.assertAlmostEqual(g,0)
-
-    def test_03(self):
         """Matched slab with albedo=0."""
         exp = iadpython.Experiment(r=0)
         a, b, g = exp.invert()
@@ -35,13 +27,29 @@ class IADTest(unittest.TestCase):
         self.assertAlmostEqual(b,np.inf)
         self.assertAlmostEqual(g,0)
 
-#     def test_04(self):
-#         """Matched slab with albedo=1."""
-#         exp = iadpython.Experiment(r=1)
-#         a, b, g = exp.invert()
-#         self.assertAlmostEqual(a,1.0,delta=1e-4)
-#         self.assertAlmostEqual(b,np.inf)
-#         self.assertAlmostEqual(g,0,delta=1e-4)
+    def test_03(self):
+        """Matched slab with albedo=0.3."""
+        exp = iadpython.Experiment(r= 0.05721)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a,0.3,delta=1e-4)
+        self.assertAlmostEqual(b,np.inf)
+        self.assertAlmostEqual(g,0)
+
+    def test_04(self):
+        """Matched slab with albedo=0.95."""
+        exp = iadpython.Experiment(r= 0.53554)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a,0.95,delta=1e-4)
+        self.assertAlmostEqual(b,np.inf)
+        self.assertAlmostEqual(g,0)
+
+    def test_04a(self):
+        """Matched slab with albedo=1."""
+        exp = iadpython.Experiment(r=1)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a,1.0,delta=1e-4)
+        self.assertAlmostEqual(b,np.inf)
+        self.assertAlmostEqual(g,0)
 
     def test_05(self):
         """Matched slab with g=0.9."""
@@ -76,6 +84,17 @@ class IADTest(unittest.TestCase):
         self.assertAlmostEqual(a,0.95,delta=2e-2)
         self.assertAlmostEqual(b,np.inf)
         self.assertAlmostEqual(g,0)
+
+    def test_09(self):
+        """Matched slab with arrays."""
+        exp = iadpython.Experiment(r=[0.05721,0.11523,0.53554])
+        a, b, g = exp.invert()
+        aa = [0.3, 0.5, 0.95]
+        bb = [np.inf, np.inf, np.inf]
+        gg = [0, 0, 0]
+        np.testing.assert_allclose(a, aa, atol=1e-4)
+        np.testing.assert_allclose(b, bb)
+        np.testing.assert_allclose(g, gg)
 
 if __name__ == '__main__':
     unittest.main()

@@ -23,6 +23,7 @@ print("b = %7.3f" % b)
 print("g = %7.3f" % g)
 """
 
+import copy
 import numpy as np
 import scipy.optimize
 import iadpython
@@ -99,9 +100,20 @@ class Experiment():
             s += self.t_sphere.__str__()
         s += "\n------------- Measurements ------------\n"
 
-        s += "   Reflection               = %.5f\n" % self.m_r
-        s += "   Transmission             = %.5f\n" % self.m_t
-        s += "   Unscattered Transmission = %.5f\n" % self.m_r
+        if self.m_r is None:
+            s += "   Reflection               = Missing\n"
+        else:
+            s += "   Reflection               = %.5f\n" % self.m_r
+
+        if self.m_t is None:
+            s += "   Transmission             = Missing\n"
+        else:
+            s += "   Transmission             = %.5f\n" % self.m_t
+
+        if self.m_u is None:
+            s += "   Unscattered Transmission = Missing\n"
+        else:
+            s += "   Unscattered Transmission = %.5f\n" % self.m_r
         return s
 
     def check_measurements(self):
@@ -201,7 +213,7 @@ class Experiment():
         """Precalculate a grid."""
         self.grid = None
 
-    def invert(self):
+    def invert_one(self):
         """Find a,b,g for this experiment."""
         self.check_measurements()
         self.useful_measurements()
@@ -220,17 +232,56 @@ class Experiment():
             else:
                 self.sample.g = 0
 
-            bnds = scipy.optimize.Bounds(np.array([0]),np.array([1]))
-            res = scipy.optimize.minimize(afun, 0.5,
+            res = scipy.optimize.minimize_scalar(afun,
                                           args=[self],
-                                          method='Powell',
-                                          bounds=bnds,
-                                          tol=1e-5
+                                          bounds=(0, 1),
+                                          method='bounded',
                                           )
-            print(res)
+
             return self.sample.a, self.sample.b, self.sample.g
 
         return None, None, None
+
+    def invert(self):
+        """Find a,b,g for this experiment."""
+        if self.m_r is None and self.m_t is None and self.m_u is None:
+            return self.invert_one()
+
+        # any scalar measurement indicates a single data point
+        if np.isscalar(self.m_r) or np.isscalar(self.m_t) or np.isscalar(self.m_u):
+            return self.invert_one()
+
+        # figure out the number of points that we need to invert
+        if self.m_r is not None:
+            N = len(self.m_r)
+        elif self.m_t is not None:
+            N = len(self.m_t)
+        else:
+            N = len(self.m_u)
+
+        a = np.zeros(N)
+        b = np.zeros(N)
+        g = np.zeros(N)
+
+        x = copy.deepcopy(self)
+        x.m_r = None
+        x.m_t = None
+        x.m_u = None
+
+        for i in range(N):
+            if self.m_r is not None:
+                x.m_r = self.m_r[i]
+            if self.m_t is not None:
+                x.m_t = self.m_t[i]
+            if self.m_u is not None:
+                x.m_u = self.m_u[i]
+
+#            print("---------%d---------\n" % i)
+#            print(x)
+            a[i], b[i], g[i] = x.invert_one()
+#            print(i, a[i])
+
+        return a, b, g
 
 def afun(x, *args):
     """Vary the albedo."""
