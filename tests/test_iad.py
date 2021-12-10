@@ -221,6 +221,24 @@ class IADTestOpticalThickness(unittest.TestCase):
         np.testing.assert_allclose(b, bb, atol=2e-2)
         np.testing.assert_allclose(g, gg)
 
+class IADAnisotropy(unittest.TestCase):
+    """Test inversion when solving only for scattering anisotropy."""
+
+    def test_g_01(self):
+        """Matched slab with albedo=0.5"""
+        exp = iadpython.Experiment(r=0.42872, default_b=2, default_a=0.95)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a,0.95)
+        self.assertAlmostEqual(b,2)
+        self.assertAlmostEqual(g,0,delta=1e-3)
+
+    def test_g_02(self):
+        """Matched slab with albedo=0.5"""
+        exp = iadpython.Experiment(t=0.40931, default_b=2, default_a=0.95)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a,0.95)
+        self.assertAlmostEqual(b,2)
+        self.assertAlmostEqual(g,0,delta=1e-3)
 
 if __name__ == '__main__':
     unittest.main()

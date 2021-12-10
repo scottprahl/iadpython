@@ -220,45 +220,54 @@ class Experiment():
         self.determine_search()
         self.initialize_grid()
 
+        if self.default_a:
+            self.sample.a = self.default_a
+        else:
+            self.sample.a = 0
+
+        if self.default_b:
+            self.sample.b = self.default_b
+        else:
+            self.sample.b = np.inf
+
+        if self.default_g:
+            self.sample.g = self.default_g
+        else:
+            self.sample.g = 0
 
         if self.search == 'find_a':
-            if self.default_b:
-                self.sample.b = self.default_b
-            else:
-                self.sample.b = np.inf
-
-            if self.default_g:
-                self.sample.g = self.default_g
-            else:
-                self.sample.g = 0
-
             res = scipy.optimize.minimize_scalar(afun,
                                           args=(self),
                                           bounds=(0, 1),
                                           method='bounded',
                                           )
-
             return self.sample.a, self.sample.b, self.sample.g
 
         if self.search == 'find_b':
-            if self.default_a:
-                self.sample.a = self.default_a
-            else:
-                self.sample.a = 0
-
-            if self.default_g:
-                self.sample.g = self.default_g
-            else:
-                self.sample.g = 0
-
             res = scipy.optimize.minimize_scalar(bfun,
                                           args=(self),
                                           bounds=(1,5),
                                           method='brent',
                                           )
-
             return self.sample.a, self.sample.b, self.sample.g
 
+        if self.search == 'find_g':
+            res = scipy.optimize.minimize_scalar(gfun,
+                                          args=(self),
+                                          bounds=(-1, 1),
+                                          method='bounded',
+                                          )
+            return self.sample.a, self.sample.b, self.sample.g
+
+        if self.search == 'find_ab':
+            bnds=scipy.optimize.Bounds([0,0], [1,np.inf])
+            res = scipy.optimize.minimize(abfun,
+                                          [0.5,1],
+                                          args=(self),
+                                          bounds=bnds,
+                                          method='bounded',
+                                          )
+            return self.sample.a, self.sample.b, self.sample.g
         return None, None, None
 
     def invert(self):
@@ -338,5 +347,16 @@ def gfun(x, *args):
         result += np.abs(ur1 - exp.m_r)
     if exp.m_t is not None:
         result += np.abs(ut1 - exp.m_t)
+
+    return result
+
+def abfun(x, *args):
+    """Vary the ab."""
+    exp = args[0]
+    exp.sample.a = x[0]
+    exp.sample.b = x[1]
+    ur1, ut1, _, _ = exp.sample.rt()
+
+    result = np.abs(ur1 - exp.m_r) + np.abs(ut1 - exp.m_t)
 
     return result
