@@ -240,5 +240,17 @@ class IADAnisotropy(unittest.TestCase):
         self.assertAlmostEqual(b,2)
         self.assertAlmostEqual(g,0,delta=1e-3)
 
+class IADAB(unittest.TestCase):
+    """Test inversion when solving only for a and b."""
+
+    def test_ab_01(self):
+        """Matched slab with albedo=0.5, b=2"""
+        exp = iadpython.Experiment(r=0.42872, t=0.40931, default_g=0)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a, 0.95, delta=1e-4)
+        self.assertAlmostEqual(b, 2, delta=1e-3)
+        self.assertAlmostEqual(g, 0)
+
+
 if __name__ == '__main__':
     unittest.main()

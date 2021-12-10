@@ -218,7 +218,9 @@ class Experiment():
         self.check_measurements()
         self.useful_measurements()
         self.determine_search()
-        self.initialize_grid()
+
+        if self.m_r is None and self.m_t is None and self.m_u is None:
+            return None, None, None
 
         if self.default_a:
             self.sample.a = self.default_a
@@ -260,12 +262,12 @@ class Experiment():
             return self.sample.a, self.sample.b, self.sample.g
 
         if self.search == 'find_ab':
-            bnds=scipy.optimize.Bounds([0,0], [1,np.inf])
+            bnds=scipy.optimize.Bounds(np.array([0,0]), np.array([1,np.inf]))
             res = scipy.optimize.minimize(abfun,
                                           [0.5,1],
                                           args=(self),
                                           bounds=bnds,
-                                          method='bounded',
+                                          method='Powell',
                                           )
             return self.sample.a, self.sample.b, self.sample.g
         return None, None, None
