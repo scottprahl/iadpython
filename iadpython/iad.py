@@ -233,9 +233,28 @@ class Experiment():
                 self.sample.g = 0
 
             res = scipy.optimize.minimize_scalar(afun,
-                                          args=[self],
+                                          args=(self),
                                           bounds=(0, 1),
                                           method='bounded',
+                                          )
+
+            return self.sample.a, self.sample.b, self.sample.g
+
+        if self.search == 'find_b':
+            if self.default_a:
+                self.sample.a = self.default_a
+            else:
+                self.sample.a = 0
+
+            if self.default_g:
+                self.sample.g = self.default_g
+            else:
+                self.sample.g = 0
+
+            res = scipy.optimize.minimize_scalar(bfun,
+                                          args=(self),
+                                          bounds=(1,5),
+                                          method='brent',
                                           )
 
             return self.sample.a, self.sample.b, self.sample.g
@@ -276,22 +295,48 @@ class Experiment():
             if self.m_u is not None:
                 x.m_u = self.m_u[i]
 
-#            print("---------%d---------\n" % i)
-#            print(x)
             a[i], b[i], g[i] = x.invert_one()
-#            print(i, a[i])
 
         return a, b, g
 
 def afun(x, *args):
     """Vary the albedo."""
-    analysis = args[0][0]
-    analysis.sample.a = x
-    ur1, ut1, _, _ = analysis.sample.rt()
+    exp = args[0]
+    exp.sample.a = x
+    ur1, ut1, _, _ = exp.sample.rt()
 
-    result = np.abs(ur1 - analysis.m_r)
-    if analysis.m_t is not None:
-        result += np.abs(ut1 - analysis.m_t)
+    result = 0
+    if exp.m_r is not None:
+        result += np.abs(ur1 - exp.m_r)
+    if exp.m_t is not None:
+        result += np.abs(ut1 - exp.m_t)
 
     return result
-    
+
+def bfun(x, *args):
+    """Vary the optical thickness."""
+    exp = args[0]
+    exp.sample.b = x
+    ur1, ut1, _, _ = exp.sample.rt()
+
+    result = 0
+    if exp.m_r is not None:
+        result += np.abs(ur1 - exp.m_r)
+    if exp.m_t is not None:
+        result += np.abs(ut1 - exp.m_t)
+
+    return result
+
+def gfun(x, *args):
+    """Vary the anisotropy."""
+    exp = args[0]
+    exp.sample.g = x
+    ur1, ut1, _, _ = exp.sample.rt()
+
+    result = 0
+    if exp.m_r is not None:
+        result += np.abs(ur1 - exp.m_r)
+    if exp.m_t is not None:
+        result += np.abs(ut1 - exp.m_t)
+
+    return result
