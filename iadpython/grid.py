@@ -9,13 +9,14 @@ Class for doing inverse adding-doubling calculations for a sample.
 
 import iadpython
 
-exp = iadpython.Experiment(0.5,0.1,default_g=0.5)
+exp = iadpython.Experiment(0.5, 0.1, default_g=0.5)
 grid = iadpython.Grid()
 grid.calc(exp)
 print(grid)
 """
 
 import numpy as np
+
 
 class Grid():
     """Container class for details of an experiment."""
@@ -25,12 +26,11 @@ class Grid():
         self.search = search
         self.default = default
         self.N = N
-        self.a = np.zeros((N,N))
-        self.b = np.zeros((N,N))
-        self.g = np.zeros((N,N))
-        self.ur1 = np.zeros((N,N))
-        self.ut1 = np.zeros((N,N))
-
+        self.a = np.zeros((N, N))
+        self.b = np.zeros((N, N))
+        self.g = np.zeros((N, N))
+        self.ur1 = np.zeros((N, N))
+        self.ut1 = np.zeros((N, N))
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -52,7 +52,6 @@ class Grid():
         s += matrix_as_string(self.ut1, "ut1")
 
         return s
-
 
     def calc(self, exp):
         """Precalculate a grid."""
@@ -79,11 +78,10 @@ class Grid():
 
         for i in range(self.N):
             for j in range(self.N):
-                exp.sample.a = self.a[i,j]
-                exp.sample.b = self.b[i,j]
-                exp.sample.g = self.g[i,j]
+                exp.sample.a = self.a[i, j]
+                exp.sample.b = self.b[i, j]
+                exp.sample.g = self.g[i, j]
                 self.ur1[i, j], self.ut1[i, j], _, _ = exp.sample.rt()
-
 
     def min_abg(self, mr, mt):
         """Find closest a, b, g closest to mr and mt."""
@@ -101,16 +99,16 @@ def matrix_as_string(x, label=''):
     if x is None:
         return ""
 
-    N, M = x.shape
+    n, m = x.shape
 
     ndashes = (80 - len(label) - 2) // 2
     s = "\n"
     s += '-' * ndashes + ' ' + label + ' ' + '-' * ndashes
     s += "\n[\n"
-    for i in range(N):
+    for i in range(n):
         s += '['
-        for j in range(M):
-            s += "%6.3f," % x[i,j]
-        s += "],\n"
+        for j in range(m):
+            s += "%6.3f, " % x[i, j]
+        s += "], \n"
     s += "]\n"
     return s

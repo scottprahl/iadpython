@@ -10,7 +10,7 @@ import numpy as np
 import iadpython
 
 
-class A_nothing_sandwich(unittest.TestCase):
+class NothingSandwichTestA(unittest.TestCase):
     """Empty layer with and without boundaries."""
 
     def test_01_zero_thickness(self):
@@ -138,7 +138,7 @@ class A_nothing_sandwich(unittest.TestCase):
         np.testing.assert_allclose(T, tt, atol=1e-5)
 
 
-class B_finite_sandwich(unittest.TestCase):
+class NothingSandwichTestB(unittest.TestCase):
     """Finite layer in air."""
 
     def test_01_sandwich(self):
@@ -305,7 +305,8 @@ class B_finite_sandwich(unittest.TestCase):
         np.testing.assert_allclose(T03, tt03, atol=1e-5)
         np.testing.assert_allclose(T30, tt30, atol=1e-5)
 
-class ThickSamples(unittest.TestCase):
+
+class ThickSamplesTest(unittest.TestCase):
     """Tests for effectively infinitely thick slabs."""
 
     def test_01_non_scattering(self):

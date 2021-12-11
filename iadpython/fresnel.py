@@ -289,7 +289,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     r2 = fresnel_reflection(n_g, nu_g, n_t)
 
     # make sure exponential is zero when nu_g == 0
-    d = np.divide(b, nu_g, out=np.zeros_like(nu_g), where=nu_g!=0)
+    d = np.divide(b, nu_g, out=np.zeros_like(nu_g), where=nu_g != 0)
     expo = np.exp(-d)
     denom = 1.0 - r1 * r2 * expo**2
     numer = r1 + (1.0 - 2.0 * r1) * r2 * expo**2

@@ -8,7 +8,7 @@ import numpy as np
 import iadpython
 
 
-class layer(unittest.TestCase):
+class LayerTest(unittest.TestCase):
     """Starting layer calculations."""
 
     def test_00_double(self):

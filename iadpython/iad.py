@@ -25,7 +25,7 @@ print("g = %7.3f" % g)
 
 import copy
 import numpy as np
-import scipy.optimize
+from scipy.optimize import minimize, minimize_scalar, Bounds
 import iadpython
 
 class Experiment():
@@ -227,61 +227,34 @@ class Experiment():
         self.sample.g = self.default_g or 0
 
         if self.search == 'find_a':
-            res = scipy.optimize.minimize_scalar(afun,
-                                          args=(self),
-                                          bounds=(0, 1),
-                                          method='bounded',
-                                          )
-            return self.sample.a, self.sample.b, self.sample.g
+            res = minimize_scalar(afun, args=(self), bounds=(0, 1), method='bounded')
 
         if self.search == 'find_b':
-            res = scipy.optimize.minimize_scalar(bfun,
-                                          args=(self),
-                                          bounds=(1,5),
-                                          method='brent',
-                                          )
-            return self.sample.a, self.sample.b, self.sample.g
+            res = minimize_scalar(bfun, args=(self), bounds=(1, 5), method='brent')
 
         if self.search == 'find_g':
-            res = scipy.optimize.minimize_scalar(gfun,
-                                          args=(self),
-                                          bounds=(-1, 1),
-                                          method='bounded',
-                                          )
-            return self.sample.a, self.sample.b, self.sample.g
+            res = minimize_scalar(gfun, args=(self), bounds=(-1, 1), method='bounded')
 
-        if self.grid is None:
-            self.grid = iadpython.Grid()
-            self.grid.calc(self)
-            
-        a, b, g = self.grid.min_abg(self.m_r, self.m_t)
+        if self.search in ['find_ab', 'find_ag', 'find_bg']:
+            if self.grid is None:
+                self.grid = iadpython.Grid()
+                self.grid.calc(self)
+
+            a, b, g = self.grid.min_abg(self.m_r, self.m_t)
 
         if self.search == 'find_ab':
-            bnds=scipy.optimize.Bounds(np.array([0,0]), np.array([1,np.inf]))
-            res = scipy.optimize.minimize(abfun, [a,b], args=(self), bounds=bnds, method='Powell')
-            return self.sample.a, self.sample.b, self.sample.g
+            bnds = Bounds(np.array([0, 0]), np.array([1, np.inf]))
+            res = minimize(abfun, [a, b], args=(self), bounds=bnds, method='Powell')
 
         if self.search == 'find_ag':
-            bnds=scipy.optimize.Bounds(np.array([0,-1]), np.array([1,1]))
-            res = scipy.optimize.minimize(agfun,
-                                          [a,g],
-                                          args=(self),
-                                          bounds=bnds,
-                                          method='Powell',
-                                          )
-            return self.sample.a, self.sample.b, self.sample.g
+            bnds = Bounds(np.array([0, -1]), np.array([1, 1]))
+            res = minimize(agfun, [a, g], args=(self), bounds=bnds, method='Powell')
 
         if self.search == 'find_bg':
-            bnds=scipy.optimize.Bounds(np.array([0,-1]), np.array([np.inf,1]))
-            res = scipy.optimize.minimize(bgfun,
-                                          [b,g],
-                                          args=(self),
-                                          bounds=bnds,
-                                          method='Powell',
-                                          )
-            return self.sample.a, self.sample.b, self.sample.g
+            bnds = Bounds(np.array([0, -1]), np.array([np.inf, 1]))
+            res = minimize(bgfun, [b, g], args=(self), bounds=bnds, method='Powell')
 
-        return None, None, None
+        return self.sample.a, self.sample.b, self.sample.g
 
     def invert(self):
         """Find a,b,g for this experiment."""

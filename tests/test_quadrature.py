@@ -8,7 +8,7 @@ import numpy as np
 import iadpython.quadrature as quad
 
 
-class gauss(unittest.TestCase):
+class GaussTest(unittest.TestCase):
     """Tests for Gaussian-Legendre quadrature."""
 
     def test_01_gaussian(self):
@@ -68,7 +68,7 @@ class gauss(unittest.TestCase):
         self.assertLess(x[-1], b)
 
 
-class radau(unittest.TestCase):
+class RadauTest(unittest.TestCase):
     """Tests for Radau-Legendre quadrature."""
 
     def test_01_radau(self):
@@ -128,7 +128,7 @@ class radau(unittest.TestCase):
         self.assertLess(a, x[0])
 
 
-class lobatto(unittest.TestCase):
+class LobattoTest(unittest.TestCase):
     """Tests for Lobatto-Legendre quadrature."""
 
     def test_01_lobatto(self):

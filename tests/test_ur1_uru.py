@@ -8,7 +8,7 @@ import numpy as np
 import iadpython
 
 
-class Test_Finite(unittest.TestCase):
+class TestFinite(unittest.TestCase):
     """Finite layer in air."""
 
     def test_01_sandwich(self):
