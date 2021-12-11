@@ -251,6 +251,52 @@ class IADAB(unittest.TestCase):
         self.assertAlmostEqual(b, 2, delta=1e-3)
         self.assertAlmostEqual(g, 0)
 
+    def test_ab_02(self):
+        """Matched slab with albedo=0.5, b=2"""
+        exp = iadpython.Experiment(r=0.18825, t=0.67381, default_g=0.3)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a, 0.9, delta=1e-4)
+        self.assertAlmostEqual(b, 1, delta=1e-3)
+        self.assertAlmostEqual(g, 0.3)
+
+class IADAG(unittest.TestCase):
+    """Test inversion when solving only for a and g."""
+
+    def test_ag_01(self):
+        """Matched slab with albedo=0.5, b=2"""
+        exp = iadpython.Experiment(r=0.42872, t=0.40931, default_b=2)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a, 0.95, delta=1e-4)
+        self.assertAlmostEqual(b, 2)
+        self.assertAlmostEqual(g, 0.0, delta=1e-3)
+
+    def test_ag_02(self):
+        """Matched slab with albedo=0.9, g=0.3"""
+        exp = iadpython.Experiment(r=0.18825, t=0.67381, default_b=1)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a, 0.9, delta=1e-4)
+        self.assertAlmostEqual(b, 1)
+        self.assertAlmostEqual(g, 0.3, delta=1e-3)
+
+class IADBG(unittest.TestCase):
+    """Test inversion when solving only for b and g."""
+
+    def test_bg_01(self):
+        """Matched slab with albedo=0.5, b=2"""
+        exp = iadpython.Experiment(r=0.42872, t=0.40931, default_a=0.95)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a, 0.95)
+        self.assertAlmostEqual(b, 2, delta=1e-3)
+        self.assertAlmostEqual(g, 0.0, delta=1e-3)
+
+    def test_bg_01(self):
+        """Matched slab with albedo=0.5, b=1"""
+        exp = iadpython.Experiment(r=0.18825, t=0.67381, default_a=0.9)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a, 0.9)
+        self.assertAlmostEqual(b, 1, delta=2e-2)
+        self.assertAlmostEqual(g, 0.3, delta=2e-2)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -262,14 +262,68 @@ class Experiment():
             return self.sample.a, self.sample.b, self.sample.g
 
         if self.search == 'find_ab':
+            min_error = np.inf
+            for a in np.linspace(0,1,11):
+                for b in np.linspace(0,10,11):
+                    self.sample.a = a
+                    self.sample.b = b
+                    ur1, ut1, _, _ = self.sample.rt()
+                    error = np.abs(ur1 - self.m_r) + np.abs(ut1 - self.m_t)
+                    if error < min_error:
+                        min_error=error
+                        min_a = a
+                        min_b = b
+
             bnds=scipy.optimize.Bounds(np.array([0,0]), np.array([1,np.inf]))
-            res = scipy.optimize.minimize(abfun,
-                                          [0.5,1],
+            res = scipy.optimize.minimize(abfun, [min_a,min_b], args=(self), bounds=bnds, method='Powell')
+            return self.sample.a, self.sample.b, self.sample.g
+
+        if self.search == 'find_ag':
+            min_error = np.inf
+            for a in np.linspace(0,1,11):
+                for g in np.linspace(-0.95,0.95,10):
+                    self.sample.a = a
+                    self.sample.g = g
+                    ur1, ut1, _, _ = self.sample.rt()
+                    error = np.abs(ur1 - self.m_r) + np.abs(ut1 - self.m_t)
+                    if error < min_error:
+                        min_error=error
+                        min_a = a
+                        min_g = g
+#                        print("new min %.5f a=%.5f g=%.5f" % (min_error, min_a, min_g))
+                        
+            bnds=scipy.optimize.Bounds(np.array([0,-1]), np.array([1,1]))
+            res = scipy.optimize.minimize(agfun,
+                                          [min_a,min_g],
                                           args=(self),
                                           bounds=bnds,
                                           method='Powell',
                                           )
             return self.sample.a, self.sample.b, self.sample.g
+
+        if self.search == 'find_bg':
+            min_error = np.inf
+            for b in np.linspace(0,10,10):
+                for g in np.linspace(-0.95,0.95,10):
+                    self.sample.b = b
+                    self.sample.g = g
+                    ur1, ut1, _, _ = self.sample.rt()
+                    error = np.abs(ur1 - self.m_r) + np.abs(ut1 - self.m_t)
+                    if error < min_error:
+                        min_error=error
+                        min_b = b
+                        min_g = g
+#                        print("new min %.5f b=%.5f g=%.5f" % (min_error, min_b, min_g))
+
+            bnds=scipy.optimize.Bounds(np.array([0,-1]), np.array([np.inf,1]))
+            res = scipy.optimize.minimize(bgfun,
+                                          [min_b,min_g],
+                                          args=(self),
+                                          bounds=bnds,
+                                          method='Powell',
+                                          )
+            return self.sample.a, self.sample.b, self.sample.g
+
         return None, None, None
 
     def invert(self):
@@ -305,7 +359,6 @@ class Experiment():
                 x.m_t = self.m_t[i]
             if self.m_u is not None:
                 x.m_u = self.m_u[i]
-
             a[i], b[i], g[i] = x.invert_one()
 
         return a, b, g
@@ -358,7 +411,20 @@ def abfun(x, *args):
     exp.sample.a = x[0]
     exp.sample.b = x[1]
     ur1, ut1, _, _ = exp.sample.rt()
+    return np.abs(ur1 - exp.m_r) + np.abs(ut1 - exp.m_t)
 
-    result = np.abs(ur1 - exp.m_r) + np.abs(ut1 - exp.m_t)
+def bgfun(x, *args):
+    """Vary the bg."""
+    exp = args[0]
+    exp.sample.b = x[0]
+    exp.sample.g = x[1]
+    ur1, ut1, _, _ = exp.sample.rt()
+    return np.abs(ur1 - exp.m_r) + np.abs(ut1 - exp.m_t)
 
-    return result
+def agfun(x, *args):
+    """Vary the ag."""
+    exp = args[0]
+    exp.sample.a = x[0]
+    exp.sample.g = x[1]
+    ur1, ut1, _, _ = exp.sample.rt()
+    return np.abs(ur1 - exp.m_r) + np.abs(ut1 - exp.m_t)
