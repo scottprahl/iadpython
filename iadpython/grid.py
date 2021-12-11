@@ -20,7 +20,7 @@ import numpy as np
 class Grid():
     """Container class for details of an experiment."""
 
-    def __init__(self, search=None, default=None, N=11):
+    def __init__(self, search=None, default=None, N=21):
         """Object initialization."""
         self.search = search
         self.default = default
@@ -86,13 +86,11 @@ class Grid():
 
 
     def min_abg(self, mr, mt):
-        """find closest a, b, g closest to mr and mt."""
+        """Find closest a, b, g closest to mr and mt."""
         if self.ur1 is None:
             raise Exception("Grid.calc(exp) must be called before Grid.min_abg")
-            return None, None, None
 
         A = np.abs(mr - self.ur1) + np.abs(mt - self.ut1)
-        print(matrix_as_string(A))
         ii_flat = A.argmin()
         i, j = ii_flat // A.shape[1], ii_flat % A.shape[1]
         return self.a[i, j], self.b[i, j], self.g[i, j]

@@ -222,20 +222,9 @@ class Experiment():
         if self.m_r is None and self.m_t is None and self.m_u is None:
             return None, None, None
 
-        if self.default_a:
-            self.sample.a = self.default_a
-        else:
-            self.sample.a = 0
-
-        if self.default_b:
-            self.sample.b = self.default_b
-        else:
-            self.sample.b = np.inf
-
-        if self.default_g:
-            self.sample.g = self.default_g
-        else:
-            self.sample.g = 0
+        self.sample.a = self.default_a or 0
+        self.sample.b = self.default_b or np.inf
+        self.sample.g = self.default_g or 0
 
         if self.search == 'find_a':
             res = scipy.optimize.minimize_scalar(afun,
@@ -261,40 +250,21 @@ class Experiment():
                                           )
             return self.sample.a, self.sample.b, self.sample.g
 
-        if self.search == 'find_ab':
-            min_error = np.inf
-            for a in np.linspace(0,1,11):
-                for b in np.linspace(0,10,11):
-                    self.sample.a = a
-                    self.sample.b = b
-                    ur1, ut1, _, _ = self.sample.rt()
-                    error = np.abs(ur1 - self.m_r) + np.abs(ut1 - self.m_t)
-                    if error < min_error:
-                        min_error=error
-                        min_a = a
-                        min_b = b
+        if self.grid is None:
+            self.grid = iadpython.Grid()
+            self.grid.calc(self)
+            
+        a, b, g = self.grid.min_abg(self.m_r, self.m_t)
 
+        if self.search == 'find_ab':
             bnds=scipy.optimize.Bounds(np.array([0,0]), np.array([1,np.inf]))
-            res = scipy.optimize.minimize(abfun, [min_a,min_b], args=(self), bounds=bnds, method='Powell')
+            res = scipy.optimize.minimize(abfun, [a,b], args=(self), bounds=bnds, method='Powell')
             return self.sample.a, self.sample.b, self.sample.g
 
         if self.search == 'find_ag':
-            min_error = np.inf
-            for a in np.linspace(0,1,11):
-                for g in np.linspace(-0.95,0.95,10):
-                    self.sample.a = a
-                    self.sample.g = g
-                    ur1, ut1, _, _ = self.sample.rt()
-                    error = np.abs(ur1 - self.m_r) + np.abs(ut1 - self.m_t)
-                    if error < min_error:
-                        min_error=error
-                        min_a = a
-                        min_g = g
-#                        print("new min %.5f a=%.5f g=%.5f" % (min_error, min_a, min_g))
-                        
             bnds=scipy.optimize.Bounds(np.array([0,-1]), np.array([1,1]))
             res = scipy.optimize.minimize(agfun,
-                                          [min_a,min_g],
+                                          [a,g],
                                           args=(self),
                                           bounds=bnds,
                                           method='Powell',
@@ -302,22 +272,9 @@ class Experiment():
             return self.sample.a, self.sample.b, self.sample.g
 
         if self.search == 'find_bg':
-            min_error = np.inf
-            for b in np.linspace(0,10,10):
-                for g in np.linspace(-0.95,0.95,10):
-                    self.sample.b = b
-                    self.sample.g = g
-                    ur1, ut1, _, _ = self.sample.rt()
-                    error = np.abs(ur1 - self.m_r) + np.abs(ut1 - self.m_t)
-                    if error < min_error:
-                        min_error=error
-                        min_b = b
-                        min_g = g
-#                        print("new min %.5f b=%.5f g=%.5f" % (min_error, min_b, min_g))
-
             bnds=scipy.optimize.Bounds(np.array([0,-1]), np.array([np.inf,1]))
             res = scipy.optimize.minimize(bgfun,
-                                          [min_b,min_g],
+                                          [b,g],
                                           args=(self),
                                           bounds=bnds,
                                           method='Powell',

@@ -12,6 +12,7 @@ lintcheck:
 	-pylint iadpython/combine.py
 	-pylint iadpython/constants.py
 	-pylint iadpython/fresnel.py
+	-pylint iadpython/grid.py
 	-pylint iadpython/iad.py
 	-pylint iadpython/nist.py
 	-pylint iadpython/quadrature.py
@@ -21,6 +22,7 @@ lintcheck:
 	-pylint tests/test_boundary.py
 	-pylint tests/test_combo.py
 	-pylint tests/test_fresnel.py
+	-pylint tests/test_grid.py
 	-pylint tests/test_iad.py
 	-pylint tests/test_layer.py
 	-pylint tests/test_layers.py
@@ -41,6 +43,7 @@ doccheck:
 	-pydocstyle iadpython/constants.py
 	-pydocstyle iadpython/iad.py
 	-pydocstyle iadpython/fresnel.py
+	-pydocstyle iadpython/grid.py
 	-pydocstyle iadpython/nist.py
 	-pydocstyle iadpython/quadrature.py
 	-pydocstyle iadpython/redistribution.py
@@ -49,6 +52,7 @@ doccheck:
 	-pydocstyle tests/test_boundary.py
 	-pydocstyle tests/test_combo.py
 	-pydocstyle tests/test_fresnel.py
+	-pydocstyle tests/test_grid.py
 	-pydocstyle tests/test_iad.py
 	-pydocstyle tests/test_layer.py
 	-pydocstyle tests/test_layers.py

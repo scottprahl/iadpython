@@ -12,7 +12,7 @@ class GridTest(unittest.TestCase):
     """Test grid construction."""
 
     def test_grid_01(self):
-        """Grid for search_ag"""
+        """Grid for search_ag."""
         exp = iadpython.Experiment(r=0.1, t=0.5, default_b=4)
         exp.determine_search()
         grid = iadpython.Grid(N=5)
@@ -42,7 +42,7 @@ class GridTest(unittest.TestCase):
                [ 0.018, 0.023, 0.032, 0.061, 0.309],
                [ 0.018, 0.029, 0.053, 0.120, 0.477],
                [ 0.018, 0.047, 0.123, 0.331, 0.949]]
-    
+
         np.testing.assert_allclose(grid.a, aa, atol=1e-5)
         np.testing.assert_allclose(grid.b, bb, atol=1e-5)
         np.testing.assert_allclose(grid.g, gg, atol=1e-5)
@@ -107,7 +107,7 @@ class GridTest(unittest.TestCase):
         np.testing.assert_allclose(grid.g, gg, atol=1e-5)
 
     def test_grid_04(self):
-        """Grid for search_ag"""
+        """Verify that minimum values are returned."""
         exp = iadpython.Experiment(r=0.1, t=0.5, default_b=4)
         exp.determine_search()
         grid = iadpython.Grid(N=21)
