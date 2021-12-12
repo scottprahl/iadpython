@@ -63,8 +63,8 @@ class Sphere():
         s += "       entrance = %.1f mm\n" % self._d_entrance
         s += "       detector = %.1f mm\n" % self._d_detector
         s += "Diffuse reflectivities \n"
-        s += "           wall = %.1f%%\n" % self.r_wall
-        s += "       detector = %.1f%%\n" % self.r_detector
+        s += "           wall = %.1f%%\n" % (self.r_wall*100)
+        s += "       detector = %.1f%%\n" % (self.r_detector*100)
         return s
 
     def gain(self, URU, r_wall=None):

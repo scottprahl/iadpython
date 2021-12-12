@@ -52,6 +52,7 @@ class Experiment():
         self.m_r = r
         self.m_t = t
         self.m_u = u
+        self.lambda0 = None
 
         # these will have to be eventually supported
         self.d_beam = 1
@@ -83,6 +84,7 @@ class Experiment():
         self.iterations = 1
         self.error = 1
         self.num_measurements = 0
+        self.num_measures = 0
         self.grid = None
 
     def __str__(self):
@@ -100,20 +102,29 @@ class Experiment():
             s += self.t_sphere.__str__()
         s += "\n------------- Measurements ------------\n"
 
+        s += "   Reflection               = "
         if self.m_r is None:
-            s += "   Reflection               = Missing\n"
+            s += "Missing\n"
+        elif np.isscalar(self.m_r):
+            s += "%.5f\n" % self.m_r
         else:
-            s += "   Reflection               = %.5f\n" % self.m_r
+            s += "%s\n" % self.m_r.__str__()
 
+        s += "   Transmission             = "
         if self.m_t is None:
-            s += "   Transmission             = Missing\n"
+            s += "Missing\n"
+        elif np.isscalar(self.m_r):
+            s += "%.5f\n" % self.m_t
         else:
-            s += "   Transmission             = %.5f\n" % self.m_t
+            s += "%s\n" % self.m_t.__str__()
 
+        s += "   Unscattered Transmission = "
         if self.m_u is None:
-            s += "   Unscattered Transmission = Missing\n"
+            s += "Missing\n"
+        elif np.isscalar(self.m_r):
+            s += "%.5f\n" % self.m_u
         else:
-            s += "   Unscattered Transmission = %.5f\n" % self.m_r
+            s += "%s\n" % self.m_u.__str__()
         return s
 
     def check_measurements(self):

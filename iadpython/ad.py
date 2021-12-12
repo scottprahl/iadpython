@@ -59,10 +59,12 @@ class Sample():
         self.a = a
         self.b = b
         self._g = g
-        self.d = d
+        self.d = d  # thickness of sample in mm
         self._n = n
         self.n_above = n_above
         self.n_below = n_below
+        self.d_above = 1 # thickness of top slide in mm
+        self.d_below = 1 # thickness of bot slide in mm
         self.nu_0 = 1.0
         self.b_above = 0
         self.b_below = 0
