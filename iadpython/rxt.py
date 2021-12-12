@@ -31,18 +31,18 @@ def read_and_remove_notation(filename):
     s = ''
     with open(filename) as f:
         for line in f:
-            line = re.sub('#.*', '', line)
-            line = re.sub('\s+', ' ', line)
-            line = re.sub('\s*$', '', line)
-            if not line:
-                continue
-            s += line + ','
+            line = re.sub(r'#.*', '', line)
+            line = re.sub(r'\s', ' ', line)
+            line = re.sub(r',', ' ', line)
+            s += line
    
     if len(re.findall('IAD1',s)) == 0:
-        raise Exemption("Not an .rxt file. (Does not start with IAD1)")
+        raise Exception("Not an .rxt file. (Does not start with IAD1)")
     
-    s = re.sub('IAD1,', '', s)
-    s = re.sub(',$', '', s)
+    s = re.sub(r'IAD1', '', s)
+    s = re.sub(r'\s+', ' ', s)
+    s = re.sub(r'^\s+', '', s)
+    s = re.sub(r'\s+$', '', s)
     return s
     
 def read_rxt(filename):
@@ -56,7 +56,7 @@ def read_rxt(filename):
         Experiment object
     """
     s = read_and_remove_notation(filename)
-    x = np.array([float(value) for value in s.split(',')])
+    x = np.array([float(value) for value in s.split(' ')])
 
     sample = iadpython.Sample()
     sample.n = x[0]
@@ -89,7 +89,6 @@ def read_rxt(filename):
 
 	# m->num_measures = (*params >= 3) ? 3 : *params;
     exp.num_measures = x[17]	
-    print('measures = %d' % exp.num_measures)
 
     exp.lambda0 = np.zeros(0)
     if exp.num_measures >= 1:
@@ -118,8 +117,9 @@ def read_rxt(filename):
         else:
             count_per_line += 1
 
-    print(exp.m_r)
-    print(exp)
+    if len(exp.lambda0) == 0:
+        exp.lambda0 = None
+    return exp
 
 
 def read_iad_output(filename):
