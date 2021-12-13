@@ -189,6 +189,11 @@ class Experiment():
         self.search = 'find_ab'
 
         # albedo is known
+        if self.m_u is not None:
+            self.search = 'find_ag'
+            self.default_b = self.what_is_b()
+            self.grid = None
+
         if self.default_a is not None:
             self.search = 'find_bg'
 
@@ -304,9 +309,10 @@ class Experiment():
 
         return a, b, g
 
-    def what_is_b(self, t_un):
+    def what_is_b(self):
         """Find optical thickness using unscattered transmission."""
         s = self.sample
+        t_un = self.m_u
 
         r1, t1 = iadpython.absorbing_glass_RT(1.0, s.n_above, s.n, s.nu_0, s.b_above)
 
