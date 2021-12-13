@@ -422,7 +422,7 @@ class Specular(unittest.TestCase):
         n_bot = 1.0
         b_slab = 0
         nu_in = np.array([0.01, 0.2, 0.5, 0.8, 1.0])
-        r, t = iad.specular_nu_RT(n_top, n_slab, n_bot, b_slab, nu_in)
+        r, t = iad.specular_rt(n_top, n_slab, n_bot, b_slab, nu_in)
         rr = np.zeros_like(nu_in)
         tt = 1-rr
         np.testing.assert_allclose(r, rr, atol=1e-5)
@@ -435,7 +435,7 @@ class Specular(unittest.TestCase):
         n_bot = 1.0
         b_slab = 1
         nu_in = np.array([0.01, 0.2, 0.5, 0.8, 1.0])
-        r, t = iad.specular_nu_RT(n_top, n_slab, n_bot, b_slab, nu_in)
+        r, t = iad.specular_rt(n_top, n_slab, n_bot, b_slab, nu_in)
         rr, tt = iad.absorbing_glass_RT(1, n_slab, 1, nu_in, b_slab)
         np.testing.assert_allclose(r, rr, atol=1e-5)
         np.testing.assert_allclose(t, tt, atol=1e-5)
@@ -447,7 +447,7 @@ class Specular(unittest.TestCase):
         n_bot = 1.5
         b_slab = 1
         nu_in = np.array([0.01, 0.2, 0.5, 0.8, 1.0])
-        r, t = iad.specular_nu_RT(n_top, n_slab, n_bot, b_slab, nu_in)
+        r, t = iad.specular_rt(n_top, n_slab, n_bot, b_slab, nu_in)
         rr, tt = iad.absorbing_glass_RT(1, n_slab, 1, nu_in, b_slab)
         np.testing.assert_allclose(r, rr, atol=1e-5)
         np.testing.assert_allclose(t, tt, atol=1e-5)
@@ -459,7 +459,7 @@ class Specular(unittest.TestCase):
         n_bot = 1.5
         b_slab = np.inf
         nu_in = np.array([0.01, 0.2, 0.5, 0.8, 1.0])
-        r, t = iad.specular_nu_RT(n_top, n_slab, n_bot, b_slab, nu_in)
+        r, t = iad.specular_rt(n_top, n_slab, n_bot, b_slab, nu_in)
         rr, tt = iad.absorbing_glass_RT(1, n_slab, 1, nu_in, b_slab)
         np.testing.assert_allclose(r, rr, atol=1e-5)
         np.testing.assert_allclose(t, tt, atol=1e-5)
@@ -471,35 +471,38 @@ class Specular(unittest.TestCase):
         n_bot = 1.5
         b_slab = np.inf
         nu_in = np.array([0.01, 0.2, 0.5, 0.8, 1.0])
-        r, t = iad.specular_nu_RT(n_top, n_slab, n_bot, b_slab, nu_in, flip=True)
+        r, t = iad.specular_rt(n_top, n_slab, n_bot, b_slab, nu_in, flip=True)
         rr, tt = iad.absorbing_glass_RT(1, n_slab, 1, nu_in, b_slab)
         np.testing.assert_allclose(r, rr, atol=1e-5)
         np.testing.assert_allclose(t, tt, atol=1e-5)
 
-#     def test_06_specular(self):
-#         """No slide on bottom and no transmission."""
-#         n_top = 1.5
-#         n_slab = 1.4
-#         n_bot = 1.4
-#         b_slab = np.inf
-#         nu_g = np.array([0.01, 0.2, 0.5, 0.8, 1.0]) # in glass
-#         nu_in = iad.cos_snell(n_top, nu_g, n_slab) # in slab
-#         r, t = iad.specular_nu_RT(n_top, n_slab, n_bot, b_slab, nu_in)
-#         rr, tt = iad.absorbing_glass_RT(1, n_top, n_slab, nu_g, b_slab)
-#         np.testing.assert_allclose(r, rr, atol=1e-5)
-#         np.testing.assert_allclose(t, tt, atol=1e-5)
-# 
-#     def test_07_specular(self):
-#         """No slide on bottom and no transmission and flipped."""
-#         n_top = 1.5
-#         n_slab = 1.4
-#         n_bot = 1.4
-#         b_slab = np.inf
-#         nu_in = np.array([0.01, 0.2, 0.5, 0.8, 1.0])
-#         r, t = iad.specular_nu_RT(n_top, n_slab, n_bot, b_slab, nu_in, flip=True)
-#         rr, tt = iad.absorbing_glass_RT(1, n_bot, n_slab, nu_in, b_slab)
-#         np.testing.assert_allclose(r, rr, atol=1e-5)
-#         np.testing.assert_allclose(t, tt, atol=1e-5)
+    def test_06_specular(self):
+        """No slide on bottom and no transmission."""
+        n_top = 1.5
+        n_slab = 1.4
+        n_bot = 1.4
+        b_slab = np.inf
+        nu_i = np.array([0.01, 0.2, 0.5, 0.8, 1.0]) # in air
+        nu_in = iad.cos_snell(1, nu_i, n_slab) # in air
+        r, t = iad.specular_rt(n_top, n_slab, n_bot, b_slab, nu_in)
+        rr, _ = iad.absorbing_glass_RT(1, n_top, n_slab, nu_i, 0)
+        tt = np.zeros_like(nu_i)
+        np.testing.assert_allclose(r, rr, atol=1e-5)
+        np.testing.assert_allclose(t, tt, atol=1e-5)
+
+    def test_07_specular(self):
+        """No slide on bottom and no transmission and flipped."""
+        n_top = 1.5
+        n_slab = 1.4
+        n_bot = 1.4
+        b_slab = np.inf
+        nu_i = np.array([0.01, 0.2, 0.5, 0.8, 1.0]) # in air
+        nu_in = iad.cos_snell(1, nu_i, n_slab) # in air
+        r, t = iad.specular_rt(n_top, n_slab, n_bot, b_slab, nu_in, flip=True)
+        rr, _ = iad.absorbing_glass_RT(1, n_bot, n_slab, nu_i, 0)
+        tt = np.zeros_like(nu_i)
+        np.testing.assert_allclose(r, rr, atol=1e-5)
+        np.testing.assert_allclose(t, tt, atol=1e-5)
 
 if __name__ == '__main__':
     unittest.main()

@@ -26,7 +26,7 @@ __all__ = ('cos_critical',
            'cos_snell',
            'fresnel_reflection',
            'absorbing_glass_RT',
-           'specular_nu_RT',
+           'specular_rt',
            'diffuse_glass_R',
            'glass',
            )
@@ -240,10 +240,10 @@ def glass(n_i, n_g, n_t, nu_i):
 
 def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     """
-    Reflection from an absorbing slide.
+    Reflection and transmission of an absorbing slide.
 
-    'absorbing_glass_RT' calculates the total specular reflection and transmission
-    (i.e., including nmultiple internal reflections) based on
+    Calculates the total specular reflection and transmission
+    (i.e., including multiple internal reflections) based on
     the indices of refraction of the incident medium 'n_i', the glass 'n_g',
     and medium into which the light is transmitted 'n_t' for light incident at
     an angle from the normal having cosine 'nu_i'.  The optical thickness of
@@ -251,11 +251,11 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
 
     This routine was generated to help solve a problem with the inverse adding-doubling
     program associated with samples with low absorbances.  A particular situation
-    arises when the slides have significant absorption relative to the sample
+    (in the IR) arises when the slides have significant absorption relative to the sample
     absorption.  Anyway, it is not hard to extend the result for non-absorbing slides
     to the absorbing case
 
-    r = r_1 + r_2*(1-r_1)**2*exp(-2b/nu_g) / [1 - r_1*r_2*exp(-2b/nu_g)]
+    r = r_1 + r_2 * (1-r_1)**2 * exp(-2b/nu_g) / [1 - r_1*r_2*exp(-2b/nu_g)]
 
     Here r_1 is the reflection at the sample-glass interface and r_2 is the
     reflection at the glass-air interface and  nu_g is the cosine of the
@@ -278,7 +278,14 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     at avoiding unnecessary computations.  At worst this routine just has
     a couple of extra function calls and a few extra multiplications.
 
-    I also check to make sure that the exponent is not too small.
+    Args:
+        n_i: index of medium from which light is incident
+        n_g: index of glass
+        n_t: index of slab
+        nu_i: cosine of angle of incidence (in n_i)
+        b: optical thickness of glass
+    Returns
+        r, t: unscattered reflectance(s) and transmission(s)
     """
     r1 = fresnel_reflection(n_i, nu_i, n_g)
     nu_g = cos_snell(n_i, nu_i, n_g)
@@ -301,7 +308,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     return r, t
 
 
-def _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
+def _specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top=0, b_bot=0):
     """
     Unscattered reflection and transmission through a glass-slab-glass sandwich.
 
@@ -322,16 +329,16 @@ def _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
     Args:
         n_top: index of glass slide on top
         n_slab: index of the slab
-        n_bottom: index of glass on bottom
+        n_bot: index of glass on bottom
         b_top: optical thickness of top slide
         b_slab: optical thickness of the slab
-        b_bottom: optical thickness of the bottom slide
+        b_bot: optical thickness of the bottom slide
         nu: cosine of angle(s) in slab
     Returns
         r, t: unscattered reflectance(s) and transmission(s)
     """
     # simplest case of no glass slides
-    if (n_top == 1 and n_bottom == 1) or (n_top == n_slab and n_bottom == n_slab):
+    if (n_top == 1 and n_bot == 1) or (n_top == n_slab and n_bot == n_slab):
         return absorbing_glass_RT(1, n_slab, 1, nu, b_slab)
 
     # backwards because nu is measured in the slab
@@ -341,7 +348,7 @@ def _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
     if b_slab > iadpython.AD_MAX_THICKNESS:
         return r_top, 0
 
-    r_bottom, t_bottom = absorbing_glass_RT(n_slab, n_bottom, 1.0, nu, b_bottom)
+    r_bottom, t_bottom = absorbing_glass_RT(n_slab, n_bot, 1.0, nu, b_bot)
 
     # if b==0, no attenuation.
     if np.isscalar(nu):
@@ -372,7 +379,7 @@ def _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0):
     return r, t
 
 
-def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0, flip=False):
+def specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top=0, b_bot=0, flip=False):
     """
     Unscattered refl and trans for a sample.
 
@@ -382,26 +389,19 @@ def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0, fli
     Args:
         n_top: index of glass slide on top
         n_slab: index of the slab
-        n_bottom: index of glass on bottom
+        n_bot: index of glass on bottom
         b_slab: optical thickness of the slab
         b_top: optical thickness of top slide
-        b_bottom: optical thickness of the bottom slide
+        b_bot: optical thickness of the bottom slide
         nu: cosine of angle(s) in slab
         flipped: True if light hits bottom first
     Returns
         r, t: unscattered reflectance(s) and transmission(s)
     """
-    r, t = _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top, b_bottom)
-
-    if not flip:
-        return r, t
-
-    if n_top == n_bottom and b_top == b_bottom:
-        return r, t
-
-    _, t = _specular_nu_RT(n_bottom, n_slab, n_top, b_slab, nu, b_bottom, b_top)
-
-    return r, t
+    if flip:
+        return _specular_rt(n_bot, n_slab, n_top, b_slab, nu, b_bot, b_top)
+    else:
+        return _specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top, b_bot)
 
 
 def R1(ni, nt):

@@ -20,7 +20,7 @@ Two types of starting methods are possible.
     import iadpython as iad
 
     s = iad.Sample(a=0.9, b=10, g=0.9, n=1.5)
-    r, t = iad.start.init_layer(s)
+    r, t = iad.init_layer(s)
     print(r)
     print(t)
 
@@ -28,7 +28,7 @@ Two types of starting methods are possible.
 
 import numpy as np
 import scipy.linalg
-import iadpython.redistribution
+import iadpython as iad
 
 __all__ = ('zero_layer',
            'starting_thickness',
@@ -118,7 +118,7 @@ def igi(sample):
     d = sample.b_thinnest
 
     if sample.hp is None:
-        sample.hp, sample.hm = iadpython.redistribution.hg_legendre(sample)
+        sample.hp, sample.hm = iad.hg_legendre(sample)
 
     temp = sample.a_delta_M() * d / 4 / sample.nu
     R = temp * (sample.hm / sample.nu).T
@@ -147,7 +147,7 @@ def diamond(sample):
     II = np.identity(n)
 
     if sample.hp is None:
-        sample.hp, sample.hm = iadpython.redistribution.hg_legendre(sample)
+        sample.hp, sample.hm = iad.hg_legendre(sample)
 
     w = sample.twonuw / sample.nu / 2
     temp = sample.a_delta_M() * d * w / 4
@@ -200,11 +200,11 @@ def _boundary(sample, n_i, n_g, n_t, b):
 
     """
     if n_i == 1.0:
-        nu = iadpython.fresnel.cos_snell(n_t, sample.nu, n_i)
+        nu = iad.cos_snell(n_t, sample.nu, n_i)
     else:
         nu = sample.nu
 
-    r, t = iadpython.fresnel.absorbing_glass_RT(n_i, n_g, n_t, nu, b)
+    r, t = iad.absorbing_glass_RT(n_i, n_g, n_t, nu, b)
     r *= sample.twonuw
     return r, t
 
@@ -295,13 +295,13 @@ def unscattered_rt(s):
     Oh, yes.  The mysterious multiplication by a factor of 'n_slab*n_slab'
     is required to account for the n**2-law of radiance.
     """
-    r01, t01 = iadpython.zero_layer(s)
-    r10, t10 = iadpython.zero_layer(s)
+    r01, t01 = iad.zero_layer(s)
+    r10, t10 = iad.zero_layer(s)
 
-    r01, t01 = iadpython.specular_nu_RT(s.n_above, s.n, s.n_below, s.b, s.nu,
-                                        s.b_above, s.b_below)
-    r10, t10 = iadpython.specular_nu_RT(s.n_below, s.n, s.n_above, s.b, s.nu,
-                                        s.b_below, s.b_above)
+    r01, t01 = iad.specular_rt(s.n_above, s.n, s.n_below, s.b, s.nu,
+                               s.b_above, s.b_below)
+    r10, t10 = iad.specular_rt(s.n_below, s.n, s.n_above, s.b, s.nu,
+                               s.b_below, s.b_above)
 
     rr01 = np.diagflat(r01) / s.twonuw
     rr10 = np.diagflat(r10) / s.twonuw
@@ -345,15 +345,15 @@ def unscattered(s):
     utu = 0
 
     for i in range(n):
-        nu_outside = iadpython.fresnel.cos_snell(s.n, s.nu[i], 1.0)
+        nu_outside = iad.cos_snell(s.n, s.nu[i], 1.0)
         if nu_outside == 0:
-            r, t = iadpython.fresnel.specular_nu_RT(s.n_above, s.n, s.n_below,
-                                                    s.b_above, s.b, s.b_below, nu_outside)
+            r, t = iad.specular_rt(s.n_above, s.n, s.n_below,
+                                   s.b_above, s.b, s.b_below, nu_outside)
             uru += s.twonuw[i] * r[i, i]
             utu += s.twonuw[i] * t[i, i]
 
-    ur1, ut1 = iadpython.fresnel.specular_nu_RT(s.n_above, s.n, s.n_below,
-                                                s.b_above, s.b, s.b_below, s.nu_0)
+    ur1, ut1 = iad.specular_rt(s.n_above, s.n, s.n_below,
+                               s.b_above, s.b, s.b_below, s.nu_0)
 
     uru *= s.n**2
     utu *= s.n**2
