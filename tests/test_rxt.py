@@ -5,7 +5,6 @@
 """Tests for NIST reflectance data."""
 
 import unittest
-import numpy as np
 import iadpython
 
 
@@ -62,6 +61,7 @@ class TestRXT(unittest.TestCase):
         self.assertAlmostEqual(exp.m_r[-1], 0.28689, delta=1e-5)
         self.assertIsNone(exp.m_t)
         self.assertIsNone(exp.m_u)
+
 
 if __name__ == '__main__':
     unittest.main()
