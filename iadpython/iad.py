@@ -304,6 +304,32 @@ class Experiment():
 
         return a, b, g
 
+    def what_is_b(self, t_un):
+        """Find optical thickness using unscattered transmission."""
+        s = self.sample
+
+        r1, t1 = iadpython.absorbing_glass_RT(1.0, s.n_above, s.n, s.nu_0, s.b_above)
+
+        mu = iadpython.cos_snell(1.0, s.nu_0, s.n)
+
+        r2, t2 = iadpython.absorbing_glass_RT(s.n, s.n_below, 1.0, mu, s.b_below)
+
+        if t_un <= 0:
+            return np.inf
+
+        if t_un >= t1 * t2 / (1 - r1 * r2):
+            return 0.001
+
+        tt = t1 * t2
+
+        if r1 == 0 or r2 == 0:
+            ratio = tt / t_un
+        else:
+            ratio = (tt + np.sqrt(tt**2 + 4 * t_un**2 * r1 * r2))/(2 * t_un)
+
+        return s.nu_0 * np.log(ratio)
+
+
 def afun(x, *args):
     """Vary the albedo."""
     exp = args[0]

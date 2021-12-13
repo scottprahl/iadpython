@@ -395,7 +395,7 @@ class AbsorbingGlass(unittest.TestCase):
         np.testing.assert_allclose(r, rr, atol=1e-5)
         np.testing.assert_allclose(t, tt, atol=1e-5)
 
-    def test_absorbing_glass_14(self):
+    def test_absorbing_glass_05(self):
         """Absorbing glass slide on sample."""
         b = 1
         n_i = 1.0

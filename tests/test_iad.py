@@ -302,6 +302,44 @@ class IADBG(unittest.TestCase):
         self.assertAlmostEqual(b, 1, delta=2e-2)
         self.assertAlmostEqual(g, 0.3, delta=2e-2)
 
+class WhatIsB(unittest.TestCase):
+    """Test inversion of unscattered transmission."""
+
+    def test_inverting_tu_01(self):
+        """Matched slab with albedo=0.0, b=0.1."""
+        b = 0.1
+        s = iadpython.Sample(a=0, b=b, quad_pts=16)
+        x = iadpython.Experiment(sample=s)
+        _, t_un, _, _ = s.rt()
+        bb = x.what_is_b(t_un)
+        self.assertAlmostEqual(b, bb, delta=1e-5)
+
+    def test_inverting_tu_02(self):
+        """Matched slab with albedo=0.0, b=2."""
+        b = 2
+        s = iadpython.Sample(a=0, b=b, quad_pts=16)
+        x = iadpython.Experiment(sample=s)
+        _, t_un, _, _ = s.rt()
+        bb = x.what_is_b(t_un)
+        self.assertAlmostEqual(b, bb, delta=2e-5)
+
+    def test_inverting_tu_03(self):
+        """Matched slab with albedo=0.0, b=2."""
+        b = 2
+        s = iadpython.Sample(a=0, b=b, n=1.5, quad_pts=16)
+        x = iadpython.Experiment(sample=s)
+        _, t_un, _, _ = s.rt()
+        bb = x.what_is_b(t_un)
+        self.assertAlmostEqual(b, bb, delta=2e-5)
+
+    def test_inverting_tu_04(self):
+        """Matched slab with albedo=0.0, b=2."""
+        b = 2
+        s = iadpython.Sample(a=0, b=b, n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
+        x = iadpython.Experiment(sample=s)
+        _, t_un, _, _ = s.rt()
+        bb = x.what_is_b(t_un)
+        self.assertAlmostEqual(b, bb, delta=2e-5)
 
 if __name__ == '__main__':
     unittest.main()
