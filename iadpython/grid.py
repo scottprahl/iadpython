@@ -93,6 +93,12 @@ class Grid():
         i, j = ii_flat // A.shape[1], ii_flat % A.shape[1]
         return self.a[i, j], self.b[i, j], self.g[i, j]
 
+    def is_stale(self, default):
+        if self.default is None:
+            return True
+        if self.default != default:
+            return True
+        return False
 
 def matrix_as_string(x, label=''):
     """Return matrix as a string."""

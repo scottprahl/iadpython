@@ -282,6 +282,44 @@ class IADAG(unittest.TestCase):
         self.assertAlmostEqual(b, 1)
         self.assertAlmostEqual(g, 0.3, delta=1e-3)
 
+    def test_ag_03(self):
+        """Matched slab with albedo=0.9, g=0.3."""
+        exp = iadpython.Experiment(r=0.18825, t=0.67381, u=0.36788)
+        a, b, g = exp.invert()
+        self.assertAlmostEqual(a, 0.9, delta=1e-4)
+        self.assertAlmostEqual(b, 1, delta=1e-4)
+        self.assertAlmostEqual(g, 0.3, delta=1e-3)
+
+    def test_ag_04(self):
+        """Matched slab with albedo=0.9, g=0.3."""
+        aa = [0.95, 0.95]
+        bb = [0.5, 2]
+        gg = [0.7, 0.3]
+        s = iadpython.Sample(a=aa, b=bb, g=gg, quad_pts=16)
+        rr, tt, _, _ = s.rt()
+        s.a = [0, 0]
+        _, uu, _, _ = s.rt()
+        s.quad_pts = 8
+        exp = iadpython.Experiment(r=rr, t=tt, u=uu, sample=s)
+        a, b, g = exp.invert()
+        np.testing.assert_allclose(a, aa, atol=2e-2)
+        np.testing.assert_allclose(b, bb, atol=2e-2)
+        np.testing.assert_allclose(g, gg, atol=2e-2)
+
+    def test_ag_05(self):
+        """Matched slab with albedo=0.9, g=0.3."""
+        aa = [0.95, 0.95]
+        bb = [0.5, 2]
+        gg = [0.7, 0.3]
+        s = iadpython.Sample(a=aa, b=bb, g=gg, n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
+        rr, tt, _, _ = s.rt()
+        s.a = [0, 0]
+        _, uu, _, _ = s.rt()
+        exp = iadpython.Experiment(r=rr, t=tt, u=uu, sample=s)
+        a, b, g = exp.invert()
+        np.testing.assert_allclose(a, aa, atol=2e-2)
+        np.testing.assert_allclose(b, bb, atol=2e-2)
+        np.testing.assert_allclose(g, gg, atol=2e-2)
 
 class IADBG(unittest.TestCase):
     """Test inversion when solving only for b and g."""
@@ -302,6 +340,7 @@ class IADBG(unittest.TestCase):
         self.assertAlmostEqual(b, 1, delta=2e-2)
         self.assertAlmostEqual(g, 0.3, delta=2e-2)
 
+
 class WhatIsB(unittest.TestCase):
     """Test inversion of unscattered transmission."""
 
@@ -310,8 +349,8 @@ class WhatIsB(unittest.TestCase):
         b = 0.1
         s = iadpython.Sample(a=0, b=b, quad_pts=16)
         x = iadpython.Experiment(sample=s)
-        _, t_un, _, _ = s.rt()
-        bb = x.what_is_b(t_un)
+        _, x.m_u, _, _ = s.rt()
+        bb = x.what_is_b()
         self.assertAlmostEqual(b, bb, delta=1e-5)
 
     def test_inverting_tu_02(self):
@@ -319,8 +358,8 @@ class WhatIsB(unittest.TestCase):
         b = 2
         s = iadpython.Sample(a=0, b=b, quad_pts=16)
         x = iadpython.Experiment(sample=s)
-        _, t_un, _, _ = s.rt()
-        bb = x.what_is_b(t_un)
+        _, x.m_u, _, _ = s.rt()
+        bb = x.what_is_b()
         self.assertAlmostEqual(b, bb, delta=2e-5)
 
     def test_inverting_tu_03(self):
@@ -328,8 +367,8 @@ class WhatIsB(unittest.TestCase):
         b = 2
         s = iadpython.Sample(a=0, b=b, n=1.5, quad_pts=16)
         x = iadpython.Experiment(sample=s)
-        _, t_un, _, _ = s.rt()
-        bb = x.what_is_b(t_un)
+        _, x.m_u, _, _ = s.rt()
+        bb = x.what_is_b()
         self.assertAlmostEqual(b, bb, delta=2e-5)
 
     def test_inverting_tu_04(self):
@@ -337,8 +376,8 @@ class WhatIsB(unittest.TestCase):
         b = 2
         s = iadpython.Sample(a=0, b=b, n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
         x = iadpython.Experiment(sample=s)
-        _, t_un, _, _ = s.rt()
-        bb = x.what_is_b(t_un)
+        _, x.m_u, _, _ = s.rt()
+        bb = x.what_is_b()
         self.assertAlmostEqual(b, bb, delta=2e-5)
 
 if __name__ == '__main__':

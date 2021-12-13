@@ -3,9 +3,6 @@ command-line
     iad
 
 functionality
-    reuse grid object
-    determine b from m_u
-    implement 3 measurement test
     add support for one sphere
     add support for two spheres
     implement ba inversion

@@ -192,7 +192,6 @@ class Experiment():
         if self.m_u is not None:
             self.search = 'find_ag'
             self.default_b = self.what_is_b()
-            self.grid = None
 
         if self.default_a is not None:
             self.search = 'find_bg'
@@ -252,10 +251,11 @@ class Experiment():
             res = minimize_scalar(gfun, args=(self), bounds=(-1, 1), method='bounded')
 
         if self.search in ['find_ab', 'find_ag', 'find_bg']:
+            default = self.default_a or self.default_b or self.default_g
             if self.grid is None:
                 self.grid = iadpython.Grid()
+            if self.grid.is_stale(default):
                 self.grid.calc(self)
-
             a, b, g = self.grid.min_abg(self.m_r, self.m_t)
 
         if self.search == 'find_ab':
