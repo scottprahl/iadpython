@@ -19,7 +19,16 @@ import numpy as np
 
 
 class Grid():
-    """Container class for details of an experiment."""
+    """
+    Class to track pre-calculated R & T values.
+    
+    There is a long story associated with these routines.  I spent a lot of time 
+    trying to find an empirical function to allow a guess at a starting value for
+    the inversion routine.  Basically nothing worked very well.  There were 
+    too many special cases and what not.  So I decided to calculate a whole bunch
+    of reflection and transmission values and keep their associated optical 
+    properties linked nearby.  
+    """
 
     def __init__(self, search=None, default=None, N=21):
         """Object initialization."""
