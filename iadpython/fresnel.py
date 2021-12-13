@@ -378,6 +378,18 @@ def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0, fli
 
     Find the reflectance to incorporate flipping of the sample.  This
     is needed when the sample is flipped between measurements.
+
+    Args:
+        n_top: index of glass slide on top
+        n_slab: index of the slab
+        n_bottom: index of glass on bottom
+        b_slab: optical thickness of the slab
+        b_top: optical thickness of top slide
+        b_bottom: optical thickness of the bottom slide
+        nu: cosine of angle(s) in slab
+        flipped: True if light hits bottom first
+    Returns
+        r, t: unscattered reflectance(s) and transmission(s)
     """
     r, t = _specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top, b_bottom)
 
