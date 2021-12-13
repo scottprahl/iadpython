@@ -24,6 +24,7 @@ import iadpython.constants
 
 __all__ = ('cos_critical',
            'cos_snell',
+           'fresnel_reflection',
            'absorbing_glass_RT',
            'specular_nu_RT',
            'diffuse_glass_R',
@@ -254,7 +255,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     absorption.  Anyway, it is not hard to extend the result for non-absorbing slides
     to the absorbing case
 
-    r = r_1 + (1-2r_1)r_2*exp(-2b/nu_g) / [1 - r_1*r_2*exp(-2b/nu_g)]
+    r = r_1 + r_2*(1-r_1)**2*exp(-2b/nu_g) / [1 - r_1*r_2*exp(-2b/nu_g)]
 
     Here r_1 is the reflection at the sample-glass interface and r_2 is the
     reflection at the glass-air interface and  nu_g is the cosine of the
@@ -292,8 +293,8 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     d = np.divide(b, nu_g, out=np.zeros_like(nu_g), where=nu_g != 0)
     expo = np.exp(-d)
     denom = 1.0 - r1 * r2 * expo**2
-    numer = r1 + (1.0 - 2.0 * r1) * r2 * expo**2
-    r = np.divide(numer, denom, out=np.ones_like(numer), where=denom!=0)
+    numer = (1 - r1) * expo * r2 * expo * (1-r1)
+    r = r1 + np.divide(numer, denom, out=np.ones_like(numer), where=denom!=0)
     numer = (1.0 - r1) * (1.0 - r2) * expo
     t = np.divide(numer, denom, out=np.zeros_like(numer), where=denom!=0)
 

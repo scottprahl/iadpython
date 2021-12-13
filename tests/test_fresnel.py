@@ -6,7 +6,7 @@
 
 import unittest
 import numpy as np
-import iadpython.fresnel
+import iadpython
 
 
 class Fresnel(unittest.TestCase):
@@ -333,6 +333,85 @@ class Fresnel(unittest.TestCase):
         r, _ = iadpython.fresnel.absorbing_glass_RT(n_i, n_g, n_t, nu_i, np.inf)
         rr = iadpython.fresnel.fresnel_reflection(n_i, nu_i, n_g)
         np.testing.assert_allclose(r, rr, atol=1e-5)
+
+class AbsorbingGlass(unittest.TestCase):
+    """Absorbing glass calculations."""
+
+    def test_absorbing_glass_01(self):
+        """No boundries."""
+        n_i = 1.0
+        n_g = 1.0
+        n_t = 1.0
+        nu_i = np.array([0.0, 0.2, 0.5, 0.8, 1.0])
+        rr = np.zeros_like(nu_i)
+        tt = 1-rr
+        r, t = iadpython.absorbing_glass_RT(n_i, n_g, n_t, nu_i, 0)
+        np.testing.assert_allclose(r, rr, atol=1e-5)
+        np.testing.assert_allclose(t, tt, atol=1e-5)
+
+    def test_absorbing_glass_02(self):
+        """No glass, but sample."""
+        n_i = 1.0
+        n_g = 1.0
+        n_t = 1.5
+        nu_i = np.array([0.0, 0.2, 0.5, 0.8, 1.0])
+        rr = iadpython.fresnel_reflection(n_i, nu_i, n_t)
+        tt = 1-rr
+        r, t = iadpython.absorbing_glass_RT(n_i, n_g, n_t, nu_i, 0)
+        np.testing.assert_allclose(r, rr, atol=1e-5)
+        np.testing.assert_allclose(t, tt, atol=1e-5)
+        np.testing.assert_allclose(r[-1], 0.04, atol=1e-5)
+        np.testing.assert_allclose(t[-1], 0.96, atol=1e-5)
+
+    def test_absorbing_glass_03(self):
+        """No glass, but sample."""
+        n_i = 1.0
+        n_g = 1.5
+        n_t = 1.5
+        nu_i = np.array([0.0, 0.2, 0.5, 0.8, 1.0])
+        rr = iadpython.fresnel_reflection(n_i, nu_i, n_t)
+        tt = 1-rr
+        r, t = iadpython.absorbing_glass_RT(n_i, n_g, n_t, nu_i, 0)
+        np.testing.assert_allclose(r, rr, atol=1e-5)
+        np.testing.assert_allclose(t, tt, atol=1e-5)
+        np.testing.assert_allclose(r[-1], 0.04, atol=1e-5)
+        np.testing.assert_allclose(t[-1], 0.96, atol=1e-5)
+
+    def test_absorbing_glass_04(self):
+        """Non-absorbing glass slide on sample."""
+        b = 0
+        n_i = 1.0
+        n_g = 1.5
+        n_t = 1.4
+        nu_i = np.array([0.01, 0.2, 0.5, 0.8, 1.0])
+        r1 = iadpython.fresnel_reflection(n_i, nu_i, n_g)
+        nu_g = iadpython.cos_snell(n_i, nu_i, n_g)
+        r2 = iadpython.fresnel_reflection(n_g, nu_g, n_t)
+        t1 = 1 - r1
+        t2 = 1 - r2
+        rr = r1 + r2 * t1 * t1/(1 - r1 * r2 * np.exp(-2*b/nu_g))
+        tt = t1 * t2 /(1 - r1 * r2 * np.exp(-2*b/nu_g))
+        r, t = iadpython.absorbing_glass_RT(n_i, n_g, n_t, nu_i, b)
+        np.testing.assert_allclose(r, rr, atol=1e-5)
+        np.testing.assert_allclose(t, tt, atol=1e-5)
+
+    def test_absorbing_glass_14(self):
+        """Absorbing glass slide on sample."""
+        b = 1
+        n_i = 1.0
+        n_g = 1.5
+        n_t = 1.4
+        nu_i = np.array([0.01, 0.2, 0.5, 0.8, 1.0])
+        r1 = iadpython.fresnel_reflection(n_i, nu_i, n_g)
+        nu_g = iadpython.cos_snell(n_i, nu_i, n_g)
+        r2 = iadpython.fresnel_reflection(n_g, nu_g, n_t)
+        t1 = 1 - r1
+        t2 = 1 - r2
+        rr = r1 + r2 * t1**2 * np.exp(-2*b/nu_g)/(1 - r1 * r2 * np.exp(-2*b/nu_g))
+        tt = t1 * t2 * np.exp(-b/nu_g) /(1 - r1 * r2 * np.exp(-2*b/nu_g))
+        r, t = iadpython.absorbing_glass_RT(n_i, n_g, n_t, nu_i, b)
+        np.testing.assert_allclose(r, rr, atol=1e-5)
+        np.testing.assert_allclose(t, tt, atol=1e-5)
 
 #     def test_08_sandwich(self):
 #     def specular_nu_RT(n_top, n_slab, n_bottom, b_slab, nu, b_top=0, b_bottom=0, flip=False):
