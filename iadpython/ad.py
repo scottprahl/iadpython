@@ -453,3 +453,12 @@ class Sample():
             ur1[i], ut1[i], uru[i], utu[i] = sample.UX1_and_UXU(R, T)
 
         return ur1, ut1, uru, utu
+
+    def unscattered_rt(self):
+        """Convenience method to find unscattered r and t."""
+        n_top = self.n_above
+        n_slab = self.n
+        n_bot = self.n_below
+        b_slab = self.b
+        nu_in = iadpython.fresnel.cos_snell(1, self.nu_0, n_slab)
+        return iadpython.fresnel.specular_rt(n_top, n_slab, n_bot, b_slab, nu_in)
