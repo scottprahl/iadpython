@@ -454,7 +454,7 @@ class Sample():
 
         return ur1, ut1, uru, utu
 
-    def unscattered_rt(self):
+    def _unscattered_rt(self):
         """Convenience method to find unscattered r and t."""
         n_top = self.n_above
         n_slab = self.n
@@ -462,3 +462,17 @@ class Sample():
         b_slab = self.b
         nu_in = iadpython.fresnel.cos_snell(1, self.nu_0, n_slab)
         return iadpython.fresnel.specular_rt(n_top, n_slab, n_bot, b_slab, nu_in)
+
+    def unscattered_rt(self):
+        """Convenience method to find unscattered r and t."""
+        if np.isscalar(self.b):
+            return self._unscattered_rt()
+        
+        r = np.empty_like(self.b, dtype=type(self.nu_0))
+        t = np.empty_like(self.b, dtype=type(self.nu_0))
+        x = copy.deepcopy(self)
+        for i,b in enumerate(self.b):
+            x.b = b
+            r[i], t[i] = x._unscattered_rt()
+
+        return r,t
