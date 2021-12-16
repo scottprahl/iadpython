@@ -18,11 +18,11 @@ import numpy as np
 class Sphere():
     """Container class for an integrating sphere."""
 
-    def __init__(self, d_sphere, d_sample, d_entrance=0, 
+    def __init__(self, d_sphere, d_sample, d_entrance=0,
                        d_detector=0, r_detector=0, r_wall=1, r_std=1):
         """
         Object initialization.
-        
+
         d_sphere: diameter of integrating sphere [mm]
         d_sample: diameter of the sample port [mm]
         d_entrance: diameter of the port that light enters the sphere [mm]
@@ -243,7 +243,7 @@ class Sphere():
         """Getter property for reflectance standard."""
         return self._r_std
 
-    @a_wall.setter
+    @r_std.setter
     def r_std(self, value):
         """Change the reflectance standard used."""
         assert 0 <= value <= 1, "Reflectivity of standard must be between 0 and 1"
@@ -255,7 +255,7 @@ class Sphere():
         """Getter property for wall reflectivity."""
         return self._r_wall
 
-    @a_wall.setter
+    @r_wall.setter
     def r_wall(self, value):
         """Change the wall reflectivity."""
         assert 0 <= value <= 1, "wall reflectivity must be between 0 and 1"
