@@ -18,8 +18,21 @@ import numpy as np
 class Sphere():
     """Container class for an integrating sphere."""
 
-    def __init__(self, d_sphere, d_sample, d_entrance=0, d_detector=0, r_detector=0, r_wall=1):
-        """Object initialization."""
+    def __init__(self, d_sphere, d_sample, d_entrance=0,
+                       d_detector=0, r_detector=0, r_wall=1, r_std=1):
+        """
+        Object initialization.
+
+        d_sphere: diameter of integrating sphere [mm]
+        d_sample: diameter of the sample port [mm]
+        d_entrance: diameter of the port that light enters the sphere [mm]
+        d_detector: diameter of the detector port [mm]
+        r_detector: reflectivity of the detector
+        r_wall: reflectivity of the wall
+        r_std: reflectivity of the standard used with the sphere
+        gain_00: sphere gain when sample reflectance is zero
+        gain_std: sphere gain when the sample reflectance is r_std
+        """
         self._d_sphere = d_sphere
         self._d_sample = d_sample
         self._d_entrance = d_entrance
@@ -30,7 +43,10 @@ class Sphere():
         self.a_entrance = self.relative_cap_area(d_entrance)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
         self.r_detector = r_detector
-        self.r_wall = r_wall
+        self._r_wall = r_wall
+        self._r_std = r_std
+        self.gain_00 = self.gain(0, 0)
+        self.gain_std = self.gain(r_std, r_std)
 
     def cap_area(self, d_port):
         """Calculate area of spherical cap."""
@@ -58,13 +74,17 @@ class Sphere():
         """Return basic details as a string for printing."""
         s = ""
         s += "Sphere diameter = %.1f mm\n" % self._d_sphere
-        s += "Port diameters \n"
+        s += "Port diameters\n"
         s += "         sample = %.1f mm\n" % self._d_sample
         s += "       entrance = %.1f mm\n" % self._d_entrance
         s += "       detector = %.1f mm\n" % self._d_detector
-        s += "Diffuse reflectivities \n"
+        s += "Diffuse reflectivities\n"
         s += "           wall = %.1f%%\n" % (self.r_wall*100)
         s += "       detector = %.1f%%\n" % (self.r_detector*100)
+        s += "       standard = %.1f%%\n" % (self.r_std*100)
+        s += "Gain\n"
+        s += "        nothing = %.1f\n" % self.gain_00
+        s += "       standard = %.1f\n" % self.gain_std
         return s
 
     def gain(self, URU, r_wall=None):
@@ -75,8 +95,6 @@ class Sphere():
         to a perfectly black sphere) is
 
         G(URU) = (P_d /A_d) / (P/A)
-
-        See sphere.ipynb for details on the derivation.
 
         Args:
             URU: total reflectance for diffuse illumination
@@ -114,14 +132,14 @@ class Sphere():
         and application" using equation 14
 
         Args:
-            UR1: sample reflectance for normal irradiance
+            UR1: sample reflectance for normal collimated irradiance
             URU: sample reflectance for diffuse irradiance
             r_wall: wall reflectance
         Returns:
-            sphere muliplier
+            sphere multiplier
         """
         if r_wall is None:
-            r_wall = self.r_wall
+            r_wall = self._r_wall
 
         if UR1 is None:
             UR1 = r_wall
@@ -151,6 +169,8 @@ class Sphere():
         self.a_detector = self.relative_cap_area(self._d_detector)
         self.a_entrance = self.relative_cap_area(self._d_entrance)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
+        self.gain_00 = self.gain(0,0)
+        self.gain_std = self.gain(self.r_std, self.r_std)
 
     @property
     def d_sample(self):
@@ -164,6 +184,8 @@ class Sphere():
         self._d_sample = value
         self.a_sample = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
+        self.gain_00 = self.gain(0,0)
+        self.gain_std = self.gain(self.r_std, self.r_std)
 
     @property
     def d_entrance(self):
@@ -177,6 +199,8 @@ class Sphere():
         self._d_entrance = value
         self.a_entrance = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
+        self.gain_00 = self.gain(0,0)
+        self.gain_std = self.gain(self.r_std, self.r_std)
 
     @property
     def d_detector(self):
@@ -190,6 +214,8 @@ class Sphere():
         self._d_detector = value
         self.a_detector = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
+        self.gain_00 = self.gain(0,0)
+        self.gain_std = self.gain(self.r_std, self.r_std)
 
     @property
     def a_wall(self):
@@ -202,7 +228,6 @@ class Sphere():
         assert 0 <= value <= 1, "relative wall are must be between 0 and 1"
         # Find the diameter of a spherical cap assuming all non-wall
         # port area is assigned to a single sample port
-        assert 0 < value < 1, "0 < relative wall area < 1"
         self._d_sample = 2 * self._d_sphere * np.sqrt(value - value**2)
         self._d_entrance = 0
         self._d_detector = 0
@@ -210,6 +235,33 @@ class Sphere():
         self.a_detector = 0
         self._a_wall = value
         self.a_sample = 1 - value
+        self.gain_00 = self.gain(0, 0)
+        self.gain_std = self.gain(self.r_std, self.r_std)
+
+    @property
+    def r_std(self):
+        """Getter property for reflectance standard."""
+        return self._r_std
+
+    @r_std.setter
+    def r_std(self, value):
+        """Change the reflectance standard used."""
+        assert 0 <= value <= 1, "Reflectivity of standard must be between 0 and 1"
+        self._r_std = value
+        self.gain_std = self.gain(value, value)
+
+    @property
+    def r_wall(self):
+        """Getter property for wall reflectivity."""
+        return self._r_wall
+
+    @r_wall.setter
+    def r_wall(self, value):
+        """Change the wall reflectivity."""
+        assert 0 <= value <= 1, "wall reflectivity must be between 0 and 1"
+        self._r_wall = value
+        self.gain_00 = self.gain(0, 0)
+        self.gain_std = self.gain(value, value)
 
 
 def Gain_11(RS, TS, URU, tdiffuse):
