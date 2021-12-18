@@ -78,8 +78,13 @@ class Sphere():
         s += "         sample = %.1f mm\n" % self._d_sample
         s += "       entrance = %.1f mm\n" % self._d_entrance
         s += "       detector = %.1f mm\n" % self._d_detector
+        s += "Fractional areas of sphere\n"
+        s += "          walls = %.5f\n" % self.a_wall
+        s += "         sample = %.5f\n" % self.a_sample
+        s += "       entrance = %.5f\n" % self.a_entrance
+        s += "       detector = %.5f\n" % self.a_detector
         s += "Diffuse reflectivities\n"
-        s += "           wall = %.1f%%\n" % (self.r_wall*100)
+        s += "          walls = %.1f%%\n" % (self.r_wall*100)
         s += "       detector = %.1f%%\n" % (self.r_detector*100)
         s += "       standard = %.1f%%\n" % (self.r_std*100)
         s += "Gain\n"
@@ -151,7 +156,15 @@ class Sphere():
         denom -= self._a_wall * r_wall
         denom -= self.a_sample * URU
         denom -= self.a_detector * self.r_detector
-        return UR1 / denom
+        
+        if UR1 == 0:
+            m = 0
+            
+        elif denom < 1e-8:
+            m = np.inf
+        else:
+            m = UR1/denom
+        return m
 
     @property
     def d_sphere(self):
