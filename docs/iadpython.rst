@@ -12,6 +12,14 @@ iadpython.ad module
    :undoc-members:
    :show-inheritance:
 
+iadpython.calc module
+--------------------
+
+.. automodule:: iadpython.calc
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 iadpython.combine module
 ------------------------
 
@@ -28,10 +36,34 @@ iadpython.fresnel module
    :undoc-members:
    :show-inheritance:
 
+iadpython.grid module
+------------------------
+
+.. automodule:: iadpython.grid
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+iadpython.iad module
+------------------------
+
+.. automodule:: iadpython.iad
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 iadpython.iadc module
 ------------------------
 
 .. automodule:: iadpython.iadc
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+iadpython.nist module
+------------------------
+
+.. automodule:: iadpython.nist
    :members:
    :undoc-members:
    :show-inheritance:
@@ -52,18 +84,18 @@ iadpython.redistribution module
    :undoc-members:
    :show-inheritance:
 
-iadpython.start module
-----------------------
+iadpython.sphere module
+------------------------
 
-.. automodule:: iadpython.start
+.. automodule:: iadpython.sphere
    :members:
    :undoc-members:
    :show-inheritance:
 
-iadpython.nist module
+iadpython.start module
 ----------------------
 
-.. automodule:: iadpython.nist
+.. automodule:: iadpython.start
    :members:
    :undoc-members:
    :show-inheritance:

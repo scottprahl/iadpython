@@ -45,8 +45,8 @@ class Sphere():
         self.r_detector = r_detector
         self._r_wall = r_wall
         self._r_std = r_std
-        self.gain_00 = self.gain(0, 0)
-        self.gain_std = self.gain(r_std, r_std)
+        self.gain_00 = self.multiplier(0, 0)
+        self.gain_std = self.multiplier(r_std, r_std)
 
     def cap_area(self, d_port):
         """Calculate area of spherical cap."""
@@ -98,9 +98,9 @@ class Sphere():
 
         Args:
             URU: total reflectance for diffuse illumination
-            r_wall: fractional wall reflectivity
+            r_wall: wall reflectance
         Returns:
-            gain on detector caused by multiple bounces in sphere
+            gain on detector caused by bounces inside sphere
         """
         if r_wall is None:
             r_wall = self.r_wall
@@ -169,8 +169,8 @@ class Sphere():
         self.a_detector = self.relative_cap_area(self._d_detector)
         self.a_entrance = self.relative_cap_area(self._d_entrance)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-        self.gain_00 = self.gain(0,0)
-        self.gain_std = self.gain(self.r_std, self.r_std)
+        self.gain_00 = self.multiplier(0,0)
+        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
     @property
     def d_sample(self):
@@ -184,8 +184,8 @@ class Sphere():
         self._d_sample = value
         self.a_sample = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-        self.gain_00 = self.gain(0,0)
-        self.gain_std = self.gain(self.r_std, self.r_std)
+        self.gain_00 = self.multiplier(0,0)
+        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
     @property
     def d_entrance(self):
@@ -199,8 +199,8 @@ class Sphere():
         self._d_entrance = value
         self.a_entrance = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-        self.gain_00 = self.gain(0,0)
-        self.gain_std = self.gain(self.r_std, self.r_std)
+        self.gain_00 = self.multiplier(0,0)
+        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
     @property
     def d_detector(self):
@@ -214,8 +214,8 @@ class Sphere():
         self._d_detector = value
         self.a_detector = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-        self.gain_00 = self.gain(0,0)
-        self.gain_std = self.gain(self.r_std, self.r_std)
+        self.gain_00 = self.multiplier(0,0)
+        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
     @property
     def a_wall(self):
@@ -235,8 +235,8 @@ class Sphere():
         self.a_detector = 0
         self._a_wall = value
         self.a_sample = 1 - value
-        self.gain_00 = self.gain(0, 0)
-        self.gain_std = self.gain(self.r_std, self.r_std)
+        self.gain_00 = self.multiplier(0, 0)
+        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
     @property
     def r_std(self):
@@ -260,8 +260,8 @@ class Sphere():
         """Change the wall reflectivity."""
         assert 0 <= value <= 1, "wall reflectivity must be between 0 and 1"
         self._r_wall = value
-        self.gain_00 = self.gain(0, 0)
-        self.gain_std = self.gain(value, value)
+        self.gain_00 = self.multiplier(0, 0)
+        self.gain_std = self.multiplier(value, value)
 
 
 def Gain_11(RS, TS, URU, tdiffuse):

@@ -14,16 +14,6 @@ Example Usage
    sample
    
 .. toctree::
-   :caption: Gory Details
-   :hidden:
-
-   quadrature-examples
-   
-   redistribution
-   
-   thin-layer
-   
-.. toctree::
    :caption: NIST Spectra
    :hidden:
 
@@ -33,10 +23,24 @@ Example Usage
    :caption: Integrating Spheres
    :hidden:
 
-   sphere
+   sphere-basics
+   
+   sphere-single
+   
+   sphere-double
    
    impossible
 
+.. toctree::
+   :caption: Adding-Doubling Details
+   :hidden:
+
+   quadrature-examples
+   
+   redistribution
+   
+   thin-layer
+   
 .. toctree::
    :caption: API
    :hidden:
