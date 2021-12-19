@@ -98,7 +98,7 @@ class Sphere():
 
         If the walls of the sphere are black then the light falling on the
         detector is the diffuse light entering the sphere divided by the
-        surface area on the sphere (P/A). Thus
+        surface area on the sphere (P/A).
 
         If the walls are perfectly white (and ports are perfectly absorbing)
         then the all entering light exits through the ports. (P/A_ports)
