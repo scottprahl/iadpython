@@ -94,15 +94,25 @@ class Sphere():
 
     def gain(self, URU, r_wall=None):
         """
-        Determine the gain for this integrating sphere.
+        Determine the gain relative to a black sphere.
 
-        The gain G(URU) on the irradiance on the detector (relative
-        to a perfectly black sphere) is
+        If the walls of the sphere are black then the light falling on the
+        detector is the diffuse light entering the sphere divided by the
+        surface area on the sphere (P/A). Thus
 
-        G(URU) = (P_d /A_d) / (P/A)
+        If the walls are perfectly white (and ports are perfectly absorbing)
+        then the all entering light exits through the ports. (P/A_ports)
+
+        The gain caused by 0% reflecting sphere walls (no port refl) is
+
+        gain = (P/A) / (P/A) = 1
+
+        The gain caused by 100% reflecting sphere walls (no port refl) is
+
+        gain = (P/A_ports) / (P/A) = A_total / A_ports
 
         Args:
-            URU: total reflectance for diffuse illumination
+            URU: reflectance from sample port for diffuse light
             r_wall: wall reflectance
         Returns:
             gain on detector caused by bounces inside sphere
@@ -113,9 +123,9 @@ class Sphere():
         tmp = self.a_detector * self.r_detector + self.a_sample * URU
         tmp = r_wall * (self._a_wall + (1 - self.a_entrance) * tmp)
         if tmp == 1.0:
-            G = r_wall
+            G = np.inf
         else:
-            G = r_wall * (1.0 + tmp / (1.0 - tmp))
+            G = 1.0 + tmp / (1.0 - tmp)
         return G
 
     def multiplier(self, UR1=None, URU=None, r_wall=None):
@@ -156,14 +166,14 @@ class Sphere():
         denom -= self._a_wall * r_wall
         denom -= self.a_sample * URU
         denom -= self.a_detector * self.r_detector
-        
-        if UR1 == 0:
-            m = 0
-            
-        elif denom < 1e-8:
-            m = np.inf
+
+        if np.isscalar(denom):
+            if denom < 1e-8:
+                m = np.inf
+            else:
+                m = UR1/denom
         else:
-            m = UR1/denom
+            m = np.where(denom>1e-8, UR1/denom, np.inf)
         return m
 
     @property
@@ -259,9 +269,12 @@ class Sphere():
     @r_std.setter
     def r_std(self, value):
         """Change the reflectance standard used."""
-        assert 0 <= value <= 1, "Reflectivity of standard must be between 0 and 1"
+        if np.isscalar(value):
+            assert 0 <= value <= 1, "Reflectivity of standard must be between 0 and 1"
+        else:
+            assert 0 <= value.all() <= 1, "Reflectivity of standard must be between 0 and 1"
         self._r_std = value
-        self.gain_std = self.gain(value, value)
+        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
     @property
     def r_wall(self):
@@ -271,10 +284,13 @@ class Sphere():
     @r_wall.setter
     def r_wall(self, value):
         """Change the wall reflectivity."""
-        assert 0 <= value <= 1, "wall reflectivity must be between 0 and 1"
+        if np.isscalar(value):
+            assert 0 <= value <= 1, "Reflectivity of standard must be between 0 and 1"
+        else:
+            assert 0 <= value.all() <= 1, "Reflectivity of standard must be between 0 and 1"
         self._r_wall = value
         self.gain_00 = self.multiplier(0, 0)
-        self.gain_std = self.multiplier(value, value)
+        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
 
 def Gain_11(RS, TS, URU, tdiffuse):
