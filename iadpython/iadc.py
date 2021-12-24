@@ -7,18 +7,19 @@
 """
 Module for direct and inverse adding-doubling calculations.
 
-    import iadpython as iad
+    Example:
+        >>> import iadpython as iad
 
-    a = 0.9
-    b = 10
-    g = 0.9
-    n_top = 1.5
-    n_bot = 1.5
-    ur1, ut1, uru, utu = iad.rt(n_top, n_bot, a, b, g)
-    print("total reflected   light for normal incidence %.5f" % UR1)
-    print("total transmitted light for normal incidence %.5f" % UT1)
-    print("total reflected   light for diffuse incidence %.5f" % URU)
-    print("total transmitted light for diffuse incidence %.5f" % UTU)
+        >>> a = 0.9
+        >>> b = 10
+        >>> g = 0.9
+        >>> n_top = 1.5
+        >>> n_bot = 1.5
+        >>> ur1, ut1, uru, utu = iad.rt(n_top, n_bot, a, b, g)
+        >>> print("total reflected   light for normal incidence %.5f" % UR1)
+        >>> print("total transmitted light for normal incidence %.5f" % UT1)
+        >>> print("total reflected   light for diffuse incidence %.5f" % URU)
+        >>> print("total transmitted light for diffuse incidence %.5f" % UTU)
 """
 
 import sys
@@ -75,23 +76,15 @@ def basic_rt(n, nslab, ntop, nbot, a, b, g):
     """
     Calculate the total reflection and transmission for a turbid slab.
 
-    basic_rt() returns [UR1,UT1,URU,UTU] for a slab optionally
-    bounded by glass slides.  The slab is characterized by an albedo a, an
-    optical thickness b, a scattering anisotropy g, and an index of refraction nslab.
-
-    The top glass slides have an index of refraction ntop and the bottom slide has
-    an index nbot.  If there are no glass slides, set ntop and nbottom to 1.
-
-    n is the number of quadrature angles (more angles give better accuracy but slow
-    the calculation by n**3, n must be a multiple of 4, typically 16 is good for forward
+    `n` is the number of quadrature angles (more angles give better accuracy but slow
+    the calculation by `n**3`, `n` must be a multiple of 4, typically 16 is good for forward
     calculations and 4 is appropriate for inverse calculations).
 
-    All input parameters must be scalars.
+    The semi-infinite slab may be bounded by glass slides.  
+    The top glass slides have an index of refraction `ntop` and the bottom slide has
+    an index `nbot`.  If there are no glass slides, set `ntop` and `nbottom` to 1.
 
-    UR1 is the total reflection for normally incident collimated light.
-    UT1 is the total transmission for normally incident collimated light.
-    URU is the total reflection for diffuse incident light.
-    UTU is the total transmission for diffuse incident light.
+    All input parameters must be scalars.
 
     Args:
         n: number of points in quadrature (multiple of 4)
@@ -101,8 +94,11 @@ def basic_rt(n, nslab, ntop, nbot, a, b, g):
         a: single scattering albedo of the slab
         b: optical thickness of the slab
         g: anisotropy of single scattering
-    Returns
-        [UR1, UT1, URU, UTU]
+    Returns:
+        - `UR1` is the total reflection for normally incident collimated light.
+        - `UT1` is the total transmission for normally incident collimated light.
+        - `URU` is the total reflection for diffuse incident light.
+        - `UTU` is the total transmission for diffuse incident light.
     """
     ur1 = ctypes.c_double()
     ut1 = ctypes.c_double()
@@ -131,23 +127,29 @@ def basic_rt_unscattered(n, nslab, ntop, nbot, a, b, g):
     """
     Calculate the unscattered reflection and transmission for a turbid slab.
 
-    basic_rt_unscattered(n,nslab,ntop,nbot,a,b,g) returns the unscattered
-    light for normal and diffuse incidence [UR1,UT1,URU,UTU] for a slab
-    bounded by glass slides.  The slab is characterized by an albedo a, an
-    optical thickness b, a scattering anisotropy g, and an index of refraction nslab.
-    The top glass slides have an index of refraction ntop and the bottom slide has
-    an index nbot.  If there are no glass slides, set ntop and nbottom to 1.
-
-    n is the number of quadrature angles (more angles give better accuracy but slow
-    the calculation by n**3, n must be a multiple of 4, typically 16 is good for forward
+    `n` is the number of quadrature angles (more angles give better accuracy but slow
+    the calculation by `n**3`, `n` must be a multiple of 4, typically 16 is good for forward
     calculations and 4 is appropriate for inverse calculations).
 
-    All parameters must be scalars.
+    The semi-infinite slab may be bounded by glass slides.  
+    The top glass slides have an index of refraction `ntop` and the bottom slide has
+    an index `nbot`.  If there are no glass slides, set `ntop` and `nbottom` to 1.
 
-    UR1 is the unscattered reflection for normally incident collimated light.
-    UT1 is the unscattered transmission for normally incident collimated light.
-    URU is the unscattered reflection for diffuse incident light.
-    UTU is the unscattered transmission for diffuse incident light.
+    All input parameters must be scalars.
+
+    Args:
+        n: number of points in quadrature (multiple of 4)
+        nslab: index of refraction of the slab
+        ntop: index of refraction of the top slide
+        nbot: index of refraction of the bottom slide
+        a: single scattering albedo of the slab
+        b: optical thickness of the slab
+        g: anisotropy of single scattering
+    Returns:
+        - `UR1` is the total reflection for normally incident collimated light.
+        - `UT1` is the total transmission for normally incident collimated light.
+        - `URU` is the total reflection for diffuse incident light.
+        - `UTU` is the total transmission for diffuse incident light.
     """
     ur1 = ctypes.c_double()
     ut1 = ctypes.c_double()
@@ -177,26 +179,34 @@ def basic_rt_cone(n, nslab, ntop, nbot, a, b, g, cos_cone_angle):
     """
     Calculate reflection and transmission for a turbid slab exiting within a cone.
 
-    basic_rt_cone(n,nslab,ntop,nbot,a,b,g,cos_cone_angle) assumes normally
-    incident or uniformly diffuse incident light and returns the total reflected
-    or transmitted light that exits within a cone. The cosine of the cone angle
-    is given by cos_cone.  The returned values are [UR1,UT1,URU,UTU].
+    This routine assumes normally incident or uniformly diffuse incident light
+    and returns the total reflected or transmitted light that exits within a cone. 
+    The cosine of the cone angle is given by `cos_cone_angle`.
 
-    The slab is characterized by an albedo a, an
-    optical thickness b, a scattering anisotropy g, and an index of refraction nslab.
-    The top glass slides have an index of refraction ntop and the bottom slide has
-    an index nbot.  If there are no glass slides, set ntop and nbottom to 1.
-
-    n is the number of quadrature angles (more angles give better accuracy but slow
-    the calculation by n**3, n must be a multiple of 4, typically 16 is good for forward
+    `n` is the number of quadrature angles (more angles give better accuracy but slow
+    the calculation by `n**3`, `n` must be a multiple of 4, typically 16 is good for forward
     calculations and 4 is appropriate for inverse calculations).
 
-    All parameters must be scalars.
+    The semi-infinite slab may be bounded by glass slides.  
+    The top glass slides have an index of refraction `ntop` and the bottom slide has
+    an index `nbot`.  If there are no glass slides, set `ntop` and `nbottom` to 1.
 
-    UR1 is the total reflection within a cone for normally incident collimated light.
-    UT1 is the total transmission within a cone for normally incident collimated light.
-    URU is the total reflection within a cone for diffuse incident light.
-    UTU is the total transmission within a cone for diffuse incident light.
+    All input parameters must be scalars.
+
+    Args:
+        n: number of points in quadrature (multiple of 4)
+        nslab: index of refraction of the slab
+        ntop: index of refraction of the top slide
+        nbot: index of refraction of the bottom slide
+        a: single scattering albedo of the slab
+        b: optical thickness of the slab
+        g: anisotropy of single scattering
+        cos_cone_angle: cosine of cone of exiting light
+    Returns:
+        - `UR1` is the reflection within cone for normally incident collimated light.
+        - `UT1` is the transmission within cone for normally incident collimated light.
+        - `URU` is the reflection within cone for diffuse incident light.
+        - `UTU` is the transmission within cone for diffuse incident light.
     """
     ur1 = ctypes.c_double()
     ut1 = ctypes.c_double()
@@ -227,26 +237,34 @@ def basic_rt_oblique(n, nslab, ntop, nbot, a, b, g, cos_oblique):
     """
     Calculate reflection and transmission for light incident at a oblique angle.
 
-    basic_rt_oblique(n,nslab,ntop,nbot,a,b,g,cos_oblique) returns the total R and T
-    for light incident at an oblique angle or incident withn a cone.  The cosine
-    of the oblique angle (or the cone) is cos_oblique. The returned values are
-    [URx,UTx,URU,UTU].
-
-    The slab is characterized by an albedo a, an optical thickness b, a scattering
-    anisotropy g, and an index of refraction nslab. The top glass slide have an
-    index of refraction of ntop and the bottom slide has an index nbot.  If there
-    are no glass slides, set ntop and nbottom to 1.
+    This returns the total R and T for light incident at an oblique angle or 
+    incident within a cone.  The cosine of the oblique angle (or the cone) is 
+    `cos_oblique`.
 
     n is the number of quadrature angles (more angles give better accuracy but slow
     the calculation by n**3, n must be a multiple of 4, typically 16 is good for forward
     calculations and 4 is appropriate for inverse calculations).
 
-    All parameters must be scalars.
+    The semi-infinite slab may be bounded by glass slides.  
+    The top glass slides have an index of refraction `ntop` and the bottom slide has
+    an index `nbot`.  If there are no glass slides, set `ntop` and `nbottom` to 1.
+        
+    All input parameters must be scalars.
 
-    URx is the total reflection for obliquely incident collimated light.
-    UTx is the total transmission for obliquely incident collimated light.
-    URU is the total reflection for diffuse light incident within a cone.
-    UTU is the total transmission for diffuse light incident within a cone.
+    Args:
+        n: number of points in quadrature (multiple of 4)
+        nslab: index of refraction of the slab
+        ntop: index of refraction of the top slide
+        nbot: index of refraction of the bottom slide
+        a: single scattering albedo of the slab
+        b: optical thickness of the slab
+        g: anisotropy of single scattering
+        cos_oblique: cosine of cone of incident light
+    Returns:
+        - `URx` is the total reflection for obliquely incident collimated light.
+        - `UTx` is the total transmission for obliquely incident collimated light.
+        - `URU` is the total reflection for diffuse light incident within a cone.
+        - `UTU` is the total transmission for diffuse light incident within a cone.
     """
     ur1 = ctypes.c_double()
     ut1 = ctypes.c_double()
@@ -274,12 +292,27 @@ def basic_rt_inverse(nslab, nslide, ur1, ut1, tc):
     """
     Calculate optical properties given reflection and transmission values.
 
-    basic_rt_inverse(nslab, nslide, ur1, ut1, tc) finds [a,b,g] for a slab
-    with total reflectance ur1, total transmission ut1, unscattered transmission Tc.
-    The index of refraction of the slab is nslab, the index of refraction of the
-    top and bottom slides is nslide.
+    Finds the optical properties `[a,b,g]` for a slab
+    with total reflectance `ur1`, total transmission `ut1`, unscattered transmission `Tc`.
+    The index of refraction of the slab is `nslab`, the index of refraction of the
+    top and bottom slides is `nslide`.
 
-    All parameters must be scalars
+    The semi-infinite slab may be bounded by glass slides.  
+    The top glass slides have an index of refraction `ntop` and the bottom slide has
+    an index `nbot`.  If there are no glass slides, set `ntop` and `nbottom` to 1.
+
+    All input parameters must be scalars.
+
+    Args:
+        nslab: index of refraction of the slab
+        nslide: index of refraction of the slides
+        ur1: is total reflection for normally incident collimated light.
+        ut1: is total transmission for normally incident collimated light.
+        tc: unscattered transmission through sample
+    Returns:
+        - `a` is the single scattering albedo of the slab
+        - `b` is the optical thickness of the slab
+        - `g` is the anisotropy of single scattering
     """
     a = ctypes.c_double()
     b = ctypes.c_double()
@@ -293,18 +326,20 @@ def rt(nslab, nslide, a, b, g):
     """
     Calculate the total reflection and transmission for a turbid slab.
 
-    rt(nslab,ntop,nbot,a,b,g) returns [UR1,UT1,URU,UTU] for a slab optionally
-    bounded by glass slides.  The slab is characterized by an albedo a, an
-    optical thickness b, a scattering anisotropy g, and an index of refraction nslab.
-    The top glass slides have an index of refraction ntop and the bottom slide has
-    an index nbot.  If there are no glass slides, set ntop and nbottom to 1.
+    This routine should be the primary entry point because the optical properties
+    can be either scalars or arrays.
 
-    a, b, and g can be scalars or arrays.
-
-    UR1 is the total reflection for normally incident collimated light.
-    UT1 is the total reflection for normally incident collimated light.
-    URU is the total reflection for diffuse incident light.
-    UTU is the total reflection for diffuse incident light.
+    Args:
+        nslab: index of refraction of the slab
+        nslide: index of refraction of the slides
+        a: single scattering albedo of the slab
+        b: optical thickness of the slab
+        g: anisotropy of single scattering
+    Returns:
+        - `UR1` is the total reflection for normally incident collimated light.
+        - `UT1` is the total transmission for normally incident collimated light.
+        - `URU` is the total reflection for diffuse incident light.
+        - `UTU` is the total transmission for diffuse incident light.
     """
     N_QUADRATURE = 16  # should be a multiple of 16
 
@@ -365,19 +400,20 @@ def rt_unscattered(nslab, nslide, a, b, g):
     """
     Calculate the unscattered reflection and transmission for a turbid slab.
 
-    rt_unscattered(nslab,nslide,a,b,g) returns the unscattered portion of
-    light for normal and diffuse incidence [UR1,UT1,URU,UTU] for a slab
-    bounded by glass slides.  The slab is characterized by an albedo a, an
-    optical thickness b, a scattering anisotropy g, and an index of refraction nslab.
-    The top and bottom glass slides have index nslide. If there are no glass slides,
-    set ntop and nbottom to 1.
+    This routine should be the primary entry point because the optical properties
+    can be either scalars or arrays.
 
-    a,b,g may be scalars or arrays.
-
-    UR1 is the unscattered reflection for normally incident collimated light
-    UT1 is the unscattered reflection for normally incident collimated light
-    URU is the unscattered reflection for diffuse incident light
-    UTU is the unscattered reflection for diffuse incident light
+    Args:
+        nslab: index of refraction of the slab
+        nslide: index of refraction of the slides
+        a: single scattering albedo of the slab
+        b: optical thickness of the slab
+        g: anisotropy of single scattering
+    Returns:
+        - `UR1` is the unscattered reflection for normally incident collimated light.
+        - `UT1` is the unscattered transmission for normally incident collimated light.
+        - `URU` is the unscattered reflection for diffuse incident light.
+        - `UTU` is the unscattered transmission for diffuse incident light.
     """
     N_QUADRATURE = 16  # should be a multiple of 16
 
@@ -441,22 +477,22 @@ def rt_cone(nslab, nslide, a, b, g, cos_cone):
     """
     Calculate reflection and transmission for a turbid slab exiting within a cone.
 
-    rt_cone(nslab,nslide,a,b,g,cos_cone) assumes normally
-    incident or uniformly diffuse incident light and returns the total reflected
-    or transmitted light that exits within a cone. The cosine of the cone angle
-    is cos_cone.  The returned values are [UR1,UT1,URU,UTU].
+    This routine should be the primary entry point because the optical properties
+    can be either scalars or arrays.
 
-    The slab is characterized by an albedo a, an
-    optical thickness b, a scattering anisotropy g, and an index of refraction
-    nslab. The top and bottom glass slides have an index of refraction nslide.
-    If there are no glass slides, set nslide to 1.
-
-    a, b, g, and cos_cone may be scalars or arrays.
-
-    UR1 is the total reflection within a cone for normally incident collimated light.
-    UT1 is the total transmission within a cone for normally incident collimated light.
-    URU is the total reflection within a cone for diffuse incident light.
-    UTU is the total transmission within a cone for diffuse incident light.
+    Args:
+        n: number of points in quadrature (multiple of 4)
+        nslab: index of refraction of the slab
+        nslide: index of refraction of the top and bottom slides
+        a: single scattering albedo of the slab
+        b: optical thickness of the slab
+        g: anisotropy of single scattering
+        cos_cone: cosine of cone of exiting light
+    Returns:
+        - `UR1` is the reflection within cone for normally incident collimated light.
+        - `UT1` is the transmission within cone for normally incident collimated light.
+        - `URU` is the reflection within cone for diffuse incident light.
+        - `UTU` is the transmission within cone for diffuse incident light.
     """
     N_QUADRATURE = 16  # should be a multiple of 16
 
@@ -535,21 +571,23 @@ def rt_oblique(nslab, nslide, a, b, g, cos_oblique):
     """
     Calculate reflection and transmission for light incident at a oblique angle.
 
-    rt_oblique(n,nslide,a,b,g,cos_oblique) returns the total R and T
-    for light incident at an oblique angle or incident withn a cone.  The cosine
-    of the oblique angle (or the cone) is cos_oblique. The returned values are
-    [URx,UTx,URU,UTU].
+    This routine should be the primary entry point because the optical properties
+    can be either scalars or arrays.
+        
+    All input parameters must be scalars.
 
-    The slab is characterized by an albedo a, an optical thickness b, a scattering
-    anisotropy g, and an index of refraction nslab. The top and bottom glass slides
-    have an index of refraction nslide. If there are no glass slides, set nslide to 1.
-
-    a, b, g, and cos_oblique may be scalars or arrays.
-
-    URx is the total reflection for obliquely incident collimated light.
-    UTx is the total transmission for obliquely incident collimated light.
-    URU is the total reflection for diffuse light incident within a cone.
-    UTU is the total transmission for diffuse light incident within a cone.
+    Args:
+        nslab: index of refraction of the slab
+        nslide: index of refraction of the top and bottom slides
+        a: single scattering albedo of the slab
+        b: optical thickness of the slab
+        g: anisotropy of single scattering
+        cos_oblique: cosine of cone of incident light
+    Returns:
+        - `URx` is the total reflection for obliquely incident collimated light.
+        - `UTx` is the total transmission for obliquely incident collimated light.
+        - `URU` is the total reflection for diffuse light incident within a cone.
+        - `UTU` is the total transmission for diffuse light incident within a cone.
     """
     N_QUADRATURE = 16  # should be a multiple of 16
 
@@ -628,11 +666,21 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
     """
     Calculate [a,b,g] for a slab.
 
-    with total reflectance ur1, total transmission ut1, unscattered transmission t_unscattered.
-    The index of refraction of the slab is nslab, the index of refraction of the
-    top and bottom slides is nslide.
+    This routine should be the primary entry point because the reflection
+    and transmission can be either scalars or arrays.
 
-    ur1, ut1, and t_unscattered may be scalars or arrays.
+    All input parameters must be scalars.
+
+    Args:
+        nslab: index of refraction of the slab
+        nslide: index of refraction of the slides
+        ur1: is total reflection for normally incident collimated light.
+        ut1: is total transmission for normally incident collimated light.
+        tc: unscattered transmission through sample
+    Returns:
+        - `a` is the single scattering albedo of the slab
+        - `b` is the optical thickness of the slab
+        - `g` is the anisotropy of single scattering
     """
     if np.isscalar(ur1):
         len_r1 = 0

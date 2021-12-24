@@ -9,14 +9,14 @@ Module for generating boundary matrices.
 
 Two types of starting methods are possible.
 
-    import iadpython.fresnel
-
-    n = 4
-    slab = iadpython.start.Slab(a = 0.9, b = 10, g = 0.9, n = 1.5)
-    method = iadpython.start.Method(slab)
-    r, t = iad.start.init_layer(slab, method)
-    print(r)
-    print(t)
+    Example:
+        >>> import iadpython as iad
+        >>> n = 4
+        >>> slab = iad.Slab(a = 0.9, b = 10, g = 0.9, n = 1.5)
+        >>> method = iad.Method(slab)
+        >>> r, t = iad.init_layer(slab, method)
+        >>> print(r)
+        >>> print(t)
 
 """
 import numpy as np
@@ -39,11 +39,13 @@ def cos_critical(n_i, n_t):
     This works for arrays too.  If there is no critical angle then
     cos(pi/2)=0 is returned.
 
-    theta_c = arcsin(n_t / n_i)
+        .. math:: \\theta_c = \\sin^{-1}(n_t / n_i)
 
     The cosine of this angle is then
 
-    cos(theta_c) = cos(arcsin(n_t / n_i)) = sqrt(1-(n_t/n_i)**2)
+        .. math:: \\cos(\\theta_c) = \\cos(\\sin^{-1}(n_t / n_i))
+
+        .. math:: \\cos(\\theta_c) = \\sqrt{1-(n_t/n_i)^2}
 
     Args:
         n_i: index of refraction of incident medium
@@ -68,20 +70,24 @@ def cos_snell(n_i, nu_i, n_t):
 
     Snell's law states
 
-    n_i * sin(theta_i) = n_t*sin(theta_t)
+    .. math:: n_i\\sin(\\theta_i) = n_t \\sin(\\theta_t)
 
-    but if the angles are expressed as cosines,  nu_i = cos(theta_i) then
+    but if the angles are expressed as cosines,
+    :math:`\\nu_i = \\cos(\\theta_i)` then
 
-    n_i*sin(arccos(nu_i)) = n_t*sin(arccos(nu_t))
+    .. math:: n_i\\sin(\\cos^{-1}\\nu_i) = n_t \\sin(arccos(\\nu_t))
 
     Solving for nu_t yields
 
-    nu_t = cos(arcsin[(n_i/n_t) sin(arccos(nu_i))]
+    .. math:: \\nu_t = \\cos(\\sin^{-1}[(n_i/n_t) \\sin(\\cos^{-1}\\nu_i)]
 
-    which is pretty ugly.  However, note that sin(arccos(nu)) = sqrt(1-nu**2)
+    which is pretty ugly.  However, note that 
+    
+    .. math:: \\sin(\\cos^{-1}\\nu) = \\sqrt{1-\\nu^2}
+
     and the above becomes
 
-    nu_t = sqrt(1-(n_i/n_t)**2 (1- nu_i**2))
+    .. math:: \\nu_t = \\sqrt{1-(n_i/n_t)^2 (1- \\nu_i^2)}
 
     Args:
         n_i: index of refraction of incident medium
@@ -113,8 +119,7 @@ def fresnel_reflection(n_i, nu_i, n_t):
     The usual way to calculate the total reflection for unpolarized light is
     to use the Fresnel formula
 
-    R = 1 / 2 left[  sin**2( theta_i- theta_t) /  sin**2( theta_i+ theta_t)
-                         + tan**2( theta_i- theta_t) /  tan**2( theta_i+ theta_t)  right]
+    .. math:: R = \\frac{1}{2} \\left[\\frac{\\sin^2(\\theta_i-\\theta_t)}{\\sin^2(\\theta_i+\\theta_t)} + \\frac{\\tan^2(\\theta_i-\\theta_t)}{\\tan^2(\\theta_i+\\theta_t)} \\right]
 
     where  theta_i and  theta_t represent the angle (from normal) that light is incident
     and the angle at which light is transmitted.
@@ -131,18 +136,14 @@ def fresnel_reflection(n_i, nu_i, n_t):
     Closer inspection reveals that this is the wrong formulation to use.  The formulas that
     should be used for parallel and perpendicular polarization are
 
-    R_ parallel = left[n_t cos theta_i-n_i cos theta_t /
-                                            n_t cos theta_i+n_i cos theta_t right]**2,
+    .. math:: R_\\parallel = \\left[\\frac{n_t\\cos\\theta_i-n_i\\cos\\theta_t}{n_t\\cos\\theta_i+n_i\\cos\\theta_t}\\right]^2,
 
-    R_ perp = left[ n_i cos theta_i-n_t cos theta_t /
-                                            n_i cos theta_i+n_t cos theta_t right]**2.
+    .. math:: R_\\perp = \\left[\\frac{n_i\\cos\\theta_i-n_t\\cos\\theta_t}{n_i\\cos\\theta_i+n_t\\cos\\theta_t}\\right]^2.
 
-    The formula for unpolarized light, written in terms of  nu_i = cos theta_i and
-     nu_t = cos theta_t is
+    The formula for unpolarized light, written in terms of
+    :math:`\\nu_i = \\cos \\theta_i` and :math:`\\nu_t = \\cos \\theta_t` is
 
-    R = 1 / 2 (n_t nu_i-n_i nu_t)**2/(n_t nu_i+n_i nu_t)**2
-    +1 / 2 left[n_i nu_i-n_t nu_t / n_i nu_i+n_t nu_t right]**2
-
+    .. math:: R = \\frac{1}{2} \\left[\\frac{n_t\\nu_i-n_i\\nu_t}{n_t \\nu_i+n_i \\nu_t}\\right]^2 +\\frac{1}{2} \\left[\\frac{n_i\\nu_i-n_t\\nu_t}{n_i \\nu_i+n_t \\nu_t}\\right]^2
 
     This formula has the advantage that no trig routines need to be called and that the
     case of normal irradiance does not cause division by zero.  Near normal incidence
@@ -204,9 +205,9 @@ def glass(n_i, n_g, n_t, nu_i):
     result for the reflection from a non-absorbing glass layer (equation A2.21
     in my dissertation) in which multiple reflections are properly accounted for
 
-    r_g = r_1 + r_2 - 2  r_1  r_2  / 1 - r_1  r_2
+    .. math:: r_g = \\frac{r_1 + r_2 - 2  r_1  r_2 }{ 1 - r_1  r_2}
 
-    Here r_1 is the reflection at the air-glass interface and r_2 is the
+    Here :math:`r_1` is the reflection at the air-glass interface and :math:`r_2` is the
     reflection at the glass-sample interface.
 
     There is one pitfall in calculating r_g.  When the angle
@@ -255,7 +256,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     absorption.  Anyway, it is not hard to extend the result for non-absorbing slides
     to the absorbing case
 
-    r = r_1 + r_2 * (1-r_1)**2 * exp(-2b/nu_g) / [1 - r_1*r_2*exp(-2b/nu_g)]
+    .. math:: r = r_1 + \\frac{(1-r_1)^2 r_2 e^{-2b/\\nu_g}}{1 - r_1 r_2e^{-2b/\\nu_g}}
 
     Here r_1 is the reflection at the sample-glass interface and r_2 is the
     reflection at the glass-air interface and  nu_g is the cosine of the
@@ -265,7 +266,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
 
     The corresponding result for transmission is
 
-    t = (1-r_1)*(1-r_2)*exp(-b/nu_g) / [1 - r_1*r_2*exp(-2b/nu_g)]
+    .. math:: t = \\frac{(1-r_1)(1-r_2)e^{-b/\\nu_g}} {1 - r_1 r_2e^{-2b/\\nu_g}}
 
     There are two potential pitfalls in the calculation.  The first is
     when the angle of incidence exceeds the critical angle then the formula causes

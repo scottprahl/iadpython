@@ -13,7 +13,7 @@ iadpython.ad module
    :show-inheritance:
 
 iadpython.calc module
---------------------
+---------------------
 
 .. automodule:: iadpython.calc
    :members:
@@ -37,7 +37,7 @@ iadpython.fresnel module
    :show-inheritance:
 
 iadpython.grid module
-------------------------
+---------------------
 
 .. automodule:: iadpython.grid
    :members:
@@ -45,7 +45,7 @@ iadpython.grid module
    :show-inheritance:
 
 iadpython.iad module
-------------------------
+--------------------
 
 .. automodule:: iadpython.iad
    :members:
@@ -53,7 +53,7 @@ iadpython.iad module
    :show-inheritance:
 
 iadpython.iadc module
-------------------------
+---------------------
 
 .. automodule:: iadpython.iadc
    :members:
@@ -61,7 +61,7 @@ iadpython.iadc module
    :show-inheritance:
 
 iadpython.nist module
-------------------------
+---------------------
 
 .. automodule:: iadpython.nist
    :members:

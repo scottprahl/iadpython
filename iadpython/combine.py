@@ -6,16 +6,17 @@ Module for adding layers together.
 
 Two types of starting methods are possible.
 
-    import iadpython
+    Example:
+        >>> import iadpython as iad
 
-    # Isotropic finite layer with mismatched slides the hard way.
-    s = iadpython.Sample(a=0.5, b=1, g=0.0, n=1.4, n_above=1.5, n_below=1.6)
-    s.quad_pts = 4
-    R01, R10, T01, T10 = iadpython.boundary_matrices(s, top=True)
-    R23, R32, T23, T32 = iadpython.boundary_matrices(s, top=False)
-    R12, T12 = iadpython.simple_layer_matrices(s)
-    R02, R20, T02, T20 = iadpython.add_layers(s, R01, R10, T01, T10, R12, R12, T12, T12)
-    rr03, rr30, tt03, tt30 = iadpython.add_layers(s, R02, R20, T02, T20, R23, R32, T23, T32)
+        >>> # Isotropic finite layer with mismatched slides the hard way.
+        >>> s = iad.Sample(a=0.5, b=1, g=0.0, n=1.4, n_above=1.5, n_below=1.6)
+        >>> s.quad_pts = 4
+        >>> R01, R10, T01, T10 = iad.boundary_matrices(s, top=True)
+        >>> R23, R32, T23, T32 = iad.boundary_matrices(s, top=False)
+        >>> R12, T12 = iad.simple_layer_matrices(s)
+        >>> R02, R20, T02, T20 = iad.add_layers(s, R01, R10, T01, T10, R12, R12, T12, T12)
+        >>> rr03, rr30, tt03, tt30 = iad.add_layers(s, R02, R20, T02, T20, R23, R32, T23, T32)
 
 """
 
@@ -40,26 +41,28 @@ def add_layers_basic(sample, R10, T01, R12, R21, T12, T21):
 
     The basic equations for the adding-doubling sample (neglecting sources) are
 
-    T_02  = T_12 (E - R_10 R_12)⁻¹ T_01
+    .. math:: T_{02}  = T_{12} (E - R_{10} R_{12})^{-1} T_{01}
 
-    R_20  = T_12 (E - R_10 R_12)⁻¹ R_10 T_21 +R_21
+    .. math:: R_{20}  = T_{12} (E - R_{10} R_{12})^{-1} R_{10} T_{21} +R_{21}
 
-    T_20  = T_10 (E - R_12 R_10)⁻¹ T_21
+    .. math:: T_{20}  = T_{10} (E - R_{12} R_{10})^{-1} T_{21}
 
-    R_02  = T_10 (E - R_12 R_10)⁻¹ R_12 T_01 +R_01
+    .. math:: R_{02}  = T_{10} (E - R_{12} R_{10})^{-1} R_{12} T_{01} +R_{01}
 
     Upon examination it is clear that the two sets of equations have
     the same form.  These equations assume some of the multiplications are
     star multiplications. Explicitly,
 
-    T_02  = T_12 (E - R_10 C R_12 )⁻¹ T_01
+    .. math:: T_{02}  = T_{12} (E - R_{10} C R_{12} )^{-1} T_{01}
 
-    R_20  = T_12 (E - R_10 C R_12 )⁻¹ R_10 C T_21 +R_21
+    .. math:: R_{20}  = T_{12} (E - R_{10} C R_{12} )^{-1} R_{10} C T_{21} +R_{21}
 
     where the diagonal matrices C and E are
 
-    E_ij= 1/(2*nu_i*w_i) delta_ij
-    C_ij= 2*nu_i*w_i delta_ij
+    .. math:: E_{ij}= 1/(2\\nu_i w_i) \\delta_{ij}
+
+    .. math:: C_{ij}= 2*\\nu_i w_i \\delta_{ij}
+
     """
     C = np.diagflat(sample.twonuw)
     E = np.diagflat(1 / sample.twonuw)
@@ -146,9 +149,10 @@ def _add_boundary_config_a(sample, R12, R21, T12, T21, R10, T01):
     on top of an inhomogeneous layer characterized by 'R12', 'R21', 'T12',
     'T21' using:
 
-    T_02=T_12 (E-R_10*R_12 )**-1 T_01
+    .. math:: T_{02}=T_{12} (E-R_{10}R_{12})^{-1} T_{01}
 
-    R_20=T_12 (E-R_10*R_12)**-1 R_10 T_21 + R_21
+    .. math:: R_{20}=T_{12} (E-R_{10}R_{12})^{-1} R_{10} T_{21} + R_{21}
+
     Args:
         R12: reflection matrix for light moving downwards 1->2
         R21: reflection matrix for light moving upwards 2->1
@@ -176,9 +180,9 @@ def _add_boundary_config_b(sample, R12, T21, R01, R10, T01, T10):
     on top of an inhomogeneous layer characterized by 'R12', 'R21', 'T12',
     'T21' using:
 
-    T_20=T_10 (E-R_12R_10)**(-1) T_21
+    .. math:: T_{20}=T_{10} (E-R_{12}R_{10})^{-1} T_{21}
 
-    R_02=T_10 (E-R_12R_10)**(-1) R_12 T_01 + R_01
+    .. math:: R_{02}=T_{10} (E-R_{12}R_{10})^{-1} R_{12} T_{01} + R_{01}
 
     Args:
         R12: reflection matrix for light moving downwards 1->2
@@ -266,8 +270,8 @@ def add_same_slides(sample, R01, R10, T01, T10, R, T):
     This leads to a faster method for calculating the reflection and
     transmission for a slab with equal boundary conditions on each side.
     Let the top boundary be layer 01, the medium layer 12, and the bottom
-    layer 23.  The boundary conditions on each side are equal:  R_01=R_32,
-    R_10=R_23, T_01=T_32, and T_10=T_23.
+    layer 23.  The boundary conditions on each side are equal:  R_{01}=R_{32},
+    R_{10}=R_{23}, T_{01}=T_{32}, and T_{10}=T_{23}.
 
     For example the light reflected from layer 01 (travelling from boundary
     0 to boundary 1) will equal the amount of light reflected from layer 32,
@@ -275,18 +279,18 @@ def add_same_slides(sample, R01, R10, T01, T10, R, T):
     in the numbering arises from the fact that light passes from the medium
     to the outside at the top surface by going from 1 to 0, and from 2 to 3
     on the bottom surface.  The reflection and transmission for the slab
-    with boundary conditions are R_30 and  T_03 respectively.  These are
+    with boundary conditions are R_{30} and  T_{03} respectively.  These are
     given by
 
-    A_XX = T_12(E-R_10R_12)**-1
+    .. math:: A_{XX} = T_{12}(E-R_{10}R_{12})^{-1}
 
-    R_20 = A_XX R_10T_21 + R_21
+    .. math:: R_{20} = A_{XX} R_{10}T_{21} + R_{21}
 
-    B_XX = T_10(E-R_20R_10)**-1
+    .. math:: B_{XX} = T_{10}(E-R_{20}R_{10})^{-1}
 
-    T_03 = B_XX A_XX T_01
+    .. math:: T_{03} = B_{XX} A_{XX} T_{01}
 
-    R_30 = B_XX R_20 T_01 + R_01/(2nuw)**2
+    .. math:: R_{30} = B_{XX} R_{20} T_{01} + R_{01}/(2\\nu w)^2
 
     Args:
         R01: R, T for slide assuming 0=air and 1=slab

@@ -7,13 +7,13 @@
 """
 Class for doing adding-doubling calculations for a sample.
 
-    import iadpython
-
-    n=4
-    sample = iadpython.Sample(a=0.9, b=10, g=0.9, n=1.5, quad_pts=4)
-    r, t = sample.rt()
-    print(r)
-    print(t)
+    Example:
+        >>> import iadpython as iad
+        >>> n=4
+        >>> sample = iad.Sample(a=0.9, b=10, g=0.9, n=1.5, quad_pts=4)
+        >>> r, t = sample.rt()
+        >>> print(r)
+        >>> print(t)
 """
 
 import copy
@@ -24,34 +24,41 @@ import iadpython.start
 import iadpython.combine
 
 class Sample():
-    """Container class for details of a sample."""
+    """
+    Container class for details of a sample.
 
-    def __init__(self, a=0, b=1, g=0, d=1, n=1, n_above=1, n_below=1, quad_pts=4):
-        """
-        Object initialization.
-
-        Most things can be changed later by just assigning to the element.
+        Most things can be changed after creation by assigning to an element.
 
         The angle of incidence is assumed to be perpendicular to the
         surface.  This is stored as the cosine of the angle and therefore to
-        change it to 60° from the normal, one does `sample.nu_0 = 0.5`.
+        change it to 60° from the normal, one does 
+
+        Example:
+
+            sample.nu_0 = 0.5
 
         To avoid needing to calculate the quadrature angles each time a
-        calculation is done, the object stores the quadrature angles as
+        calculation is done, the `Sample` object stores the quadrature angles as
         well as the redistribution function.  A bit of trouble is taken
         to ensure that these values get updated when something changes
         e.g., the anisotropy, the angle of incidence, or the number of
         quadrature points.
 
-        Args:
-            a: albedo
-            b: optical thickness
-            b: physical thickness [mm]
-            g: scattering anisotropy [-]
-            n: index of refraction of sample
-            n_above: index of refraction of slide above
-            n_below: index of refraction of slide below
-            quad_pts: number of quadrature points
+    Attributes:
+        - a: albedo
+        - b: optical thickness
+        - b: physical thickness [mm]
+        - g: scattering anisotropy [-]
+        - n: index of refraction of sample
+        - n_above: index of refraction of slide above
+        - n_below: index of refraction of slide below
+        - quad_pts: number of quadrature points
+        
+    """
+
+    def __init__(self, a=0, b=1, g=0, d=1, n=1, n_above=1, n_below=1, quad_pts=4):
+        """
+        Object initialization.
 
         Returns:
             object with all details needed to do a radiative calculation

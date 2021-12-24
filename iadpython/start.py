@@ -3,26 +3,14 @@
 """
 Module for generating the starting thinnest_layer for adding-doubling.
 
-The next two routines 'A_Add_Slide' and 'B_Add_Slide' are modifications of
-the full addition algorithms for dissimilar layers.  They are optimized to
-take advantage of the diagonal nature of the boundary_layer matrices.  There are
-two algorithms below to facilitate adding slides below and above the sample.
+Two types of starting methods are possible IGI and Diamond.
 
-The important point that must be remembered is that all the angles in
-this program assume that the angles are those actually in the sample.
-This allows angles greater that the critical angle to be used.
-Everything is fine as long as the index of refraction of the incident
-medium is 1.0.  If this is not the case then the angle inside the medium
-must be figured out.
-"
-Two types of starting methods are possible.
-
-    import iadpython as iad
-
-    s = iad.Sample(a=0.9, b=10, g=0.9, n=1.5)
-    r, t = iad.init_layer(s)
-    print(r)
-    print(t)
+    Example:
+        >>> import iadpython as iad
+        >>> s = iad.Sample(a=0.9, b=10, g=0.9, n=1.5)
+        >>> r, t = iad.init_layer(s)
+        >>> print(r)
+        >>> print(t)
 
 """
 

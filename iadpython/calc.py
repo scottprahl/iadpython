@@ -7,11 +7,11 @@
 """
 Functions to figure out how close guess is to correct answer.
 
-import iadpython as iad
-
-s = iad.Sample(a=0.95, b=3)
-x = iad.Experiment(sample=s, m_r=0.5, m_t=0.1)
-delta = corrected_distance(x)
+    Example:
+        >>> import iadpython as iad
+        >>> s = iad.Sample(a=0.95, b=3)
+        >>> x = iad.Experiment(sample=s, m_r=0.5, m_t=0.1)
+        >>> delta = corrected_distance(x)
 """
 
 import numpy as np
@@ -86,8 +86,8 @@ def corrected_distance(x):
             # However if the number of spheres is zero, then no lost light
             # calculations are made and therefore that is a potential error.
             # 
-            *M_R     = (1-MM.f_r) * R_direct/((1-MM.f_r) + MM.f_r*MM.rw_r/MM.rstd_r)
-            *M_T     = T_direct
+#             M_R     = (1-MM.f_r) * R_direct/((1-MM.f_r) + MM.f_r*MM.rw_r/MM.rstd_r)
+#             M_T     = T_direct
         else:
             # The direct incident power is $(1-f) P$. The reflected power will 
             # be $(1-f)\rdirect P$.  Since baffles ensure that the light cannot
@@ -114,92 +114,92 @@ def corrected_distance(x):
             # 
             # @<Calc |M_R| and |M_T| for single beam sphere@>=
 
-            G_0      = Gain(REFLECTION_SPHERE, MM, 0.0)
-            G        = Gain(REFLECTION_SPHERE, MM, R_diffuse)
-            G_std    = Gain(REFLECTION_SPHERE, MM, MM.rstd_r)
-    
-            P_d      = G     * (R_direct  * (1-MM.f_r) + MM.f_r*MM.rw_r)
-            P_std    = G_std * (MM.rstd_r * (1-MM.f_r) + MM.f_r*MM.rw_r)
-            P_0      = G_0   * (                         MM.f_r*MM.rw_r)   
-            *M_R     = MM.rstd_r * (P_d - P_0)/(P_std - P_0)
+#             G_0      = Gain(REFLECTION_SPHERE, MM, 0.0)
+#             G        = Gain(REFLECTION_SPHERE, MM, R_diffuse)
+#             G_std    = Gain(REFLECTION_SPHERE, MM, MM.rstd_r)
+#     
+#             P_d      = G     * (R_direct  * (1-MM.f_r) + MM.f_r*MM.rw_r)
+#             P_std    = G_std * (MM.rstd_r * (1-MM.f_r) + MM.f_r*MM.rw_r)
+#             P_0      = G_0   * (                         MM.f_r*MM.rw_r)   
+#             M_R     = MM.rstd_r * (P_d - P_0)/(P_std - P_0)
+# 
+#             GP       = Gain(TRANSMISSION_SPHERE, MM, R_diffuse)
+#             GP_std   = Gain(TRANSMISSION_SPHERE, MM, 0.0)
+#             M_T     = T_direct * GP / GP_std
 
-            GP       = Gain(TRANSMISSION_SPHERE, MM, R_diffuse)
-            GP_std   = Gain(TRANSMISSION_SPHERE, MM, 0.0)
-            *M_T     = T_direct * GP / GP_std
-
-    if exp.num_spheres == 2:
-        # """When two integrating spheres are present then the
-        # double integrating sphere formulas are slightly more complicated.
-        # 
-        # I am not sure what it means when |rstd_t| is not unity.
-        # 
-        # The normalized sphere measurements for two spheres are
-        # 
-        # $$
-        # M_R = R(\rdirect,\rdiffuse,\tdirect,\tdiffuse) - R(0,0,0,0)
-        # \over R(r_\std,r_\std,0,0) - R(0,0,0,0)
-        # $$
-        # and
-        # $$
-        # M_T = T(\rdirect,\rdiffuse,\tdirect,\tdiffuse) - T(0,0,0,0)
-        #                    \over T(0,0,1,1) - T(0,0,0,0)
-        # $$
-        # 
-        # Note that |R_0| and |T_0| will be zero unless one has explicitly
-        # set the fraction |m.f_r| ore |m.f_t| to be non-zero.
-        # 
-        # @<Calc |M_R| and |M_T| for two spheres@>=
-        # """
-        # double R_0, T_0
-        # R_0 = Two_Sphere_R(MM, 0, 0, 0, 0)
-        # T_0 = Two_Sphere_T(MM, 0, 0, 0, 0)
-
-        *M_R = MM.rstd_r * (Two_Sphere_R(MM, R_direct, R_diffuse, T_direct, T_diffuse) - R_0)/
-                           (Two_Sphere_R(MM, MM.rstd_r, MM.rstd_r, 0, 0) - R_0)
-        *M_T =  (Two_Sphere_T(MM, R_direct, R_diffuse, T_direct, T_diffuse) - T_0)/
-                           (Two_Sphere_T(MM, 0, 0, 1, 1) - T_0)
-    
-    """There are at least three things that need to be considered here.
-    First, the number of measurements.  Second, is the metric is relative or absolute.  
-    And third, is the albedo fixed at zero which means that the transmission
-    measurement should be used instead of the reflection measurement.
-
-    @<Calculate the deviation@>=
-    """
-    if (RR.search==FIND_A  || RR.search==FIND_G || RR.search==FIND_B || 
-        RR.search==FIND_Bs || RR.search == FIND_Ba) 
-        """This part was slightly tricky.  The crux of the problem was to
-        decide if the transmission or the reflection was trustworthy.  After
-        looking a bunches of measurements, I decided that the transmission
-        measurement was almost always more reliable.  So when there is just
-        a single measurement known, then use the total transmission if it 
-        exists.
-
-        @<One parameter deviation@>=
-        """
-        if  MM.m_t > 0:
-            if RR.metric == RELATIVE: 
-                distance = abs(MM.m_t - *M_T) / (MM.m_t + ABIT)
-            else: 
-                distance = abs(MM.m_t - *M_T) 
-         else: 
-            if RR.metric == RELATIVE: 
-                distance = abs(MM.m_r - *M_R) / (MM.m_r + ABIT)
-            else: 
-                distance = abs(MM.m_r - *M_R) 
-     else: 
-#         This stuff happens when we are doing two parameter searches.
-#         In these cases there should be information in both R and T.
-#         The distance should be calculated using the deviation from
-#         both.  The albedo stuff might be able to be take out.  We'll see.
-        if RR.metric == RELATIVE: 
-            distance = 0
-            if MM.m_t > ABIT:
-                distance = T_TRUST_FACTOR* abs(MM.m_t - *M_T) / (MM.m_t + ABIT)
-            if  RR.default_a != 0:
-                distance += abs(MM.m_r - *M_R) / (MM.m_r + ABIT)          
-         else: 
-            distance = T_TRUST_FACTOR * abs(MM.m_t - *M_T)
-            if  RR.default_a != 0:
-                distance += abs(MM.m_r - *M_R)
-    return distance
+#     if exp.num_spheres == 2:
+#         # """When two integrating spheres are present then the
+#         # double integrating sphere formulas are slightly more complicated.
+#         # 
+#         # I am not sure what it means when |rstd_t| is not unity.
+#         # 
+#         # The normalized sphere measurements for two spheres are
+#         # 
+#         # $$
+#         # M_R = R(\rdirect,\rdiffuse,\tdirect,\tdiffuse) - R(0,0,0,0)
+#         # \over R(r_\std,r_\std,0,0) - R(0,0,0,0)
+#         # $$
+#         # and
+#         # $$
+#         # M_T = T(\rdirect,\rdiffuse,\tdirect,\tdiffuse) - T(0,0,0,0)
+#         #                    \over T(0,0,1,1) - T(0,0,0,0)
+#         # $$
+#         # 
+#         # Note that |R_0| and |T_0| will be zero unless one has explicitly
+#         # set the fraction |m.f_r| ore |m.f_t| to be non-zero.
+#         # 
+#         # @<Calc |M_R| and |M_T| for two spheres@>=
+#         # """
+#         # double R_0, T_0
+#         # R_0 = Two_Sphere_R(MM, 0, 0, 0, 0)
+#         # T_0 = Two_Sphere_T(MM, 0, 0, 0, 0)
+# 
+#         M_R = MM.rstd_r * (Two_Sphere_R(MM, R_direct, R_diffuse, T_direct, T_diffuse) - R_0)/
+#                            (Two_Sphere_R(MM, MM.rstd_r, MM.rstd_r, 0, 0) - R_0)
+#         M_T =  (Two_Sphere_T(MM, R_direct, R_diffuse, T_direct, T_diffuse) - T_0)/
+#                            (Two_Sphere_T(MM, 0, 0, 1, 1) - T_0)
+#     
+#     """There are at least three things that need to be considered here.
+#     First, the number of measurements.  Second, is the metric is relative or absolute.  
+#     And third, is the albedo fixed at zero which means that the transmission
+#     measurement should be used instead of the reflection measurement.
+# 
+#     @<Calculate the deviation@>=
+#     """
+#     if (RR.search==FIND_A  || RR.search==FIND_G || RR.search==FIND_B || 
+#         RR.search==FIND_Bs || RR.search == FIND_Ba) 
+#         """This part was slightly tricky.  The crux of the problem was to
+#         decide if the transmission or the reflection was trustworthy.  After
+#         looking a bunches of measurements, I decided that the transmission
+#         measurement was almost always more reliable.  So when there is just
+#         a single measurement known, then use the total transmission if it 
+#         exists.
+# 
+#         @<One parameter deviation@>=
+#         """
+#         if  MM.m_t > 0:
+#             if RR.metric == RELATIVE: 
+#                 distance = abs(MM.m_t - *M_T) / (MM.m_t + ABIT)
+#             else: 
+#                 distance = abs(MM.m_t - *M_T) 
+#          else: 
+#             if RR.metric == RELATIVE: 
+#                 distance = abs(MM.m_r - *M_R) / (MM.m_r + ABIT)
+#             else: 
+#                 distance = abs(MM.m_r - *M_R) 
+#      else: 
+# #         This stuff happens when we are doing two parameter searches.
+# #         In these cases there should be information in both R and T.
+# #         The distance should be calculated using the deviation from
+# #         both.  The albedo stuff might be able to be take out.  We'll see.
+#         if RR.metric == RELATIVE: 
+#             distance = 0
+#             if MM.m_t > ABIT:
+#                 distance = T_TRUST_FACTOR* abs(MM.m_t - *M_T) / (MM.m_t + ABIT)
+#             if  RR.default_a != 0:
+#                 distance += abs(MM.m_r - *M_R) / (MM.m_r + ABIT)          
+#          else: 
+#             distance = T_TRUST_FACTOR * abs(MM.m_t - *M_T)
+#             if  RR.default_a != 0:
+#                 distance += abs(MM.m_r - *M_R)
+#     return distance

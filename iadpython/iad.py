@@ -3,24 +3,26 @@
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-arguments
 # pylint: disable=consider-using-f-string
+# pylint: disable=unused-argument
 
 """
 Class for doing inverse adding-doubling calculations for a sample.
 
-import iadpython
+    Example:
+        >>> import iadpython as iad
 
-exp = iadpython.Experiment(0.5,0.1,0.01)
-a, b, g = exp.invert()
-print("a = %7.3f" % a)
-print("b = %7.3f" % b)
-print("g = %7.3f" % g)
+        >>> exp = iad.Experiment(0.5,0.1,0.01)
+        >>> a, b, g = exp.invert()
+        >>> print("a = %7.3f" % a)
+        >>> print("b = %7.3f" % b)
+        >>> print("g = %7.3f" % g)
 
-s = iadpython.Sample(0.5,0.1,0.01,n=1.4, n_top=1.5, n_bottom=1.5)
-exp = iadpython.Experiment(s)
-a, b, g = exp.invert()
-print("a = %7.3f" % a)
-print("b = %7.3f" % b)
-print("g = %7.3f" % g)
+        >>> s = iad.Sample(0.5,0.1,0.01,n=1.4, n_top=1.5, n_bottom=1.5)
+        >>> exp = iad.Experiment(s)
+        >>> a, b, g = exp.invert()
+        >>> print("a = %7.3f" % a)
+        >>> print("b = %7.3f" % b)
+        >>> print("g = %7.3f" % g)
 """
 
 import copy
@@ -334,6 +336,84 @@ class Experiment():
             ratio = (tt + np.sqrt(tt**2 + 4 * t_un**2 * r1 * r2))/(2 * t_un)
 
         return s.nu_0 * np.log(ratio)
+
+    def measured_rt(self):
+        """
+        Calculate measured reflection and transmission.
+
+        The direct incident power is :math:`(1-f)P`. The reflected power will
+        be :math:`(1-f)R_{direct} P`.  Since baffles ensure that the light cannot
+        reach the detector, we must bounce the light off the sphere walls to
+        use to above gain formulas.  The contribution will then be
+
+        .. math:: (1-f)R_{direct} (1-a_e) r_w P.
+
+        The measured power will be
+
+        .. math:: P_d = a_d (1-a_e) r_w [(1-f) r_{direct} + f r_w] P \\cdot G(r_s)
+
+        Similarly the power falling on the detector measuring transmitted light is
+
+        .. math:: P_d'= a_d' t_{direct} r_w' (1-a_e') P \\cdot G'(r_s)
+
+        when the `entrance' port in the transmission sphere is closed,
+        :math:`a_e'=0`.
+
+        The normalized sphere measurements are
+
+        .. math:: M_R = r_{std}\\cdot\\frac{R(r_{direct},r_s)-R(0,0)}{R(r_{std},r_{std})-R(0,0)}
+
+        and
+
+        .. math:: M_T = t_{std}\\cdot{T(t_{direct},r_s)-T(0,0) \\over T(t_{std},r_{std})-T(0,0)}
+
+        Args:
+            ur1: reflection for collimated incidence
+            ut1: transmission for collimated incidence
+            uru: reflection for diffuse incidence
+            utu: transmission for diffuse incidence
+
+        Returns:
+            [float, float]: measured reflection and transmission
+        """
+        s = x.sample  
+        ur1, ut1, uru, utu = s.rt()
+    
+        # find the unscattered reflection and transmission
+        nu_inside = iad.cos_snell(1, s.nu_0, s.n)
+        r_un, t_un = iad.specular_rt(s.n_above, s.n, s.n_below, s.b, nu_inside)
+
+        # correct for lost light
+        R_diffuse = uru - x.uru_lost
+        T_diffuse = utu - x.utu_lost
+        R_direct = ur1 - x.ur1_lost
+        T_direct = ut1 - x.ut1_lost
+
+        # correct for fraction not collected
+        R_direct -= (1.0 - x.fraction_of_rc_in_mr) * r_un
+        T_direct -= (1.0 - x.fraction_of_tc_in_mt) * t_un
+
+        # Values when no spheres are used
+        m_r = R_direct
+        m_t = T_direct
+
+        if exp.num_spheres == 1:
+            return R_direct, T_direct
+            r_gain_00 = self.r_sphere.multiplier(0, 0)
+            r_gain_std = self.r_sphere.multiplier(self.r_sphere.r_std, self.r_sphere.r_std)
+            r_gain_sample = self.r_sphere.multiplier(ur1, uru)
+
+            f = self.fraction_of_rc_in_mr
+            p_d = r_gain_sample * (ur1  * (1-f) + f*self.r_sphere.r_wall)
+            p_std = r_gain_std * (self.r_sphere.r_std * (1-f) + f*self.r_sphere.r_wall)
+            p_0 = r_gain_00 * f * self.r_sphere.r_wall
+            m_r = self.r_sphere.r_std * (p_d - p_0)/(p_std - p_0)
+
+            t_gain_00 = self.t_sphere.multiplier(0, 0)
+            t_gain_std = self.t_sphere.multiplier(ur1, uru)
+            m_t = ut1 * t_gain_00 / t_gain_std
+
+        return m_r, m_t
 
 
 def afun(x, *args):

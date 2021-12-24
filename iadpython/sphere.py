@@ -2,36 +2,46 @@
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
 # pylint: disable=consider-using-f-string
+# pylint: disable=line-too-long
 
 """
 Class for managing integrating spheres.
 
-    import iadpython
+    Example:
+        >>> import iadpython
+        >>> s = iadpython.Sphere(250,20)
+        >>> print(s)
 
-    s = iadpython.Sphere(250,20)
-    print(s)
 """
 
 import numpy as np
 
 
 class Sphere():
-    """Container class for an integrating sphere."""
+    """
+    Container class for an integrating sphere.
+
+    Attributes:
+        - d_sphere: diameter of integrating sphere [mm]
+        - d_sample: diameter of the sample port [mm]
+        - d_entrance: diameter of the port that light enters the sphere [mm]
+        - d_detector: diameter of the detector port [mm]
+        - r_detector: reflectivity of the detector
+        - r_wall: reflectivity of the wall
+        - r_std: reflectivity of the standard used with the sphere
+
+    Example:
+        >>> import iadpython as iad
+        >>> s = iad.Sphere(200, 20)
+        >>> print(s)
+
+    """
 
     def __init__(self, d_sphere, d_sample, d_entrance=0,
                        d_detector=0, r_detector=0, r_wall=1, r_std=1):
         """
         Object initialization.
 
-        d_sphere: diameter of integrating sphere [mm]
-        d_sample: diameter of the sample port [mm]
-        d_entrance: diameter of the port that light enters the sphere [mm]
-        d_detector: diameter of the detector port [mm]
-        r_detector: reflectivity of the detector
-        r_wall: reflectivity of the wall
-        r_std: reflectivity of the standard used with the sphere
-        gain_00: sphere gain when sample reflectance is zero
-        gain_std: sphere gain when the sample reflectance is r_std
         """
         self._d_sphere = d_sphere
         self._d_sample = d_sample
@@ -45,8 +55,6 @@ class Sphere():
         self.r_detector = r_detector
         self._r_wall = r_wall
         self._r_std = r_std
-        self.gain_00 = self.multiplier(0, 0)
-        self.gain_std = self.multiplier(r_std, r_std)
 
     def cap_area(self, d_port):
         """Calculate area of spherical cap."""
@@ -88,8 +96,8 @@ class Sphere():
         s += "       detector = %.1f%%\n" % (self.r_detector*100)
         s += "       standard = %.1f%%\n" % (self.r_std*100)
         s += "Gain\n"
-        s += "        nothing = %.1f\n" % self.gain_00
-        s += "       standard = %.1f\n" % self.gain_std
+        s += "        nothing = %.1f\n" % self.multiplier(0,0)
+        s += "       standard = %.1f\n" % self.multiplier(self.r_std, self.r_std)
         return s
 
     def gain(self, URU, r_wall=None):
@@ -105,11 +113,11 @@ class Sphere():
 
         The gain caused by 0% reflecting sphere walls (no port refl) is
 
-        gain = (P/A) / (P/A) = 1
+        .. math:: \\mbox{gain} = \\frac{(P/A)}{(P/A)} = 1
 
         The gain caused by 100% reflecting sphere walls (no port refl) is
 
-        gain = (P/A_ports) / (P/A) = A_total / A_ports
+        .. math:: \\mbox{gain} = \\frac{(P/A_ports)}{(P/A)} = \\frac{A_total}{A_ports}
 
         Args:
             URU: reflectance from sample port for diffuse light
@@ -192,8 +200,6 @@ class Sphere():
         self.a_detector = self.relative_cap_area(self._d_detector)
         self.a_entrance = self.relative_cap_area(self._d_entrance)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-        self.gain_00 = self.multiplier(0,0)
-        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
     @property
     def d_sample(self):
@@ -207,8 +213,6 @@ class Sphere():
         self._d_sample = value
         self.a_sample = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-        self.gain_00 = self.multiplier(0,0)
-        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
     @property
     def d_entrance(self):
@@ -222,8 +226,6 @@ class Sphere():
         self._d_entrance = value
         self.a_entrance = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-        self.gain_00 = self.multiplier(0,0)
-        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
     @property
     def d_detector(self):
@@ -237,8 +239,6 @@ class Sphere():
         self._d_detector = value
         self.a_detector = self.relative_cap_area(value)
         self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-        self.gain_00 = self.multiplier(0,0)
-        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
     @property
     def a_wall(self):
@@ -258,8 +258,6 @@ class Sphere():
         self.a_detector = 0
         self._a_wall = value
         self.a_sample = 1 - value
-        self.gain_00 = self.multiplier(0, 0)
-        self.gain_std = self.multiplier(self.r_std, self.r_std)
 
     @property
     def r_std(self):
@@ -289,9 +287,6 @@ class Sphere():
         else:
             assert 0 <= value.all() <= 1, "Reflectivity of standard must be between 0 and 1"
         self._r_wall = value
-        self.gain_00 = self.multiplier(0, 0)
-        self.gain_std = self.multiplier(self.r_std, self.r_std)
-
 
 def Gain_11(RS, TS, URU, tdiffuse):
     """
@@ -300,9 +295,13 @@ def Gain_11(RS, TS, URU, tdiffuse):
     The light on the detector in the reflectance sphere is affected by interactions
     between the two spheres.  This function calculates the net gain on a detector
     in the reflection sphere for diffuse light starting in the reflectance sphere.
-    G₁₁ = (P₁/Ad) / (P/A)
+
+    .. math:: G_{11} = \\frac{(P_1/A_d)}{(P/A)}
+
     then the full expression for the gain is
-    G(r_s)/(1-a_s a_s' r_w r_w' (1-a_e)(1-a_e') G(r_s) G'(r_s)t_s²)
+
+    .. math:: \\frac{G(r_s)}{(1-a_s a_s' r_w r_w' (1-a_e)(1-a_e') G(r_s) G'(r_s)t_s^2)}
+
     """
     G = RS.gain(URU)
     GP = TS.gain(URU)
@@ -317,12 +316,11 @@ def Gain_22(RS, TS, URU, tdiffuse):
     Two sphere gain in T sphere for light starting in T sphere.
 
     Similarly, when the light starts in the second sphere, the gain for light
-    on the detector in the second sphere $G_{22}$ is found by switching
-    all primed variables to unprimed.  Thus $G_{21}(r_s,t_s)$ is
-    $$
-    G_{22}(r_s,t_s) = {G'(r_s) over 1-a_s a_s' r_w r_w'
-                                  (1-a_e)(1-a_e') G(r_s) G'(r_s)t_s²  }
-    $$
+    on the detector in the second sphere :math:`G_{22}` is found by switching
+    all primed variables to unprimed.  Thus :math:`G_{21}(r_s,t_s)` is
+
+    .. math:: G_{22}(r_s,t_s) = \\frac{G'(r_s)}{1-a_s a_s' r_w r_w'(1-a_e)(1-a_e') G(r_s) G'(r_s)t_s^2}
+
     """
     G = RS.gain(URU)
     GP = TS.gain(URU)
@@ -338,17 +336,29 @@ def Two_Sphere_R(RS, TS, UR1, URU, UT1, UTU, f=0):
 
     The light on the detector in the reflection sphere arises from three
     sources: the fraction of light directly reflected off the sphere wall
-    f r_w² (1-a_e) P,
+
+    .. math:: f r_w^2 (1-a_e) P,
+
     the fraction of light reflected by the sample
-    (1-f) rdirect r_w² (1-a_e) P,
+
+    .. math:: (1-f) r_{direct} r_w^2 (1-a_e) P,
+
     and the light transmitted through the sample
-    (1-f) tdirect r_w' (1-a_e') P,
+
+    .. math:: (1-f) t_{direct} r_w' (1-a_e') P,
+
     If we use the gain for each part then we add
-    G₁₁ * a_d (1-a_e) r_w² f  P
+
+    .. math:: G_{11}  a_d (1-a_e) r_w^2 f  P
+
     to
-    G₁₁ * a_d (1-a_e) r_w (1-f) rdirect  P
+
+    .. math:: G_{11} a_d (1-a_e) r_w (1-f) r_{direct}  P
+
     and
-    G₂₁ * a_d (1-a_e') r_w' (1-f) tdirect  P
+
+    .. math:: G_{21} a_d (1-a_e') r_w' (1-f) t_{direct}  P
+
     which simplifies slightly to the formula used below
     """
     GP = TS.gain(URU)
@@ -369,11 +379,17 @@ def Two_Sphere_T(RS, TS, UR1, URU, UT1, UTU, f=0):
     have the same three sources.  The only difference is that the subscripts
     on the gain terms now indicate that the light ends up in the second
     sphere
-    G₁₂ * a_d' (1-a_e) r_w² f P
+
+    .. math:: G_{12}  a_d' (1-a_e) r_w^2 f P
+
     plus
-    G₁₂ * a_d' (1-a_e) r_w (1-f) rdirect P
+
+    .. math:: G_{12}  a_d' (1-a_e) r_w (1-f) r_{direct} P
+
     plus
-    G₂₂ * a_d' (1-a_e') r_w' (1-f) tdirect  P
+
+    .. math:: G_{22} a_d' (1-a_e') r_w' (1-f) t_{direct}  P
+
     which simplifies slightly to the formula used below
     """
     G = RS.gain(URU)
