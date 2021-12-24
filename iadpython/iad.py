@@ -28,7 +28,7 @@ Class for doing inverse adding-doubling calculations for a sample.
 import copy
 import numpy as np
 from scipy.optimize import minimize, minimize_scalar, Bounds
-import iadpython
+import iadpython as iad
 
 class Experiment():
     """Container class for details of an experiment."""
@@ -39,7 +39,7 @@ class Experiment():
                  default_a=None, default_b=None, default_g=None):
         """Object initialization."""
         if sample is None:
-            self.sample = iadpython.Sample()
+            self.sample = iad.Sample()
         else:
             self.sample = sample
 
@@ -77,7 +77,6 @@ class Experiment():
         self.default_mua = None
         self.default_mus = None
 
-        self.found = False
         self.search = 'unknown'
         self.metric = 1
         self.tolerance = 1
@@ -86,8 +85,8 @@ class Experiment():
         self.iterations = 1
         self.error = 1
         self.num_measurements = 0
-        self.num_measures = 0
         self.grid = None
+
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -129,20 +128,26 @@ class Experiment():
             s += "%s\n" % self.m_u.__str__()
         return s
 
+
     def check_measurements(self):
         """Make sure measurements are sane."""
         between = " Must be between 0 and 1."
+        if not (self.m_r is None or np.isscalar(self.m_r)) or \
+           not (self.m_t is None or np.isscalar(self.m_t)) or \
+           not (self.m_u is None or np.isscalar(self.m_u)):
+            raise Exception("invert_scalar_rt() is only for scalar m_r, m_t, m_u")
+
         if self.m_r is not None:
             if self.m_r < 0 or self.m_r > 1:
-                raise "Invalid refl. %.4f" % self.m_r + between
+                raise Exception("Invalid refl. %.4f" % self.m_r + between)
 
         if self.m_t is not None:
             if self.m_t < 0 or self.m_t > 1:
-                raise "Invalid trans. %.4f" % self.m_t + between
+                raise Exception("Invalid trans. %.4f" % self.m_t + between)
 
         if self.m_u is not None:
             if self.m_u < 0 or self.m_u > 1:
-                raise "Invalid unscattered trans. %.4f." % self.m_u + between
+                raise Exception("Invalid unscattered trans. %.4f." % self.m_u + between)
 
 
     def useful_measurements(self):
@@ -226,12 +231,18 @@ class Experiment():
         else:
             self.determine_two_parameter_search()
 
-    def initialize_grid(self):
-        """Precalculate a grid."""
-        self.grid = None
 
-    def invert_one(self):
-        """Find a,b,g for this experiment."""
+    def invert_scalar_rt(self):
+        """
+        Find a,b,g for a single experimental measurement.
+
+        This routine assumes that `m_r`, `m_t`, and `m_u` are scalars.
+
+        Returns:
+            - `a` is the single scattering albedo of the slab
+            - `b` is the optical thickness of the slab
+            - `g` is the anisotropy of single scattering
+        """
         self.check_measurements()
         self.useful_measurements()
         self.determine_search()
@@ -239,6 +250,7 @@ class Experiment():
         if self.m_r is None and self.m_t is None and self.m_u is None:
             return None, None, None
 
+        # assign default values
         self.sample.a = self.default_a or 0
         self.sample.b = self.default_b or np.inf
         self.sample.g = self.default_g or 0
@@ -255,7 +267,7 @@ class Experiment():
         if self.search in ['find_ab', 'find_ag', 'find_bg']:
             default = self.default_a or self.default_b or self.default_g
             if self.grid is None:
-                self.grid = iadpython.Grid()
+                self.grid = iad.Grid()
             if self.grid.is_stale(default):
                 self.grid.calc(self)
             a, b, g = self.grid.min_abg(self.m_r, self.m_t)
@@ -274,14 +286,23 @@ class Experiment():
 
         return self.sample.a, self.sample.b, self.sample.g
 
-    def invert(self):
-        """Find a,b,g for this experiment."""
+    def invert_rt(self):
+        """
+        Find a,b,g for experimental measurements.
+
+        This method works if `m_r`, `m_t`, and `m_u` are scalars or arrays.
+
+        Returns:
+            - `a` is the single scattering albedo of the slab
+            - `b` is the optical thickness of the slab
+            - `g` is the anisotropy of single scattering
+        """
         if self.m_r is None and self.m_t is None and self.m_u is None:
-            return self.invert_one()
+            return self.invert_scalar_rt()
 
         # any scalar measurement indicates a single data point
         if np.isscalar(self.m_r) or np.isscalar(self.m_t) or np.isscalar(self.m_u):
-            return self.invert_one()
+            return self.invert_scalar_rt()
 
         # figure out the number of points that we need to invert
         if self.m_r is not None:
@@ -307,20 +328,21 @@ class Experiment():
                 x.m_t = self.m_t[i]
             if self.m_u is not None:
                 x.m_u = self.m_u[i]
-            a[i], b[i], g[i] = x.invert_one()
+            a[i], b[i], g[i] = x.invert_scalar_rt()
 
         return a, b, g
+
 
     def what_is_b(self):
         """Find optical thickness using unscattered transmission."""
         s = self.sample
         t_un = self.m_u
 
-        r1, t1 = iadpython.absorbing_glass_RT(1.0, s.n_above, s.n, s.nu_0, s.b_above)
+        r1, t1 = iad.absorbing_glass_RT(1.0, s.n_above, s.n, s.nu_0, s.b_above)
 
-        mu = iadpython.cos_snell(1.0, s.nu_0, s.n)
+        mu = iad.cos_snell(1.0, s.nu_0, s.n)
 
-        r2, t2 = iadpython.absorbing_glass_RT(s.n, s.n_below, 1.0, mu, s.b_below)
+        r2, t2 = iad.absorbing_glass_RT(s.n, s.n_below, 1.0, mu, s.b_below)
 
         if t_un <= 0:
             return np.inf
@@ -336,6 +358,7 @@ class Experiment():
             ratio = (tt + np.sqrt(tt**2 + 4 * t_un**2 * r1 * r2))/(2 * t_un)
 
         return s.nu_0 * np.log(ratio)
+
 
     def measured_rt(self):
         """
@@ -376,42 +399,41 @@ class Experiment():
         Returns:
             [float, float]: measured reflection and transmission
         """
-        s = x.sample  
+        s = self.sample
         ur1, ut1, uru, utu = s.rt()
-    
+
         # find the unscattered reflection and transmission
         nu_inside = iad.cos_snell(1, s.nu_0, s.n)
         r_un, t_un = iad.specular_rt(s.n_above, s.n, s.n_below, s.b, nu_inside)
 
         # correct for lost light
-        R_diffuse = uru - x.uru_lost
-        T_diffuse = utu - x.utu_lost
-        R_direct = ur1 - x.ur1_lost
-        T_direct = ut1 - x.ut1_lost
+#        R_diffuse = uru - self.uru_lost
+#        T_diffuse = utu - self.utu_lost
+        R_direct = ur1 - self.ur1_lost
+        T_direct = ut1 - self.ut1_lost
 
         # correct for fraction not collected
-        R_direct -= (1.0 - x.fraction_of_rc_in_mr) * r_un
-        T_direct -= (1.0 - x.fraction_of_tc_in_mt) * t_un
+        R_direct -= (1.0 - self.fraction_of_rc_in_mr) * r_un
+        T_direct -= (1.0 - self.fraction_of_tc_in_mt) * t_un
 
         # Values when no spheres are used
         m_r = R_direct
         m_t = T_direct
 
-        if exp.num_spheres == 1:
-            return R_direct, T_direct
+        if self.num_spheres == 1:
             r_gain_00 = self.r_sphere.multiplier(0, 0)
             r_gain_std = self.r_sphere.multiplier(self.r_sphere.r_std, self.r_sphere.r_std)
             r_gain_sample = self.r_sphere.multiplier(ur1, uru)
 
             f = self.fraction_of_rc_in_mr
-            p_d = r_gain_sample * (ur1  * (1-f) + f*self.r_sphere.r_wall)
+            p_d = r_gain_sample * (R_direct  * (1-f) + f*self.r_sphere.r_wall)
             p_std = r_gain_std * (self.r_sphere.r_std * (1-f) + f*self.r_sphere.r_wall)
             p_0 = r_gain_00 * f * self.r_sphere.r_wall
             m_r = self.r_sphere.r_std * (p_d - p_0)/(p_std - p_0)
 
             t_gain_00 = self.t_sphere.multiplier(0, 0)
             t_gain_std = self.t_sphere.multiplier(ur1, uru)
-            m_t = ut1 * t_gain_00 / t_gain_std
+            m_t = T_direct * t_gain_00 / t_gain_std
 
         return m_r, m_t
 
@@ -420,42 +442,39 @@ def afun(x, *args):
     """Vary the albedo."""
     exp = args[0]
     exp.sample.a = x
-    ur1, ut1, _, _ = exp.sample.rt()
+    m_r, m_t = exp.measured_rt()
 
     result = 0
     if exp.m_r is not None:
-        result += np.abs(ur1 - exp.m_r)
+        result += np.abs(m_r - exp.m_r)
     if exp.m_t is not None:
-        result += np.abs(ut1 - exp.m_t)
-
+        result += np.abs(m_t - exp.m_t)
     return result
 
 def bfun(x, *args):
     """Vary the optical thickness."""
     exp = args[0]
     exp.sample.b = x
-    ur1, ut1, _, _ = exp.sample.rt()
+    m_r, m_t = exp.measured_rt()
 
     result = 0
     if exp.m_r is not None:
-        result += np.abs(ur1 - exp.m_r)
+        result += np.abs(m_r - exp.m_r)
     if exp.m_t is not None:
-        result += np.abs(ut1 - exp.m_t)
-
+        result += np.abs(m_t - exp.m_t)
     return result
 
 def gfun(x, *args):
     """Vary the anisotropy."""
     exp = args[0]
     exp.sample.g = x
-    ur1, ut1, _, _ = exp.sample.rt()
+    m_r, m_t = exp.measured_rt()
 
     result = 0
     if exp.m_r is not None:
-        result += np.abs(ur1 - exp.m_r)
+        result += np.abs(m_r - exp.m_r)
     if exp.m_t is not None:
-        result += np.abs(ut1 - exp.m_t)
-
+        result += np.abs(m_t - exp.m_t)
     return result
 
 def abfun(x, *args):
@@ -463,21 +482,21 @@ def abfun(x, *args):
     exp = args[0]
     exp.sample.a = x[0]
     exp.sample.b = x[1]
-    ur1, ut1, _, _ = exp.sample.rt()
-    return np.abs(ur1 - exp.m_r) + np.abs(ut1 - exp.m_t)
+    m_r, m_t = exp.measured_rt()
+    return np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
 
 def bgfun(x, *args):
     """Vary the bg."""
     exp = args[0]
     exp.sample.b = x[0]
     exp.sample.g = x[1]
-    ur1, ut1, _, _ = exp.sample.rt()
-    return np.abs(ur1 - exp.m_r) + np.abs(ut1 - exp.m_t)
+    m_r, m_t = exp.measured_rt()
+    return np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
 
 def agfun(x, *args):
     """Vary the ag."""
     exp = args[0]
     exp.sample.a = x[0]
     exp.sample.g = x[1]
-    ur1, ut1, _, _ = exp.sample.rt()
-    return np.abs(ur1 - exp.m_r) + np.abs(ut1 - exp.m_t)
+    m_r, m_t = exp.measured_rt()
+    return np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)

@@ -21,13 +21,13 @@ import numpy as np
 class Grid():
     """
     Class to track pre-calculated R & T values.
-    
-    There is a long story associated with these routines.  I spent a lot of time 
+
+    There is a long story associated with these routines.  I spent a lot of time
     trying to find an empirical function to allow a guess at a starting value for
-    the inversion routine.  Basically nothing worked very well.  There were 
+    the inversion routine.  Basically nothing worked very well.  There were
     too many special cases and what not.  So I decided to calculate a whole bunch
-    of reflection and transmission values and keep their associated optical 
-    properties linked nearby.  
+    of reflection and transmission values and keep their associated optical
+    properties linked nearby.
     """
 
     def __init__(self, search=None, default=None, N=21):
@@ -103,6 +103,7 @@ class Grid():
         return self.a[i, j], self.b[i, j], self.g[i, j]
 
     def is_stale(self, default):
+        """Decide if current grid is still useful."""
         if self.default is None:
             return True
         if self.default != default:

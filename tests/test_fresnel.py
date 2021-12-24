@@ -414,6 +414,7 @@ class AbsorbingGlass(unittest.TestCase):
         np.testing.assert_allclose(t, tt, atol=1e-5)
 
 class Specular(unittest.TestCase):
+    """Tests for unscattered light."""
 
     def test_01_specular(self):
         """Matched boundaries no absorption."""
@@ -427,7 +428,7 @@ class Specular(unittest.TestCase):
         tt = 1-rr
         np.testing.assert_allclose(r, rr, atol=1e-5)
         np.testing.assert_allclose(t, tt, atol=1e-5)
-        
+
     def test_02_specular(self):
         """Mismatched boundaries some absorption in slab."""
         n_top = 1.0

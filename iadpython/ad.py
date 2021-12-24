@@ -31,7 +31,7 @@ class Sample():
 
         The angle of incidence is assumed to be perpendicular to the
         surface.  This is stored as the cosine of the angle and therefore to
-        change it to 60° from the normal, one does 
+        change it to 60° from the normal, one does
 
         Example:
 
@@ -53,7 +53,7 @@ class Sample():
         - n_above: index of refraction of slide above
         - n_below: index of refraction of slide below
         - quad_pts: number of quadrature points
-        
+
     """
 
     def __init__(self, a=0, b=1, g=0, d=1, n=1, n_above=1, n_below=1, quad_pts=4):
@@ -461,7 +461,7 @@ class Sample():
 
         return ur1, ut1, uru, utu
 
-    def _unscattered_rt(self):
+    def unscattered_scalar_rt(self):
         """Convenience method to find unscattered r and t."""
         n_top = self.n_above
         n_slab = self.n
@@ -473,13 +473,13 @@ class Sample():
     def unscattered_rt(self):
         """Convenience method to find unscattered r and t."""
         if np.isscalar(self.b):
-            return self._unscattered_rt()
-        
+            return self.unscattered_scalar_rt()
+
         r = np.empty_like(self.b, dtype=type(self.nu_0))
         t = np.empty_like(self.b, dtype=type(self.nu_0))
         x = copy.deepcopy(self)
         for i,b in enumerate(self.b):
             x.b = b
-            r[i], t[i] = x._unscattered_rt()
+            r[i], t[i] = x.unscattered_scalar_rt()
 
         return r,t

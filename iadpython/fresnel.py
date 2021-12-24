@@ -75,14 +75,14 @@ def cos_snell(n_i, nu_i, n_t):
     but if the angles are expressed as cosines,
     :math:`\\nu_i = \\cos(\\theta_i)` then
 
-    .. math:: n_i\\sin(\\cos^{-1}\\nu_i) = n_t \\sin(arccos(\\nu_t))
+    .. math:: n_i\\sin(\\cos^{-1}\\nu_i) = n_t \\sin(\\cos^{-1}\\nu_t)
 
-    Solving for nu_t yields
+    Solving for :math:`\\nu_t` yields
 
-    .. math:: \\nu_t = \\cos(\\sin^{-1}[(n_i/n_t) \\sin(\\cos^{-1}\\nu_i)]
+    .. math:: \\nu_t = \\cos(\\sin^{-1}[(n_i/n_t) \\sin(\\cos^{-1}\\nu_i)])
 
-    which is pretty ugly.  However, note that 
-    
+    which is pretty ugly.  However, note that
+
     .. math:: \\sin(\\cos^{-1}\\nu) = \\sqrt{1-\\nu^2}
 
     and the above becomes
@@ -119,7 +119,10 @@ def fresnel_reflection(n_i, nu_i, n_t):
     The usual way to calculate the total reflection for unpolarized light is
     to use the Fresnel formula
 
-    .. math:: R = \\frac{1}{2} \\left[\\frac{\\sin^2(\\theta_i-\\theta_t)}{\\sin^2(\\theta_i+\\theta_t)} + \\frac{\\tan^2(\\theta_i-\\theta_t)}{\\tan^2(\\theta_i+\\theta_t)} \\right]
+    .. math::
+
+      R = \\frac{1}{2} \\left[\\frac{\\sin^2(\\theta_i-\\theta_t)}{\\sin^2(\\theta_i+\\theta_t)} +
+      \\frac{\\tan^2(\\theta_i-\\theta_t)}{\\tan^2(\\theta_i+\\theta_t)} \\right]
 
     where  theta_i and  theta_t represent the angle (from normal) that light is incident
     and the angle at which light is transmitted.
@@ -136,14 +139,23 @@ def fresnel_reflection(n_i, nu_i, n_t):
     Closer inspection reveals that this is the wrong formulation to use.  The formulas that
     should be used for parallel and perpendicular polarization are
 
-    .. math:: R_\\parallel = \\left[\\frac{n_t\\cos\\theta_i-n_i\\cos\\theta_t}{n_t\\cos\\theta_i+n_i\\cos\\theta_t}\\right]^2,
+    .. math::
 
-    .. math:: R_\\perp = \\left[\\frac{n_i\\cos\\theta_i-n_t\\cos\\theta_t}{n_i\\cos\\theta_i+n_t\\cos\\theta_t}\\right]^2.
+      R_\\parallel = \\left[\\frac{n_t\\cos\\theta_i-n_i\\cos\\theta_t}
+                                  {n_t\\cos\\theta_i+n_i\\cos\\theta_t}\\right]^2,
+
+    .. math::
+
+      R_\\perp = \\left[\\frac{n_i\\cos\\theta_i-n_t\\cos\\theta_t}
+                              {n_i\\cos\\theta_i+n_t\\cos\\theta_t}\\right]^2.
 
     The formula for unpolarized light, written in terms of
     :math:`\\nu_i = \\cos \\theta_i` and :math:`\\nu_t = \\cos \\theta_t` is
 
-    .. math:: R = \\frac{1}{2} \\left[\\frac{n_t\\nu_i-n_i\\nu_t}{n_t \\nu_i+n_i \\nu_t}\\right]^2 +\\frac{1}{2} \\left[\\frac{n_i\\nu_i-n_t\\nu_t}{n_i \\nu_i+n_t \\nu_t}\\right]^2
+    .. math::
+
+      R = \\frac{1}{2} \\left[\\frac{n_t\\nu_i-n_i\\nu_t}{n_t \\nu_i+n_i \\nu_t}\\right]^2 +
+          \\frac{1}{2} \\left[\\frac{n_i\\nu_i-n_t\\nu_t}{n_i \\nu_i+n_t \\nu_t}\\right]^2
 
     This formula has the advantage that no trig routines need to be called and that the
     case of normal irradiance does not cause division by zero.  Near normal incidence
@@ -401,8 +413,8 @@ def specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top=0, b_bot=0, flip=False):
     """
     if flip:
         return _specular_rt(n_bot, n_slab, n_top, b_slab, nu, b_bot, b_top)
-    else:
-        return _specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top, b_bot)
+
+    return _specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top, b_bot)
 
 
 def R1(ni, nt):
