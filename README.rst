@@ -1,6 +1,9 @@
 iadpython
 =========
 
+by Scott Prahl
+
+
 .. image:: https://img.shields.io/pypi/v/iadpython.svg
    :target: https://pypi.org/project/iadpython/
 

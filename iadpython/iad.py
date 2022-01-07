@@ -34,8 +34,8 @@ class Experiment():
     """Container class for details of an experiment."""
 
     def __init__(self,
-                 r=None, t=None, u=None,
-                 sample=None, r_sphere=None, t_sphere=None,
+                 r=None, t=None, u=None, sample=None,
+                 r_sphere=None, t_sphere=None, num_spheres=0,
                  default_a=None, default_b=None, default_g=None):
         """Object initialization."""
         if sample is None:
@@ -45,11 +45,7 @@ class Experiment():
 
         self.r_sphere = r_sphere
         self.t_sphere = t_sphere
-        self.num_spheres = 2
-        if r_sphere is None:
-            self.num_spheres -= 1
-        if t_sphere is None:
-            self.num_spheres -= 1
+        self.num_spheres = num_spheres
 
         self.m_r = r
         self.m_t = t
@@ -264,15 +260,26 @@ class Experiment():
         if self.search == 'find_g':
             res = minimize_scalar(gfun, args=(self), bounds=(-1, 1), method='bounded')
 
+        if self.search == 'find_ab' and self.sample.g is None:
+            self.sample.g = 0
+
+        if self.search == 'find_ag' and self.sample.b is None:
+            self.sample.b = np.inf
+
+        if self.search == 'find_bg' and self.sample.a is None:
+            self.sample.a = 0
+
         if self.search in ['find_ab', 'find_ag', 'find_bg']:
-            default = self.default_a or self.default_b or self.default_g
+            default = self.default_a or self.default_b or self.default_g or 0
+            if self.search == 'find_ag' and self.default_b is None:
+                default = np.inf
             if self.grid is None:
                 self.grid = iad.Grid()
             if self.grid.is_stale(default):
                 self.grid.calc(self)
             a, b, g = self.grid.min_abg(self.m_r, self.m_t)
 
-        if self.search == 'find_ab':
+        if self.search == 'find_ab' and self.sample.g is None:
             bnds = Bounds(np.array([0, 0]), np.array([1, np.inf]))
             res = minimize(abfun, [a, b], args=(self), bounds=bnds, method='Powell')
 
@@ -379,7 +386,7 @@ class Experiment():
 
         .. math:: P_d'= a_d' t_{direct} r_w' (1-a_e') P \\cdot G'(r_s)
 
-        when the `entrance' port in the transmission sphere is closed,
+        when the entrance port in the transmission sphere is closed,
         :math:`a_e'=0`.
 
         The normalized sphere measurements are
@@ -401,6 +408,8 @@ class Experiment():
         """
         s = self.sample
         ur1, ut1, uru, utu = s.rt()
+        print(self)
+        print(ur1, ut1, uru, utu)
 
         # find the unscattered reflection and transmission
         nu_inside = iad.cos_snell(1, s.nu_0, s.n)
@@ -421,19 +430,27 @@ class Experiment():
         m_t = T_direct
 
         if self.num_spheres == 1:
-            r_gain_00 = self.r_sphere.multiplier(0, 0)
-            r_gain_std = self.r_sphere.multiplier(self.r_sphere.r_std, self.r_sphere.r_std)
-            r_gain_sample = self.r_sphere.multiplier(ur1, uru)
+            if self.r_sphere is not None:
+                r_gain_00 = self.r_sphere.gain(0)
+                ratio_std = self.r_sphere.gain(self.r_sphere.r_std)/r_gain_00
+                ratio_sample = self.r_sphere.gain(uru)/r_gain_00
+                print(r_gain_00, ratio_std, ratio_sample)
 
-            f = self.fraction_of_rc_in_mr
-            p_d = r_gain_sample * (R_direct  * (1-f) + f*self.r_sphere.r_wall)
-            p_std = r_gain_std * (self.r_sphere.r_std * (1-f) + f*self.r_sphere.r_wall)
-            p_0 = r_gain_00 * f * self.r_sphere.r_wall
-            m_r = self.r_sphere.r_std * (p_d - p_0)/(p_std - p_0)
+                f = self.fraction_of_rc_in_mr
+                p_d = R_direct * (1-f) + f*self.r_sphere.r_wall
+                p_std = self.r_sphere.r_std * (1-f) + f*self.r_sphere.r_wall
+                p_0 = f * self.r_sphere.r_wall
+                print("p values", p_d, p_std, p_0)
+                m_r = (p_d - ratio_sample*p_0)/(p_std - ratio_std*p_0)
+                m_r *= self.r_sphere.r_std
+                if ratio_sample != ratio_std:
+                    m_r *= ratio_std / ratio_sample
+                print("m_r=",m_r)
 
-            t_gain_00 = self.t_sphere.multiplier(0, 0)
-            t_gain_std = self.t_sphere.multiplier(ur1, uru)
-            m_t = T_direct * t_gain_00 / t_gain_std
+            if self.t_sphere is not None:
+                t_gain_00 = self.t_sphere.gain(0)
+                t_gain_std = self.t_sphere.gain(uru)
+                m_t = T_direct * t_gain_00 / t_gain_std
 
         return m_r, m_t
 

@@ -71,17 +71,17 @@ class Grid():
         self.search = exp.search
 
         if self.search == 'find_ab':
-            self.default = exp.default_g
+            self.default = exp.default_g or 0
             self.g = np.full((self.N, self.N), self.default)
             self.a, self.b = np.meshgrid(a, b)
 
         if self.search == 'find_ag':
-            self.default = exp.default_b
+            self.default = exp.default_b or np.inf
             self.b = np.full((self.N, self.N), self.default)
             self.a, self.g = np.meshgrid(a, g)
 
         if self.search == 'find_bg':
-            self.default = exp.default_a
+            self.default = exp.default_a or 0
             self.a = np.full((self.N, self.N), self.default)
             self.b, self.g = np.meshgrid(b, g)
 

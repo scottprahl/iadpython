@@ -307,7 +307,7 @@ class IADAG(unittest.TestCase):
         np.testing.assert_allclose(g, gg, atol=2e-2)
 
     def test_ag_05(self):
-        """Matched slab with albedo=0.9, g=0.3."""
+        """Mismatched slab with albedo=0.9, g=0.3."""
         aa = [0.95, 0.95]
         bb = [0.5, 2]
         gg = [0.7, 0.3]

@@ -7,10 +7,10 @@
 """
 Class for managing integrating spheres.
 
-    Example:
-        >>> import iadpython
-        >>> s = iadpython.Sphere(250,20)
-        >>> print(s)
+Example:
+    >>> import iadpython
+    >>> s = iadpython.Sphere(250,20)
+    >>> print(s)
 
 """
 
@@ -38,11 +38,8 @@ class Sphere():
     """
 
     def __init__(self, d_sphere, d_sample, d_entrance=0,
-                       d_detector=0, r_detector=0, r_wall=1, r_std=1):
-        """
-        Object initialization.
-
-        """
+                 d_detector=0, r_detector=0, r_wall=0.99, r_std=0.99):
+        """Object initialization."""
         self._d_sphere = d_sphere
         self._d_sample = d_sample
         self._d_entrance = d_entrance
@@ -92,9 +89,9 @@ class Sphere():
         s += "       entrance = %.5f\n" % self.a_entrance
         s += "       detector = %.5f\n" % self.a_detector
         s += "Diffuse reflectivities\n"
-        s += "          walls = %.1f%%\n" % (self.r_wall*100)
-        s += "       detector = %.1f%%\n" % (self.r_detector*100)
-        s += "       standard = %.1f%%\n" % (self.r_std*100)
+        s += "          walls = %.1f%%\n" % (self.r_wall * 100)
+        s += "       detector = %.1f%%\n" % (self.r_detector * 100)
+        s += "       standard = %.1f%%\n" % (self.r_std * 100)
         s += "Gain\n"
         s += "        nothing = %.1f\n" % self.multiplier(0,0)
         s += "       standard = %.1f\n" % self.multiplier(self.r_std, self.r_std)
@@ -134,7 +131,8 @@ class Sphere():
             G = np.inf
         else:
             G = 1.0 + tmp / (1.0 - tmp)
-        return G
+        print(URU, 1-tmp)
+        return 1-tmp
 
     def multiplier(self, UR1=None, URU=None, r_wall=None):
         """
@@ -179,9 +177,9 @@ class Sphere():
             if denom < 1e-8:
                 m = np.inf
             else:
-                m = UR1/denom
+                m = UR1 / denom
         else:
-            m = np.where(denom>1e-8, UR1/denom, np.inf)
+            m = np.where(denom > 1e-8, UR1 / denom, np.inf)
         return m
 
     @property
@@ -287,6 +285,7 @@ class Sphere():
         else:
             assert 0 <= value.all() <= 1, "Reflectivity of standard must be between 0 and 1"
         self._r_wall = value
+
 
 def Gain_11(RS, TS, URU, tdiffuse):
     """

@@ -59,6 +59,9 @@ def read_rxt(filename):
     x = np.array([float(value) for value in s.split(' ')])
 
     sample = iadpython.Sample()
+    sample.a = None
+    sample.b = None
+    sample.g = None
     sample.n = x[0]
     sample.n_above = x[1]
     sample.d = x[2]
@@ -84,7 +87,7 @@ def read_rxt(filename):
     if exp.num_spheres > 0:
         exp.r_sphere = iadpython.Sphere(x[7], x[8], x[9], x[10], 0, x[11])
 
-    if exp.num_spheres == 2:
+    if exp.num_spheres > 0:
         exp.t_sphere = iadpython.Sphere(x[12], x[13], x[14], x[15], 0, x[16])
 
 	# m->num_measures = (*params >= 3) ? 3 : *params;
