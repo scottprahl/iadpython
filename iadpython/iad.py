@@ -260,26 +260,24 @@ class Experiment():
         if self.search == 'find_g':
             res = minimize_scalar(gfun, args=(self), bounds=(-1, 1), method='bounded')
 
-        if self.search == 'find_ab' and self.sample.g is None:
-            self.sample.g = 0
-
-        if self.search == 'find_ag' and self.sample.b is None:
-            self.sample.b = np.inf
-
-        if self.search == 'find_bg' and self.sample.a is None:
-            self.sample.a = 0
-
         if self.search in ['find_ab', 'find_ag', 'find_bg']:
-            default = self.default_a or self.default_b or self.default_g or 0
-            if self.search == 'find_ag' and self.default_b is None:
-                default = np.inf
+
             if self.grid is None:
                 self.grid = iad.Grid()
-            if self.grid.is_stale(default):
+
+            # the grids are two-dimensional, one value is held constant
+            grid_constant = self.sample.g
+            if self.search == 'find_bg':
+                grid_constant = self.sample.a
+            elif self.search == 'find_bg':
+                grid_constant = self.sample.b
+
+            if self.grid.is_stale(grid_constant):
                 self.grid.calc(self)
             a, b, g = self.grid.min_abg(self.m_r, self.m_t)
 
-        if self.search == 'find_ab' and self.sample.g is None:
+
+        if self.search == 'find_ab':
             bnds = Bounds(np.array([0, 0]), np.array([1, np.inf]))
             res = minimize(abfun, [a, b], args=(self), bounds=bnds, method='Powell')
 
