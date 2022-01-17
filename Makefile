@@ -17,6 +17,7 @@ lintcheck:
 	-pylint iadpython/nist.py
 	-pylint iadpython/quadrature.py
 	-pylint iadpython/redistribution.py
+	-pylint iadpython/rxt.py
 	-pylint iadpython/sphere.py
 	-pylint iadpython/start.py
 	-pylint tests/test_boundary.py
@@ -47,6 +48,7 @@ doccheck:
 	-pydocstyle iadpython/nist.py
 	-pydocstyle iadpython/quadrature.py
 	-pydocstyle iadpython/redistribution.py
+	-pydocstyle iadpython/rxt.py
 	-pydocstyle iadpython/sphere.py
 	-pydocstyle iadpython/start.py
 	-pydocstyle tests/test_boundary.py
