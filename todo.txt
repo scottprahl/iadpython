@@ -1,18 +1,20 @@
-command-line
-    ad
-    iad
-
 functionality
-    get oblique incidence working
-    add support for one sphere
+    **test support for one sphere**
     add support for two spheres
     implement ba inversion
     implement bs inversion
     improve Experiment __str__()
+    improve Sphere __str__()
     include numba???
+    get oblique incidence working
     
 Documentation
     notebook for .rxt files
     notebook for no sphere inversion
     notebook for one sphere inversion
     notebook for two sphere inversion
+
+command-line applications
+    ad
+    iad
+
