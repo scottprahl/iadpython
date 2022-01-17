@@ -1,53 +1,58 @@
 # pylint: disable=invalid-name
-# pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-locals
-# pylint: disable=too-many-arguments
 # pylint: disable=consider-using-f-string
-
+# pylint: disable=too-many-branches
 """
-Module for reading rxt and txt files.
+Module for reading rxt files.
 
-Two types of starting methods are possible.
+This reads an input rxt file and saves the parameters into an
+Experiment object.
 
-    import iadpython
-
-    filename = 'ink.rxt'
-    exp = iadpython.read_iad_input(filename);
-
-    filename = 'ink.txt'
-    exp = iadpython.read_iad_output(filename)
+Example:
+    >>> import numpy
+    >>> import matplotlib.pyplot as plt
+    >>> import iadpython
+    >>> filename = 'ink.rxt'
+    >>> exp = iadpython.read_iad_input(filename)
+    >>> if exp.lambda0 is None:
+    >>>     plt.plot(exp.m_r)
+    >>> else:
+    >>>     plt.plot(exp.lambda0, exp.m_r)
+    >>> plt.ylabel("measured reflectance")
+    >>> plt.title(filename)
+    >>> plt.show()
 """
 
 import re
 import numpy as np
 import iadpython
 
-__all__ = ('read_rxt',
-           'read_iad_output',
-           )
+__all__ = ('read_rxt', 'read_and_remove_notation')
+
 
 def read_and_remove_notation(filename):
     """Read file and remove all whitespace and comments."""
     s = ''
-    with open(filename) as f:
+    with open(filename, encoding="utf-8") as f:
         for line in f:
             line = re.sub(r'#.*', '', line)
             line = re.sub(r'\s', ' ', line)
             line = re.sub(r',', ' ', line)
             s += line
-   
-    if len(re.findall('IAD1',s)) == 0:
+
+    if len(re.findall('IAD1', s)) == 0:
         raise Exception("Not an .rxt file. (Does not start with IAD1)")
-    
+
     s = re.sub(r'IAD1', '', s)
     s = re.sub(r'\s+', ' ', s)
     s = re.sub(r'^\s+', '', s)
     s = re.sub(r'\s+$', '', s)
     return s
-    
+
+
 def read_rxt(filename):
     """
-    Read a .rxt file.
+    Read an IAD input file in .rxt format.
 
     Args:
         filename: .rxt filename
@@ -58,10 +63,7 @@ def read_rxt(filename):
     s = read_and_remove_notation(filename)
     x = np.array([float(value) for value in s.split(' ')])
 
-    sample = iadpython.Sample()
-    sample.a = None
-    sample.b = None
-    sample.g = None
+    sample = iadpython.Sample(a=None, b=None, g=None)
     sample.n = x[0]
     sample.n_above = x[1]
     sample.d = x[2]
@@ -90,8 +92,7 @@ def read_rxt(filename):
     if exp.num_spheres > 0:
         exp.t_sphere = iadpython.Sphere(x[12], x[13], x[14], x[15], 0, x[16])
 
-	# m->num_measures = (*params >= 3) ? 3 : *params;
-    exp.num_measures = x[17]	
+    exp.num_measures = x[17]
 
     exp.lambda0 = np.zeros(0)
     if exp.num_measures >= 1:
@@ -104,7 +105,7 @@ def read_rxt(filename):
         exp.m_u = np.zeros(0)
 
     count_per_line = 1
-    for i in range(18,len(x)):
+    for i in range(18, len(x)):
 
         if x[i] > 1:
             exp.lambda0 = np.append(exp.lambda0, x[i])
@@ -122,18 +123,4 @@ def read_rxt(filename):
 
     if len(exp.lambda0) == 0:
         exp.lambda0 = None
-    return exp
-
-
-def read_iad_output(filename):
-    """
-    Read a .txt file produced by iad.
-
-    Args:
-        filename: .txt filename
-
-    Returns:
-        Experiment Object
-    """
-    exp = iadpython.Experiment()
     return exp
