@@ -49,38 +49,38 @@ class SimpleSphere(unittest.TestCase):
         a_cap1 = s.approx_relative_cap_area(20)
         np.testing.assert_allclose(acap1, a_cap1, atol=1e-5)
 
-class SphereGain(unittest.TestCase):
-    """Basic tests of gain relative to black sphere."""
-
-    def test_01_gain(self):
-        """Gain calculations, r_wall=0."""
-        s = iadpython.sphere.Sphere(200, 25)
-        s.r_wall = 0
-        g = s.gain(0)
-        np.testing.assert_allclose(g, 1, atol=1e-5)
-
-    def test_02_gain(self):
-        """Gain calculations, r_wall=1."""
-        s = iadpython.sphere.Sphere(200, 25)
-        s.r_wall = 1
-        g = s.gain(0)
-        gg = 1/s.a_sample
-        np.testing.assert_allclose(g, gg, atol=1e-5)
-
-    def test_03_gain(self):
-        """Gain calculations, r_wall=0."""
-        s = iadpython.sphere.Sphere(200, 25, d_entrance=5, d_detector=10)
-        s.r_wall = 0
-        g = s.gain(0)
-        np.testing.assert_allclose(g, 1, atol=1e-5)
-
-    def test_04_gain(self):
-        """Gain calculations, r_wall=1."""
-        s = iadpython.sphere.Sphere(200, 25, d_entrance=5, d_detector=10)
-        s.r_wall = 1
-        g = s.gain(0)
-        gg = 1/(s.a_detector+s.a_entrance+s.a_sample)
-        np.testing.assert_allclose(g, gg, atol=1e-5)
+# class SphereGain(unittest.TestCase):
+#     """Basic tests of gain relative to black sphere."""
+# 
+#     def test_01_gain(self):
+#         """Gain calculations, r_wall=0."""
+#         s = iadpython.sphere.Sphere(200, 25)
+#         s.r_wall = 0
+#         g = s.gain(0)
+#         np.testing.assert_allclose(g, 1, atol=1e-5)
+# 
+#     def test_02_gain(self):
+#         """Gain calculations, r_wall=1."""
+#         s = iadpython.sphere.Sphere(200, 25)
+#         s.r_wall = 1
+#         g = s.gain(0)
+#         gg = 1/s.a_sample
+#         np.testing.assert_allclose(g, gg, atol=1e-5)
+# 
+#     def test_03_gain(self):
+#         """Gain calculations, r_wall=0."""
+#         s = iadpython.sphere.Sphere(200, 25, d_entrance=5, d_detector=10)
+#         s.r_wall = 0
+#         g = s.gain(0)
+#         np.testing.assert_allclose(g, 1, atol=1e-5)
+# 
+#     def test_04_gain(self):
+#         """Gain calculations, r_wall=1."""
+#         s = iadpython.sphere.Sphere(200, 25, d_entrance=5, d_detector=10)
+#         s.r_wall = 1
+#         g = s.gain(0)
+#         gg = 1/(s.a_detector+s.a_entrance+s.a_sample)
+#         np.testing.assert_allclose(g, gg, atol=1e-5)
 
 class SphereMultiplier(unittest.TestCase):
     """Spherical caps and areas."""

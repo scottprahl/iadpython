@@ -406,8 +406,6 @@ class Experiment():
         """
         s = self.sample
         ur1, ut1, uru, utu = s.rt()
-        print(self)
-        print(ur1, ut1, uru, utu)
 
         # find the unscattered reflection and transmission
         nu_inside = iad.cos_snell(1, s.nu_0, s.n)
