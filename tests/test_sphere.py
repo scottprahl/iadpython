@@ -62,10 +62,11 @@ class SphereGain(unittest.TestCase):
     def test_02_gain(self):
         """Gain calculations, r_wall=1."""
         s = iadpython.sphere.Sphere(200, 25)
-        s.r_wall = 1
-        g = s.gain(0)
-        gg = 1/s.a_sample
-        np.testing.assert_allclose(g, gg, atol=1e-5)
+        g = s.gain(0, r_wall=1)
+        Asphere = 4 * np.pi * (200/2)**2
+        Asample = np.pi * (25/2)**2
+        gg = Asphere/Asample
+        np.testing.assert_allclose(g, gg, atol=1e-4)
 
     def test_03_gain(self):
         """Gain calculations, r_wall=0."""
