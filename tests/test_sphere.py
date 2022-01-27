@@ -49,6 +49,7 @@ class SimpleSphere(unittest.TestCase):
         a_cap1 = s.approx_relative_cap_area(20)
         np.testing.assert_allclose(acap1, a_cap1, atol=1e-5)
 
+
 class SphereGain(unittest.TestCase):
     """Basic tests of gain relative to black sphere."""
 
@@ -82,6 +83,7 @@ class SphereGain(unittest.TestCase):
         g = s.gain(0)
         gg = 1/(s.a_detector+s.a_entrance+s.a_sample)
         np.testing.assert_allclose(g, gg, atol=1e-5)
+
 
 class SphereMultiplier(unittest.TestCase):
     """Spherical caps and areas."""
