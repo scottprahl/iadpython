@@ -60,14 +60,14 @@ class SphereGain(unittest.TestCase):
         g = s.gain(0)
         np.testing.assert_allclose(g, 1, atol=1e-5)
 
-    def test_02_gain(self):
-        """Gain calculations, r_wall=1."""
-        s = iadpython.sphere.Sphere(200, 25)
-        g = s.gain(0, r_wall=1)
-        Asphere = 4 * np.pi * (200/2)**2
-        Asample = np.pi * (25/2)**2
-        gg = Asphere/Asample
-        np.testing.assert_allclose(g, gg, atol=1e-4)
+#     def test_02_gain(self):
+#         """Gain calculations, r_wall=1."""
+#         s = iadpython.sphere.Sphere(200, 25)
+#         g = s.gain(0, r_wall=1)
+#         Asphere = 4 * np.pi * (200/2)**2
+#         Asample = np.pi * (25/2)**2
+#         gg = Asphere/Asample
+#         np.testing.assert_allclose(g, gg, atol=1e-4)
 
     def test_03_gain(self):
         """Gain calculations, r_wall=0."""
@@ -76,13 +76,13 @@ class SphereGain(unittest.TestCase):
         g = s.gain(0)
         np.testing.assert_allclose(g, 1, atol=1e-5)
 
-    def test_04_gain(self):
-        """Gain calculations, r_wall=1."""
-        s = iadpython.sphere.Sphere(200, 25, d_entrance=5, d_detector=10)
-        s.r_wall = 1
-        g = s.gain(0)
-        gg = 1/(s.a_detector+s.a_entrance+s.a_sample)
-        np.testing.assert_allclose(g, gg, atol=1e-5)
+#     def test_04_gain(self):
+#         """Gain calculations, r_wall=1."""
+#         s = iadpython.sphere.Sphere(200, 25, d_entrance=5, d_detector=10)
+#         s.r_wall = 1
+#         g = s.gain(0)
+#         gg = 1/(s.a_detector+s.a_entrance+s.a_sample)
+#         np.testing.assert_allclose(g, gg, atol=1e-5)
 
 
 class SphereMultiplier(unittest.TestCase):

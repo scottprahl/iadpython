@@ -1,101 +1,35 @@
 API for `iadpython` package
 ===========================
 
-Submodules
-----------
+.. automodapi:: iadpython.ad
+   :no-inheritance-diagram:
 
-iadpython.ad module
---------------------
+.. automodapi:: iadpython.combine
+   :no-inheritance-diagram:
 
-.. automodule:: iadpython.ad
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. automodapi:: iadpython.fresnel
+   :no-inheritance-diagram:
 
-iadpython.calc module
----------------------
+.. automodapi:: iadpython.grid
+   :no-inheritance-diagram:
 
-.. automodule:: iadpython.calc
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. automodapi:: iadpython.iad
+   :no-inheritance-diagram:
 
-iadpython.combine module
-------------------------
+.. automodapi:: iadpython.iadc
+   :no-inheritance-diagram:
 
-.. automodule:: iadpython.combine
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. automodapi:: iadpython.nist
+   :no-inheritance-diagram:
 
-iadpython.fresnel module
-------------------------
+.. automodapi:: iadpython.quadrature
+   :no-inheritance-diagram:
 
-.. automodule:: iadpython.fresnel
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. automodapi:: iadpython.redistribution
+   :no-inheritance-diagram:
 
-iadpython.grid module
----------------------
+.. automodapi:: iadpython.sphere
+   :no-inheritance-diagram:
 
-.. automodule:: iadpython.grid
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-iadpython.iad module
---------------------
-
-.. automodule:: iadpython.iad
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-iadpython.iadc module
----------------------
-
-.. automodule:: iadpython.iadc
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-iadpython.nist module
----------------------
-
-.. automodule:: iadpython.nist
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-iadpython.quadrature module
----------------------------
-
-.. automodule:: iadpython.quadrature
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-iadpython.redistribution module
--------------------------------
-
-.. automodule:: iadpython.redistribution
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-iadpython.sphere module
-------------------------
-
-.. automodule:: iadpython.sphere
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-iadpython.start module
-----------------------
-
-.. automodule:: iadpython.start
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. automodapi:: iadpython.start
+   :no-inheritance-diagram:
