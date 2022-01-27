@@ -106,7 +106,7 @@ class Sphere():
         surface area on the sphere (P/A).
 
         If the walls are perfectly white (and ports are perfectly absorbing)
-        then the all entering light exits through the ports. (P/A_ports)
+        then all the entering light exits through the ports. (P/A_ports)
 
         The gain caused by 0% reflecting sphere walls (no port refl) is
 
