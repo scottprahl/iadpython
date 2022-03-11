@@ -1,4 +1,8 @@
-"""Files used in for inverse adding-doubling."""
+"""Modules used for inverse adding-doubling."""
+
+__version__ = '0.4.1'
+__author__ = 'Scott Prahl'
+
 from .constants import *
 from .fresnel import *
 from .start import *
