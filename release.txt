@@ -4,7 +4,7 @@ A checklist for releasing a new version
   make rcheck
   
 # update the version in setup.cfg and docs/conf.py
-  git commit setup.cfg docs/conf.py -m 'update version'
+  git commit iadpython/__init__.py -m 'update version'
   git push
 
 # update CHANGELOG

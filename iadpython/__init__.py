@@ -1,6 +1,6 @@
 """Modules used for inverse adding-doubling."""
 
-__version__ = '0.4.1'
+__version__ = '0.5.0'
 __author__ = 'Scott Prahl'
 
 from .constants import *
