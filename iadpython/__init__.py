@@ -32,8 +32,7 @@ An example::
     print('  total reflection = %.5f' % uru)
     print('  total transmission = %.5f' % utu)
 """
-
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 __author__ = 'Scott Prahl'
 __email__ = 'scott.prahl@oit.edu'
 __copyright__ = 'Copyright 2018-22, Scott Prahl'

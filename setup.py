@@ -33,4 +33,3 @@ setup(
     author_email=get_init_property('__email__'),
     license=get_init_property('__license__'),
     url=get_init_property('__url__')
-)
