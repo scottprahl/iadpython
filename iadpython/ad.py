@@ -3,17 +3,18 @@
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-arguments
 # pylint: disable=consider-using-f-string
-
 """
 Class for doing adding-doubling calculations for a sample.
 
-    Example:
-        >>> import iadpython as iad
-        >>> n=4
-        >>> sample = iad.Sample(a=0.9, b=10, g=0.9, n=1.5, quad_pts=4)
-        >>> r, t = sample.rt()
-        >>> print(r)
-        >>> print(t)
+Example::
+---------
+
+    import iadpython as iad
+    n=4
+    sample = iad.Sample(a=0.9, b=10, g=0.9, n=1.5, quad_pts=4)
+    r, t = sample.rt()
+    print(r)
+    print(t)
 """
 
 import copy
@@ -462,7 +463,7 @@ class Sample():
         return ur1, ut1, uru, utu
 
     def unscattered_scalar_rt(self):
-        """Convenience method to find unscattered r and t."""
+        """Find unscattered r and t."""
         n_top = self.n_above
         n_slab = self.n
         n_bot = self.n_below
@@ -471,14 +472,14 @@ class Sample():
         return iadpython.fresnel.specular_rt(n_top, n_slab, n_bot, b_slab, nu_in)
 
     def unscattered_rt(self):
-        """Convenience method to find unscattered r and t."""
+        """Find unscattered r and t."""
         if np.isscalar(self.b):
             return self.unscattered_scalar_rt()
 
         r = np.empty_like(self.b, dtype=type(self.nu_0))
         t = np.empty_like(self.b, dtype=type(self.nu_0))
         x = copy.deepcopy(self)
-        for i,b in enumerate(self.b):
+        for i, b in enumerate(self.b):
             x.b = b
             r[i], t[i] = x.unscattered_scalar_rt()
 
