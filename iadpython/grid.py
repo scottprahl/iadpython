@@ -110,6 +110,7 @@ class Grid():
             return True
         return False
 
+
 def matrix_as_string(x, label=''):
     """Return matrix as a string."""
     if x is None:
