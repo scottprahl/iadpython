@@ -54,7 +54,6 @@ napoleon_use_rtype = False
 exclude_patterns = ['_build',
                     '**.ipynb_checkpoints',
                     'IAD-with-spheres.ipynb',
-                    '**.rst',
                     ]
 
 # I execute the notebooks manually in advance. If notebooks test the code,
