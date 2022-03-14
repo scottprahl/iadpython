@@ -3,9 +3,11 @@ include LICENSE.txt
 include iadpython/data/M38597.csv
 exclude .gitignore
 exclude release.txt
+exclude todo.txt
 exclude Makefile
 exclude docs/*
 exclude tests/*
+exclude tests/data/*
 exclude tests_iadc/*
 exclude requirements.txt
 exclude requirements-dev.txt
