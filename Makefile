@@ -91,18 +91,19 @@ xtest:
 	pytest tests_iadc
 
 clean:
+	rm -rf .pytest_cache
+	rm -rf .tox
+	rm -rf __pycache__
 	rm -rf dist
 	rm -rf iadpython.egg-info
 	rm -rf iadpython/__pycache__
 	rm -rf iadpython/__init__.pyc
-	rm -rf .tox
+	rm -rf iadpython/.ipynb_checkpoints
 	rm -rf docs/_build 
 	rm -rf docs/api 
-	rm -rf __pycache__
-	rm -rf .pytest_cache
+	rm -rf docs/doi.org/
 	rm -rf tests/__pycache__
 	rm -rf tests/tests_iadc/__pycache__
-	rm -rf docs/doi.org/
 
 realclean:
 	make clean
