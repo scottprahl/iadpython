@@ -3,14 +3,11 @@ Changelog for `iadpython` package
 
 v0.5.0
 ------
-* single sphere support
+* inverse calculation works for 0 spheres
+* much more testing
+* basic multiple layers support
 * single location for version number
 * revert to sphinx_rtd_theme
-* avoid buggy Jinja2
-* add docs for sample object
-* add nist.py and docs
-* linting 
-* fix b=0 and b=∞ tests
 
 v0.4.0
 ------
