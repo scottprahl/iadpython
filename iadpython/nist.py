@@ -5,30 +5,30 @@ https://nvlpubs.nist.gov/nistpubs/jres/122/jres.122.026.pdf
 
 Two types of starting methods are possible.
 
-    Example:
-        >>> import numpy as np
-        >>> import matplotlib.pyplot as plt
-        >>> import iadpython as iad
+Example:
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> import iadpython as iad
 
-        # Retrieve and plot subject 5
+    # Retrieve and plot subject 5
 
-        >>> subject_number = 5
-        >>> lambda0, R = iad.subject_average_reflectance(subject_number)
-        >>> plt.plot(lambda0, R)
-        >>> plt.xlabel("Wavelength (nm)")
-        >>> plt.ylabel("Total Reflectance")
-        >>> plt.title("Subject #%d" % subject_number)
-        >>> plt.show()
+    >>> subject_number = 5
+    >>> lambda0, R = iad.subject_average_reflectance(subject_number)
+    >>> plt.plot(lambda0, R)
+    >>> plt.xlabel("Wavelength (nm)")
+    >>> plt.ylabel("Total Reflectance")
+    >>> plt.title("Subject #%d" % subject_number)
+    >>> plt.show()
 
-        # Retrieve and plot all subjects
+    # Retrieve and plot all subjects
 
-        >>> lambda0, R = iad.all_average_reflectances()
-        >>> for i in range(100):
-        >>>     plt.plot(lambda0, R[:, i])
-        >>> plt.xlabel("Wavelength (nm)")
-        >>> plt.ylabel("Total Reflectance")
-        >>> plt.title("All Subjects")
-        >>> plt.show()
+    >>> lambda0, R = iad.all_average_reflectances()
+    >>> for i in range(100):
+    >>>     plt.plot(lambda0, R[:, i])
+    >>> plt.xlabel("Wavelength (nm)")
+    >>> plt.ylabel("Total Reflectance")
+    >>> plt.title("All Subjects")
+    >>> plt.show()
 """
 
 import pkg_resources
