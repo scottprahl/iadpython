@@ -262,7 +262,7 @@ class IADAB(unittest.TestCase):
         self.assertAlmostEqual(b, 2, delta=1e-3)
         self.assertAlmostEqual(g, 0)
 
-    def test_ab_02(self):
+    def test_ab_03(self):
         """Matched slab with albedo=0.5, b=2."""
         exp = iadpython.Experiment(r=0.18825, t=0.67381, default_g=0.3)
         a, b, g = exp.invert_rt()
