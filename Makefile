@@ -40,16 +40,16 @@ xpylint:
 	
 doccheck:
 	-pydocstyle iadpython/ad.py
-	-pydocstyle iadpython/combine.py
+	-pydocstyle --ignore D301 iadpython/combine.py
 	-pydocstyle iadpython/constants.py
-	-pydocstyle iadpython/iad.py
-	-pydocstyle iadpython/fresnel.py
+	-pydocstyle --ignore D301 iadpython/iad.py
+	-pydocstyle --ignore D301 iadpython/fresnel.py
 	-pydocstyle iadpython/grid.py
 	-pydocstyle iadpython/nist.py
 	-pydocstyle iadpython/quadrature.py
 	-pydocstyle iadpython/redistribution.py
 	-pydocstyle iadpython/rxt.py
-	-pydocstyle iadpython/sphere.py
+	-pydocstyle --ignore D301 iadpython/sphere.py
 	-pydocstyle iadpython/start.py
 	-pydocstyle tests/test_boundary.py
 	-pydocstyle tests/test_combo.py
@@ -94,6 +94,7 @@ clean:
 	rm -rf dist
 	rm -rf iadpython.egg-info
 	rm -rf iadpython/__pycache__
+	rm -rf iadpython/__init__.pyc
 	rm -rf .tox
 	rm -rf docs/_build 
 	rm -rf docs/api 
