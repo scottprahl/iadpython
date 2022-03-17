@@ -8,19 +8,19 @@ Module for reading rxt files.
 This reads an input rxt file and saves the parameters into an
 Experiment object.
 
-Example:
-    >>> import numpy
-    >>> import matplotlib.pyplot as plt
-    >>> import iadpython
-    >>> filename = 'ink.rxt'
-    >>> exp = iadpython.read_iad_input(filename)
-    >>> if exp.lambda0 is None:
-    >>>     plt.plot(exp.m_r)
-    >>> else:
-    >>>     plt.plot(exp.lambda0, exp.m_r)
-    >>> plt.ylabel("measured reflectance")
-    >>> plt.title(filename)
-    >>> plt.show()
+    Example:
+        >>> import numpy
+        >>> import matplotlib.pyplot as plt
+        >>> import iadpython
+        >>> filename = 'ink.rxt'
+        >>> exp = iadpython.read_iad_input(filename)
+        >>> if exp.lambda0 is None:
+        >>>     plt.plot(exp.m_r)
+        >>> else:
+        >>>     plt.plot(exp.lambda0, exp.m_r)
+        >>> plt.ylabel("measured reflectance")
+        >>> plt.title(filename)
+        >>> plt.show()
 """
 
 import re

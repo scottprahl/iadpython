@@ -86,10 +86,10 @@ class SphereGain(unittest.TestCase):
 
 
 class SphereMultiplier(unittest.TestCase):
-    """Spherical caps and areas."""
+    """Relative increase in radiative flux on sphere walls."""
 
     def test_01_multiplier(self):
-        """Multiplier calculations."""
+        """Scalar calculations."""
         R = 100
         s = iadpython.sphere.Sphere(2 * R, 5)
         s.a_wall = 0.98

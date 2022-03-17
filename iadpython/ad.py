@@ -6,15 +6,13 @@
 """
 Class for doing adding-doubling calculations for a sample.
 
-Example::
----------
-
-    import iadpython as iad
-    n=4
-    sample = iad.Sample(a=0.9, b=10, g=0.9, n=1.5, quad_pts=4)
-    r, t = sample.rt()
-    print(r)
-    print(t)
+    Example:
+        >>> import iadpython as iad
+        >>> n=4
+        >>> sample = iad.Sample(a=0.9, b=10, g=0.9, n=1.5, quad_pts=4)
+        >>> r, t = sample.rt()
+        >>> print(r)
+        >>> print(t)
 """
 
 import copy

@@ -6,19 +6,17 @@ Module for adding layers together.
 
 Two types of starting methods are possible.
 
-Example::
----------
+    Example:
+        >>> import iadpython as iad
 
-    import iadpython as iad
-
-    # Isotropic finite layer with mismatched slides the hard way.
-    s = iad.Sample(a=0.5, b=1, g=0.0, n=1.4, n_above=1.5, n_below=1.6)
-    s.quad_pts = 4
-    R01, R10, T01, T10 = iad.boundary_matrices(s, top=True)
-    R23, R32, T23, T32 = iad.boundary_matrices(s, top=False)
-    R12, T12 = iad.simple_layer_matrices(s)
-    R02, R20, T02, T20 = iad.add_layers(s, R01, R10, T01, T10, R12, R12, T12, T12)
-    rr03, rr30, tt03, tt30 = iad.add_layers(s, R02, R20, T02, T20, R23, R32, T23, T32)
+        >>> # Isotropic finite layer with mismatched slides the hard way.
+        >>> s = iad.Sample(a=0.5, b=1, g=0.0, n=1.4, n_above=1.5, n_below=1.6)
+        >>> s.quad_pts = 4
+        >>> R01, R10, T01, T10 = iad.boundary_matrices(s, top=True)
+        >>> R23, R32, T23, T32 = iad.boundary_matrices(s, top=False)
+        >>> R12, T12 = iad.simple_layer_matrices(s)
+        >>> R02, R20, T02, T20 = iad.add_layers(s, R01, R10, T01, T10, R12, R12, T12, T12)
+        >>> rr03, rr30, tt03, tt30 = iad.add_layers(s, R02, R20, T02, T20, R23, R32, T23, T32)
 
 """
 

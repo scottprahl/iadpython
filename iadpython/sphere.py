@@ -7,10 +7,10 @@
 """
 Class for managing integrating spheres.
 
-Example:
-    >>> import iadpython
-    >>> s = iadpython.Sphere(250,20)
-    >>> print(s)
+    Example:
+        >>> import iadpython
+        >>> s = iadpython.Sphere(250,20)
+        >>> print(s)
 
 """
 
