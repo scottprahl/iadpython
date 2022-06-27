@@ -256,13 +256,13 @@ class Experiment():
 #        print('     g = ', self.sample.g)
 
         if self.search == 'find_a':
-            res = scipy.optimize.minimize_scalar(afun, args=(self), bounds=(0, 1), method='bounded')
+            _ = scipy.optimize.minimize_scalar(afun, args=(self), bounds=(0, 1), method='bounded')
 
         if self.search == 'find_b':
-            res = scipy.optimize.minimize_scalar(bfun, args=(self), bounds=(1, 5), method='brent')
+            _ = scipy.optimize.minimize_scalar(bfun, args=(self), bounds=(1, 5), method='brent')
 
         if self.search == 'find_g':
-            res = scipy.optimize.minimize_scalar(gfun, args=(self), bounds=(-1, 1), method='bounded')
+            _ = scipy.optimize.minimize_scalar(gfun, args=(self), bounds=(-1, 1), method='bounded')
 
         if self.search in ['find_ab', 'find_ag', 'find_bg']:
 
@@ -289,16 +289,16 @@ class Experiment():
 
 
         if self.search == 'find_ab':
-            bnds = scipy.optimize.Bounds(np.array([0, 0]), np.array([1, np.inf]))
-            res = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=bnds, method='Nelder-Mead')
+            x = scipy.optimize.Bounds(np.array([0, 0]), np.array([1, np.inf]))
+            _ = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=x, method='Nelder-Mead')
 
         if self.search == 'find_ag':
-            bnds = scipy.optimize.Bounds(np.array([0, -1]), np.array([1, 1]))
-            res = scipy.optimize.minimize(agfun, [a, g], args=(self), bounds=bnds, method='Nelder-Mead')
+            x = scipy.optimize.Bounds(np.array([0, -1]), np.array([1, 1]))
+            _ = scipy.optimize.minimize(agfun, [a, g], args=(self), bounds=x, method='Nelder-Mead')
 
         if self.search == 'find_bg':
-            bnds = scipy.optimize.Bounds(np.array([0, -1]), np.array([np.inf, 1]))
-            res = scipy.optimize.minimize(bgfun, [b, g], args=(self), bounds=bnds, method='Nelder-Mead')
+            x = scipy.optimize.Bounds(np.array([0, -1]), np.array([np.inf, 1]))
+            _ = scipy.optimize.minimize(bgfun, [b, g], args=(self), bounds=x, method='Nelder-Mead')
 
         return self.sample.a, self.sample.b, self.sample.g
 

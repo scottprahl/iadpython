@@ -42,14 +42,14 @@ class GridTest(unittest.TestCase):
                [0.018, 0.023, 0.032, 0.061, 0.309],
                [0.018, 0.030, 0.055, 0.124, 0.488],
                [0.018, 0.049, 0.133, 0.361, 0.992]]
-        
+
         np.testing.assert_allclose(grid.a, aa, atol=1e-5)
         np.testing.assert_allclose(grid.b, bb, atol=1e-5)
         np.testing.assert_allclose(grid.g, gg, atol=1e-5)
         np.testing.assert_allclose(grid.ur1, ur1, atol=1e-2)
         np.testing.assert_allclose(grid.ut1, ut1, atol=1e-2)
 
-        
+
     def test_grid_02(self):
         """Matched slab with search_bg."""
         fixed_a = 0.5
