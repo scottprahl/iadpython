@@ -62,26 +62,29 @@ class Grid():
 
         return s
 
-    def calc(self, exp):
+    def calc(self, exp, default=None):
         """Precalculate a grid."""
+        if default is not None:
+            self.default = default
+
         a = np.linspace(0, 1, self.N)
         b = np.linspace(0, 10, self.N)
-        g = np.linspace(-0.95, 0.95, self.N)
+        g = np.linspace(-0.99, 0.99, self.N)
 
         self.search = exp.search
 
         if self.search == 'find_ab':
-            self.default = exp.default_g or 0
+#            self.default = exp.default_g or 0
             self.g = np.full((self.N, self.N), self.default)
             self.a, self.b = np.meshgrid(a, b)
 
         if self.search == 'find_ag':
-            self.default = exp.default_b or np.inf
+#            self.default = exp.default_b or np.inf
             self.b = np.full((self.N, self.N), self.default)
             self.a, self.g = np.meshgrid(a, g)
 
         if self.search == 'find_bg':
-            self.default = exp.default_a or 0
+#            self.default = exp.default_a or 0
             self.a = np.full((self.N, self.N), self.default)
             self.b, self.g = np.meshgrid(b, g)
 

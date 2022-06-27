@@ -298,11 +298,27 @@ class IADAG(unittest.TestCase):
         self.assertAlmostEqual(b, 1, delta=1e-4)
         self.assertAlmostEqual(g, 0.3, delta=1e-3)
 
-    def test_ag_04(self):
+    def test_ag_04a(self):
         """Matched slab with albedo=0.9, g=0.3."""
         aa = [0.95, 0.95]
         bb = [0.5, 2]
         gg = [0.7, 0.3]
+        s = iadpython.Sample(a=aa, b=bb, g=gg, quad_pts=16)
+        rr, tt, _, _ = s.rt()
+        s.a = [0, 0]
+        _, uu, _, _ = s.rt()
+        s.quad_pts = 8
+        exp = iadpython.Experiment(r=rr, t=tt, u=uu, sample=s)
+        a, b, g = exp.invert_rt()
+        np.testing.assert_allclose(a, aa, atol=2e-2)
+        np.testing.assert_allclose(b, bb, atol=2e-2)
+        np.testing.assert_allclose(g, gg, atol=2e-2)
+
+    def test_ag_04b(self):
+        """Matched slab with albedo=0.9, g=0.3."""
+        aa = [0.95, 0.95]
+        bb = [2, 5]
+        gg = [0.3, 0.7]
         s = iadpython.Sample(a=aa, b=bb, g=gg, quad_pts=16)
         rr, tt, _, _ = s.rt()
         s.a = [0, 0]

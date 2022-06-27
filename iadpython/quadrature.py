@@ -9,23 +9,24 @@ include either endpoint of integration, Radau quadrature includes one
 endpoint of the integration range, and Lobatto quadrature includes both
 endpoints.::
 
-    import iad.quadrature
+    Example:
+        >>> import iad.quadrature
 
-    n=8
-    x, w = iad.quadrature.gauss(n)
-    print(" i        x         weight")
-    for i,x in enumerate(xi):
-        print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
+        >>> n=8
+        >>> x, w = iad.quadrature.gauss(n)
+        >>> print(" i        x         weight")
+        >>> for i,x in enumerate(xi):
+        >>>     print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
 
-    x, w = iad.quadrature.radau(n)
-    print(" i        x         weight")
-    for i,x in enumerate(xi):
-        print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
+        >>> x, w = iad.quadrature.radau(n)
+        >>> print(" i        x         weight")
+        >>> for i,x in enumerate(xi):
+        >>>     print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
 
-    x, w = iad.quadrature.lobatto(n)
-    print(" i        x         weight")
-    for i,x in enumerate(xi):
-        print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
+        >>> x, w = iad.quadrature.lobatto(n)
+        >>> print(" i        x         weight")
+        >>> for i,x in enumerate(xi):
+        >>>     print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
 
 """
 

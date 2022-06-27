@@ -187,15 +187,8 @@ class Experiment():
 
 
     def determine_two_parameter_search(self):
-        """Establish proper search when two measurements are available."""
-        # default case
-        self.search = 'find_ab'
-
+        """Establish proper search when 2 or 3 measurements are available."""
         # albedo is known
-        if self.m_u is not None:
-            self.search = 'find_ag'
-            self.default_b = self.what_is_b()
-
         if self.default_a is not None:
             self.search = 'find_bg'
 
@@ -215,6 +208,12 @@ class Experiment():
         elif self.default_ba is not None:
             self.search = 'find_bsg'
 
+        # by this point, assume that M_R, M_T, and M_U are known
+        else:
+            if self.m_u is None or self.m_u <= 0:
+                self.search = 'find_ab'
+            else:
+                self.search = 'find_ag'
 
     def determine_search(self):
         """Determine type of search to do."""
@@ -248,8 +247,13 @@ class Experiment():
 
         # assign default values
         self.sample.a = self.default_a or 0
-        self.sample.b = self.default_b or np.inf
+        self.sample.b = self.default_b or self.what_is_b()
         self.sample.g = self.default_g or 0
+
+#        print('search is', self.search)
+#        print('     a = ', self.sample.a)
+#        print('     b = ', self.sample.b)
+#        print('     g = ', self.sample.g)
 
         if self.search == 'find_a':
             res = scipy.optimize.minimize_scalar(afun, args=(self), bounds=(0, 1), method='bounded')
@@ -266,28 +270,35 @@ class Experiment():
                 self.grid = iad.Grid()
 
             # the grids are two-dimensional, one value is held constant
-            grid_constant = self.sample.g
+            grid_constant = None
+            if self.search == 'find_ag':
+                grid_constant = self.sample.b
             if self.search == 'find_bg':
                 grid_constant = self.sample.a
-            elif self.search == 'find_bg':
-                grid_constant = self.sample.b
+            if self.search == 'find_ab':
+                grid_constant = self.sample.g
 
             if self.grid.is_stale(grid_constant):
-                self.grid.calc(self)
+                self.grid.calc(self, grid_constant)
             a, b, g = self.grid.min_abg(self.m_r, self.m_t)
+#            print('grid constant %8.5f' % grid_constant)
+
+#            print('grid start a=%8.5f' % a)
+#            print('grid start b=%8.5f' % b)
+#            print('grid start g=%8.5f' % g)
 
 
         if self.search == 'find_ab':
             bnds = scipy.optimize.Bounds(np.array([0, 0]), np.array([1, np.inf]))
-            res = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=bnds, method='Powell')
+            res = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=bnds, method='Nelder-Mead')
 
         if self.search == 'find_ag':
             bnds = scipy.optimize.Bounds(np.array([0, -1]), np.array([1, 1]))
-            res = scipy.optimize.minimize(agfun, [a, g], args=(self), bounds=bnds, method='Powell')
+            res = scipy.optimize.minimize(agfun, [a, g], args=(self), bounds=bnds, method='Nelder-Mead')
 
         if self.search == 'find_bg':
             bnds = scipy.optimize.Bounds(np.array([0, -1]), np.array([np.inf, 1]))
-            res = scipy.optimize.minimize(bgfun, [b, g], args=(self), bounds=bnds, method='Powell')
+            res = scipy.optimize.minimize(bgfun, [b, g], args=(self), bounds=bnds, method='Nelder-Mead')
 
         return self.sample.a, self.sample.b, self.sample.g
 
@@ -341,7 +352,7 @@ class Experiment():
     def what_is_b(self):
         """Find optical thickness using unscattered transmission."""
         s = self.sample
-        t_un = self.m_u
+        t_un = self.m_u or 0
 
         r1, t1 = iad.absorbing_glass_RT(1.0, s.n_above, s.n, s.nu_0, s.b_above)
 
@@ -496,7 +507,8 @@ def abfun(x, *args):
     exp.sample.a = x[0]
     exp.sample.b = x[1]
     m_r, m_t = exp.measured_rt()
-    return np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    return delta
 
 def bgfun(x, *args):
     """Vary the bg."""
@@ -504,7 +516,8 @@ def bgfun(x, *args):
     exp.sample.b = x[0]
     exp.sample.g = x[1]
     m_r, m_t = exp.measured_rt()
-    return np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    return delta
 
 def agfun(x, *args):
     """Vary the ag."""
@@ -512,4 +525,6 @@ def agfun(x, *args):
     exp.sample.a = x[0]
     exp.sample.g = x[1]
     m_r, m_t = exp.measured_rt()
-    return np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+#    print("%9.7f %8.5f %8.5f %8.5f %8.5f" % (delta, x[0], x[1], m_r, m_t))
+    return delta
