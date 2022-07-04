@@ -56,9 +56,6 @@ exclude_patterns = ['_build',
 nbsphinx_execute = 'never'
 nbsphinx_allow_errors = True
 
-# Add type of source files
-source_suffix = ['.rst', '.ipynb']
-
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = 'sphinx_rtd_theme'
