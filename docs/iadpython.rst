@@ -16,8 +16,9 @@ API for `iadpython` package
 .. automodapi:: iadpython.iad
    :no-inheritance-diagram:
 
-.. automodapi:: iadpython.iadc
-   :no-inheritance-diagram:
+..
+   .. automodapi:: iadpython.iadc
+      :no-inheritance-diagram:
 
 .. automodapi:: iadpython.nist
    :no-inheritance-diagram:
