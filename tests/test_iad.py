@@ -345,6 +345,7 @@ class IADAG(unittest.TestCase):
         np.testing.assert_allclose(b, bb, atol=2e-2)
         np.testing.assert_allclose(g, gg, atol=2e-2)
 
+
 class IADBG(unittest.TestCase):
     """Test inversion when solving only for b and g."""
 
@@ -403,6 +404,7 @@ class WhatIsB(unittest.TestCase):
         _, x.m_u, _, _ = s.rt()
         bb = x.what_is_b()
         self.assertAlmostEqual(b, bb, delta=2e-5)
+
 
 if __name__ == '__main__':
     unittest.main()

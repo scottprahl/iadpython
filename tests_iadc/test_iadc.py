@@ -116,6 +116,7 @@ class matched_sample(unittest.TestCase):
         self.assertAlmostEqual(UR1, ur1x, delta=0.002)
         self.assertAlmostEqual(UT1, ut1x, delta=0.002)
 
+
 class mismatched_sample_no_slides(unittest.TestCase):
     """Slab with index of refraction equal to 1.5."""
 
@@ -123,7 +124,7 @@ class mismatched_sample_no_slides(unittest.TestCase):
         """No scattering case."""
         UR1 = 0.04
         a, b, g, _ = iadc.rt_inverse(1.5, 1.0, UR1, 0, 0)
-        print("%8.5f %8.5f %8.5f" % (a,b,g))
+        print("%8.5f %8.5f %8.5f" % (a, b, g))
         ur1x, _, _, _ = iadc.rt(1.5, 1.0, a, b, g)
         self.assertAlmostEqual(UR1, ur1x, delta=0.002)
 
@@ -146,7 +147,7 @@ class mismatched_sample_no_slides(unittest.TestCase):
         UR1 = 0.4
         UT1 = 0.1
         a, b, g, error = iadc.rt_inverse(1.5, 1.0, UR1, UT1, 0)
-        print("%8.5f %8.5f %8.5f" % (a,b,g))
+        print("%8.5f %8.5f %8.5f" % (a, b, g))
         print(error)
         ur1x, ut1x, _, _ = iadc.rt(1.5, 1.0, a, b, g)
         self.assertAlmostEqual(UR1, ur1x, delta=0.002)
@@ -157,7 +158,7 @@ class mismatched_sample_no_slides(unittest.TestCase):
         UR1 = 0.25312
         UT1 = 0.28882
         a, b, g, error = iadc.rt_inverse(1.5, 1.0, UR1, UT1, 0)
-        print("%8.5f %8.5f %8.5f" % (a,b,g))
+        print("%8.5f %8.5f %8.5f" % (a, b, g))
         print(error)
         ur1x, ut1x, _, _ = iadc.rt(1.5, 1.0, a, b, g)
         self.assertAlmostEqual(UR1, ur1x, delta=0.002)
@@ -205,7 +206,7 @@ class sample_with_slides(unittest.TestCase):
         UR1 = 0.4
         UT1 = 0.1
         a, b, g, error = iadc.rt_inverse(1.4, 1.5, UR1, UT1, 0)
-        print("%8.5f %8.5f %8.5f" % (a,b,g))
+        print("%8.5f %8.5f %8.5f" % (a, b, g))
         print(error)
         ur1x, ut1x, _, _ = iadc.rt(1.4, 1.5, a, b, g)
         self.assertAlmostEqual(UR1, ur1x, delta=0.002)

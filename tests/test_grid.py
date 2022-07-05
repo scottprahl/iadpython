@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 import iadpython
 
+
 class GridTest(unittest.TestCase):
     """Test grid construction."""
 
@@ -49,14 +50,13 @@ class GridTest(unittest.TestCase):
         np.testing.assert_allclose(grid.ur1, ur1, atol=1e-2)
         np.testing.assert_allclose(grid.ut1, ut1, atol=1e-2)
 
-
     def test_grid_02(self):
         """Matched slab with search_bg."""
         fixed_a = 0.5
         exp = iadpython.Experiment(r=0.1, t=0.5, default_a=fixed_a)
         exp.determine_search()
         grid = iadpython.Grid(N=5)
-        grid.calc(exp,default=fixed_a)
+        grid.calc(exp, default=fixed_a)
 
         aa = [[0.5, 0.5, 0.5, 0.5, 0.5],
               [0.5, 0.5, 0.5, 0.5, 0.5],
@@ -87,7 +87,7 @@ class GridTest(unittest.TestCase):
         exp = iadpython.Experiment(r=0.1, t=0.5, default_g=fixed_g)
         exp.determine_search()
         grid = iadpython.Grid(N=5)
-        grid.calc(exp,default=fixed_g)
+        grid.calc(exp, default=fixed_g)
 
         aa = [[0.000, 0.250, 0.500, 0.750, 1.000],
               [0.000, 0.250, 0.500, 0.750, 1.000],
@@ -115,7 +115,7 @@ class GridTest(unittest.TestCase):
         exp = iadpython.Experiment(r=0.1, t=0.5, default_b=fixed_b)
         exp.determine_search()
         grid = iadpython.Grid(N=21)
-        grid.calc(exp,default=fixed_b)
+        grid.calc(exp, default=fixed_b)
         a, b, g = grid.min_abg(0.1, 0.5)
 
         self.assertAlmostEqual(a, 0.9, delta=1e-5)

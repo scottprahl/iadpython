@@ -24,13 +24,12 @@ def get_contents(filename):
     return contents
 
 
-setup(
-    name=project,
-    long_description=get_contents('README.rst'),
-    long_description_content_type='text/x-rst',
-    version=get_init_property('__version__'),
-    author=get_init_property('__author__'),
-    author_email=get_init_property('__email__'),
-    license=get_init_property('__license__'),
-    url=get_init_property('__url__')
-    )
+setup(name=project,
+      long_description=get_contents('README.rst'),
+      long_description_content_type='text/x-rst',
+      version=get_init_property('__version__'),
+      author=get_init_property('__author__'),
+      author_email=get_init_property('__email__'),
+      license=get_init_property('__license__'),
+      url=get_init_property('__url__')
+      )

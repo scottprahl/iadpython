@@ -30,6 +30,7 @@ import numpy as np
 import scipy.optimize
 import iadpython as iad
 
+
 class Experiment():
     """Container class for details of an experiment."""
 
@@ -83,7 +84,6 @@ class Experiment():
         self.num_measurements = 0
         self.grid = None
 
-
     def __str__(self):
         """Return basic details as a string for printing."""
         s = "---------------- Sample ---------------\n"
@@ -124,7 +124,6 @@ class Experiment():
             s += "%s\n" % self.m_u.__str__()
         return s
 
-
     def check_measurements(self):
         """Make sure measurements are sane."""
         between = " Must be between 0 and 1."
@@ -145,7 +144,6 @@ class Experiment():
             if self.m_u < 0 or self.m_u > 1:
                 raise Exception("Invalid unscattered trans. %.4f." % self.m_u + between)
 
-
     def useful_measurements(self):
         """Count the number of useful measurements."""
         self.num_measurements = 0
@@ -155,7 +153,6 @@ class Experiment():
             self.num_measurements += 1
         if self.m_u is not None:
             self.num_measurements += 1
-
 
     def determine_one_parameter_search(self):
         """Establish proper search when only one measurement is available."""
@@ -184,7 +181,6 @@ class Experiment():
         # absorption coefficient is known
         elif self.default_ba is not None:
             self.search = 'find_bs'
-
 
     def determine_two_parameter_search(self):
         """Establish proper search when 2 or 3 measurements are available."""
@@ -225,7 +221,6 @@ class Experiment():
 
         else:
             self.determine_two_parameter_search()
-
 
     def invert_scalar_rt(self):
         """
@@ -287,7 +282,6 @@ class Experiment():
 #            print('grid start b=%8.5f' % b)
 #            print('grid start g=%8.5f' % g)
 
-
         if self.search == 'find_ab':
             x = scipy.optimize.Bounds(np.array([0, 0]), np.array([1, np.inf]))
             _ = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=x, method='Nelder-Mead')
@@ -348,7 +342,6 @@ class Experiment():
 
         return a, b, g
 
-
     def what_is_b(self):
         """Find optical thickness using unscattered transmission."""
         s = self.sample
@@ -371,10 +364,9 @@ class Experiment():
         if r1 == 0 or r2 == 0:
             ratio = tt / t_un
         else:
-            ratio = (tt + np.sqrt(tt**2 + 4 * t_un**2 * r1 * r2))/(2 * t_un)
+            ratio = (tt + np.sqrt(tt**2 + 4 * t_un**2 * r1 * r2)) / (2 * t_un)
 
         return s.nu_0 * np.log(ratio)
-
 
     def measured_rt(self):
         """
@@ -439,20 +431,20 @@ class Experiment():
         if self.num_spheres == 1:
             if self.r_sphere is not None:
                 r_gain_00 = self.r_sphere.gain(0)
-                ratio_std = self.r_sphere.gain(self.r_sphere.r_std)/r_gain_00
-                ratio_sample = self.r_sphere.gain(uru)/r_gain_00
+                ratio_std = self.r_sphere.gain(self.r_sphere.r_std) / r_gain_00
+                ratio_sample = self.r_sphere.gain(uru) / r_gain_00
                 print(r_gain_00, ratio_std, ratio_sample)
 
                 f = self.fraction_of_rc_in_mr
-                p_d = R_direct * (1-f) + f*self.r_sphere.r_wall
-                p_std = self.r_sphere.r_std * (1-f) + f*self.r_sphere.r_wall
+                p_d = R_direct * (1 - f) + f * self.r_sphere.r_wall
+                p_std = self.r_sphere.r_std * (1 - f) + f * self.r_sphere.r_wall
                 p_0 = f * self.r_sphere.r_wall
                 print("p values", p_d, p_std, p_0)
-                m_r = (p_d - ratio_sample*p_0)/(p_std - ratio_std*p_0)
+                m_r = (p_d - ratio_sample * p_0) / (p_std - ratio_std * p_0)
                 m_r *= self.r_sphere.r_std
                 if ratio_sample != ratio_std:
                     m_r *= ratio_std / ratio_sample
-                print("m_r=",m_r)
+                print("m_r=", m_r)
 
             if self.t_sphere is not None:
                 t_gain_00 = self.t_sphere.gain(0)
@@ -475,6 +467,7 @@ def afun(x, *args):
         result += np.abs(m_t - exp.m_t)
     return result
 
+
 def bfun(x, *args):
     """Vary the optical thickness."""
     exp = args[0]
@@ -487,6 +480,7 @@ def bfun(x, *args):
     if exp.m_t is not None:
         result += np.abs(m_t - exp.m_t)
     return result
+
 
 def gfun(x, *args):
     """Vary the anisotropy."""
@@ -501,6 +495,7 @@ def gfun(x, *args):
         result += np.abs(m_t - exp.m_t)
     return result
 
+
 def abfun(x, *args):
     """Vary the ab."""
     exp = args[0]
@@ -510,6 +505,7 @@ def abfun(x, *args):
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
     return delta
 
+
 def bgfun(x, *args):
     """Vary the bg."""
     exp = args[0]
@@ -518,6 +514,7 @@ def bgfun(x, *args):
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
     return delta
+
 
 def agfun(x, *args):
     """Vary the ag."""

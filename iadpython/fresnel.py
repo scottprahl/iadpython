@@ -313,10 +313,10 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     d = np.divide(b, nu_g, out=np.zeros_like(nu_g), where=nu_g != 0)
     expo = np.exp(-d)
     denom = 1.0 - r1 * r2 * expo**2
-    numer = (1 - r1) * expo * r2 * expo * (1-r1)
-    r = r1 + np.divide(numer, denom, out=np.ones_like(numer), where=denom!=0)
+    numer = (1 - r1) * expo * r2 * expo * (1 - r1)
+    r = r1 + np.divide(numer, denom, out=np.ones_like(numer), where=denom != 0)
     numer = (1.0 - r1) * (1.0 - r2) * expo
-    t = np.divide(numer, denom, out=np.zeros_like(numer), where=denom!=0)
+    t = np.divide(numer, denom, out=np.zeros_like(numer), where=denom != 0)
 
     return r, t
 

@@ -102,6 +102,7 @@ clean:
 	rm -rf docs/_build 
 	rm -rf docs/api 
 	rm -rf docs/doi.org/
+	rm -rf docs/.ipynb_checkpoints
 	rm -rf tests/__pycache__
 	rm -rf tests/tests_iadc/__pycache__
 

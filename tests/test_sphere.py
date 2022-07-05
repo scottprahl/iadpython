@@ -108,7 +108,7 @@ class SphereMultiplier(unittest.TestCase):
         """Array of r_wall values."""
         R = 100
         s = iadpython.sphere.Sphere(2 * R, 25, d_entrance=5, r_detector=0.1)
-        s.r_wall = np.linspace(0,1,4)
+        s.r_wall = np.linspace(0, 1, 4)
         M = s.multiplier(UR1=1, URU=0)
         mm = [1.0, 1.496948, 2.975731, 245.224041]
         np.testing.assert_allclose(mm, M, atol=1e-5)
@@ -120,6 +120,7 @@ class SphereMultiplier(unittest.TestCase):
         M = s.multiplier(UR1=1, URU=1)
         M1 = 1 / (1 - s.a_wall * s.r_wall - s.a_sample)
         np.testing.assert_allclose(M, M1, atol=1e-5)
+
 
 if __name__ == '__main__':
     unittest.main()

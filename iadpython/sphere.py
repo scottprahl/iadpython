@@ -93,7 +93,7 @@ class Sphere():
         s += "       detector = %.1f%%\n" % (self.r_detector * 100)
         s += "       standard = %.1f%%\n" % (self.r_std * 100)
         s += "Gain\n"
-        s += "        nothing = %.1f\n" % self.multiplier(0,0)
+        s += "        nothing = %.1f\n" % self.multiplier(0, 0)
         s += "       standard = %.1f\n" % self.multiplier(self.r_std, self.r_std)
         return s
 
@@ -131,8 +131,8 @@ class Sphere():
             G = np.inf
         else:
             G = 1.0 + tmp / (1.0 - tmp)
-        print(URU, 1-tmp)
-        return 1-tmp
+#        print(URU, 1 - stmp)
+        return 1 - tmp
 
     def multiplier(self, UR1=None, URU=None, r_wall=None):
         """
@@ -318,7 +318,7 @@ def Gain_22(RS, TS, URU, tdiffuse):
     on the detector in the second sphere :math:`G_{22}` is found by switching
     all primed variables to unprimed.  Thus :math:`G_{21}(r_s,t_s)` is
 
-    .. math:: G_{22}(r_s,t_s) = \\frac{G'(r_s)}{1-a_s a_s' r_w r_w'(1-a_e)(1-a_e') G(r_s) G'(r_s)t_s^2}
+    .. math:: G_{22}(r_s,t_s) =\\frac{G'(r_s)}{1-a_s a_s'r_w r_w'(1-a_e)(1-a_e')G(r_s)G'(r_s)t_s^2}
 
     """
     G = RS.gain(URU)

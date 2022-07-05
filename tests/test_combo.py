@@ -386,5 +386,6 @@ class ThickSamplesTest(unittest.TestCase):
         self.assertAlmostEqual(uru, 0.10429, delta=0.0001)
         self.assertAlmostEqual(utu, 0.00000, delta=0.0001)
 
+
 if __name__ == '__main__':
     unittest.main()

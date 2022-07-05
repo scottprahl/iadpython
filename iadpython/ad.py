@@ -22,6 +22,7 @@ import iadpython.quadrature
 import iadpython.start
 import iadpython.combine
 
+
 class Sample():
     """
     Container class for details of a sample.
@@ -69,8 +70,8 @@ class Sample():
         self._n = n
         self.n_above = n_above
         self.n_below = n_below
-        self.d_above = 1 # thickness of top slide in mm
-        self.d_below = 1 # thickness of bot slide in mm
+        self.d_above = 1  # thickness of top slide in mm
+        self.d_below = 1  # thickness of bot slide in mm
         self.nu_0 = 1.0
         self.b_above = 0
         self.b_below = 0
@@ -481,4 +482,4 @@ class Sample():
             x.b = b
             r[i], t[i] = x.unscattered_scalar_rt()
 
-        return r,t
+        return r, t

@@ -80,7 +80,7 @@ def basic_rt(n, nslab, ntop, nbot, a, b, g):
     the calculation by `n**3`, `n` must be a multiple of 4, typically 16 is good for forward
     calculations and 4 is appropriate for inverse calculations).
 
-    The semi-infinite slab may be bounded by glass slides.  
+    The semi-infinite slab may be bounded by glass slides.
     The top glass slides have an index of refraction `ntop` and the bottom slide has
     an index `nbot`.  If there are no glass slides, set `ntop` and `nbottom` to 1.
 
@@ -131,7 +131,7 @@ def basic_rt_unscattered(n, nslab, ntop, nbot, a, b, g):
     the calculation by `n**3`, `n` must be a multiple of 4, typically 16 is good for forward
     calculations and 4 is appropriate for inverse calculations).
 
-    The semi-infinite slab may be bounded by glass slides.  
+    The semi-infinite slab may be bounded by glass slides.
     The top glass slides have an index of refraction `ntop` and the bottom slide has
     an index `nbot`.  If there are no glass slides, set `ntop` and `nbottom` to 1.
 
@@ -180,14 +180,14 @@ def basic_rt_cone(n, nslab, ntop, nbot, a, b, g, cos_cone_angle):
     Calculate reflection and transmission for a turbid slab exiting within a cone.
 
     This routine assumes normally incident or uniformly diffuse incident light
-    and returns the total reflected or transmitted light that exits within a cone. 
+    and returns the total reflected or transmitted light that exits within a cone.
     The cosine of the cone angle is given by `cos_cone_angle`.
 
     `n` is the number of quadrature angles (more angles give better accuracy but slow
     the calculation by `n**3`, `n` must be a multiple of 4, typically 16 is good for forward
     calculations and 4 is appropriate for inverse calculations).
 
-    The semi-infinite slab may be bounded by glass slides.  
+    The semi-infinite slab may be bounded by glass slides.
     The top glass slides have an index of refraction `ntop` and the bottom slide has
     an index `nbot`.  If there are no glass slides, set `ntop` and `nbottom` to 1.
 
@@ -237,18 +237,18 @@ def basic_rt_oblique(n, nslab, ntop, nbot, a, b, g, cos_oblique):
     """
     Calculate reflection and transmission for light incident at a oblique angle.
 
-    This returns the total R and T for light incident at an oblique angle or 
-    incident within a cone.  The cosine of the oblique angle (or the cone) is 
+    This returns the total R and T for light incident at an oblique angle or
+    incident within a cone.  The cosine of the oblique angle (or the cone) is
     `cos_oblique`.
 
     n is the number of quadrature angles (more angles give better accuracy but slow
     the calculation by n**3, n must be a multiple of 4, typically 16 is good for forward
     calculations and 4 is appropriate for inverse calculations).
 
-    The semi-infinite slab may be bounded by glass slides.  
+    The semi-infinite slab may be bounded by glass slides.
     The top glass slides have an index of refraction `ntop` and the bottom slide has
     an index `nbot`.  If there are no glass slides, set `ntop` and `nbottom` to 1.
-        
+
     All input parameters must be scalars.
 
     Args:
@@ -297,7 +297,7 @@ def basic_rt_inverse(nslab, nslide, ur1, ut1, tc):
     The index of refraction of the slab is `nslab`, the index of refraction of the
     top and bottom slides is `nslide`.
 
-    The semi-infinite slab may be bounded by glass slides.  
+    The semi-infinite slab may be bounded by glass slides.
     The top glass slides have an index of refraction `ntop` and the bottom slide has
     an index `nbot`.  If there are no glass slides, set `ntop` and `nbottom` to 1.
 
@@ -573,7 +573,7 @@ def rt_oblique(nslab, nslide, a, b, g, cos_oblique):
 
     This routine should be the primary entry point because the optical properties
     can be either scalars or arrays.
-        
+
     All input parameters must be scalars.
 
     Args:

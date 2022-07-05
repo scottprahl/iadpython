@@ -18,9 +18,9 @@ class LayeredSample(unittest.TestCase):
     def test_00_layers(self):
         """Two identical non-scattering layers without boundaries."""
         s = iadpython.Sample(quad_pts=4)
-        s.a = np.array([0.0,0.0])
-        s.b = np.array([0.5,0.5])
-        s.g = np.array([0.0,0.0])
+        s.a = np.array([0.0, 0.0])
+        s.b = np.array([0.5, 0.5])
+        s.g = np.array([0.0, 0.0])
         rr, tt = iadpython.simple_layer_matrices(s)
 
         s.a = 0.0
@@ -50,9 +50,9 @@ class LayeredSample(unittest.TestCase):
     def test_02_layers(self):
         """Two identical isotropic scattering layers without boundaries."""
         s = iadpython.Sample(quad_pts=4)
-        s.a = np.array([0.5,0.5])
-        s.b = np.array([0.5,0.5])
-        s.g = np.array([0,0])
+        s.a = np.array([0.5, 0.5])
+        s.b = np.array([0.5, 0.5])
+        s.g = np.array([0, 0])
 
         rr, tt = iadpython.simple_layer_matrices(s)
         R = np.array([[0.80010, 0.31085, 0.18343, 0.14931],
@@ -67,7 +67,6 @@ class LayeredSample(unittest.TestCase):
 
         np.testing.assert_allclose(R, rr, atol=1e-5)
         np.testing.assert_allclose(T, tt, atol=1e-5)
-
 
     def test_03_layers(self):
         """Three identical isotropic scattering layers without boundaries."""
