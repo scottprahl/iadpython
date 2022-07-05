@@ -2,6 +2,7 @@ numpy
 matplotlib
 scipy
 
-sphinx-automodapi
+nbsphinx
+ssphinx-automodapi
 sphinx-rtd-theme
 iadpython
