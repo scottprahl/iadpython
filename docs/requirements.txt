@@ -3,6 +3,6 @@ matplotlib
 scipy
 
 nbsphinx
-ssphinx-automodapi
+sphinx-automodapi
 sphinx-rtd-theme
 iadpython
