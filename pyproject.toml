@@ -5,6 +5,18 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[tool.check-manifest]
+ignore = ["release.txt",
+          "todo.txt",
+          "Makefile",
+          "requirements.txt",
+          "requirements-dev.txt",
+          ".readthedocs.yaml",
+          ".testignore",
+          "docs/*",
+          "tests/*",
+          "tests_iadc/*"]
+
 [tool.tox]
 legacy_tox_ini = """
 

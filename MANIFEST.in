@@ -2,16 +2,3 @@ include CHANGELOG.rst
 include LICENSE.txt
 include iadpython/data/M38597.csv
 include tests/data/*.rxt
-exclude .gitignore
-exclude .testignore
-exclude release.txt
-exclude todo.txt
-exclude Makefile
-exclude docs/*
-exclude tests/*
-exclude tests/data/*
-exclude tests_iadc/*
-exclude requirements.txt
-exclude requirements-dev.txt
-exclude .readthedocs.yaml
-exclude todo.txt
