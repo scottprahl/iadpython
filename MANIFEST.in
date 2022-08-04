@@ -3,6 +3,7 @@ include LICENSE.txt
 include iadpython/data/M38597.csv
 include tests/data/*.rxt
 exclude .gitignore
+exclude .testignore
 exclude release.txt
 exclude todo.txt
 exclude Makefile
