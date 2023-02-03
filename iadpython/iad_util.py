@@ -3,7 +3,12 @@
 
 """IAD Utilities."""
 
-import numpy as np
+################
+#### NOT USED,  THIS IS THE FIRST ATTEMPT AT PORTING
+###############
+
+mport numpy as np
+import iadpython.fresnel
 
 BIG_A_VALUE = 999999.0
 SMALL_A_VALUE = 0.000001
@@ -29,12 +34,12 @@ def what_is_b(slab, Tc):
     # but there are always those annoying special cases.
     #
     r1, t1 = iadpython.fresnel.absorbing_glass_RT(1.0, slab.n_top_slide, slab.n_slab,
-                                slab.cos_angle, slab.b_top_slide)
+                                                  slab.cos_angle, slab.b_top_slide)
 
-    mu_in_slab = Cos_Snell(1.0, slab.cos_angle, slab.n_slab)
+    mu_in_slab = iadpython.fresnel.cos_snell(1.0, slab.cos_angle, slab.n_slab)
 
-    r2, t2 = Absorbing_Glass_RT(slab.n_slab, slab.n_bottom_slide, 1.0,
-                                mu_in_slab, slab.b_bottom_slide)
+    r2, t2 = iadpython.fresnel.absorbing_glass_RT(slab.n_slab, slab.n_bottom_slide, 1.0,
+                                                  mu_in_slab, slab.b_bottom_slide)
 
     # Bad values for the unscattered transmission are those that
     # are non-positive, those greater than one, and those greater than

@@ -1,6 +1,13 @@
 Changelog for `iadpython` package
 =================================
 
+v0.5.1
+------
+* fix search, one-sphere round-trips now
+* fix packaging
+* fix html generation
+* linting
+
 v0.5.0
 ------
 * inverse calculation works for 0 spheres
