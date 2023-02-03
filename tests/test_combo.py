@@ -1,5 +1,4 @@
 # pylint: disable=invalid-name
-# pylint: disable=no-self-use
 # pylint: disable=too-many-locals
 # pylint: disable=redefined-outer-name
 

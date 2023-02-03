@@ -15,7 +15,7 @@ lintcheck:
 	-pylint iadpython/grid.py
 	-pylint iadpython/iad.py
 	-pylint iadpython/nist.py
-	-pylint iadpython/quadrature.py
+	-pylint --ignored-modules=scipy.special iadpython/quadrature.py
 	-pylint iadpython/redistribution.py
 	-pylint iadpython/rxt.py
 	-pylint iadpython/sphere.py
@@ -80,7 +80,7 @@ rcheck:
 	make lintcheck
 	make notecheck
 	make test
-	flake8 .
+	-flake8 .
 	pyroma -d .
 	check-manifest
 

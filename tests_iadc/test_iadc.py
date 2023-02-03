@@ -1,5 +1,4 @@
 # pylint: disable=invalid-name
-# pylint: disable=no-self-use
 # pylint: disable=consider-using-f-string
 
 """Tests for C-library Inverse Adding-Doubling."""
