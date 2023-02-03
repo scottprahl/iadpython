@@ -254,7 +254,7 @@ class Experiment():
             _ = scipy.optimize.minimize_scalar(afun, args=(self), bounds=(0, 1), method='bounded')
 
         if self.search == 'find_b':
-            _ = scipy.optimize.minimize_scalar(bfun, args=(self), bounds=(1, 5), method='brent')
+            _ = scipy.optimize.minimize_scalar(bfun, args=(self), method='brent')
 
         if self.search == 'find_g':
             _ = scipy.optimize.minimize_scalar(gfun, args=(self), bounds=(-1, 1), method='bounded')
