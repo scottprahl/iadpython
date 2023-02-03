@@ -1,7 +1,7 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-statements
 # pylint: disable=protected-access
-
+# pylint: disable=no-self-use
 """Tests for Boundary reflection."""
 
 import unittest

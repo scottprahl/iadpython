@@ -1,6 +1,7 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-locals
 # pylint: disable=protected-access
+# pylint: disable=no-self-use
 
 """Tests for sphere object."""
 

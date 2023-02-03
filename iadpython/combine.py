@@ -1,6 +1,5 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-arguments
-
 """
 Module for adding layers together.
 

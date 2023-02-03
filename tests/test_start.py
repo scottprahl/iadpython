@@ -1,4 +1,5 @@
 # pylint: disable=invalid-name
+# pylint: disable=no-self-use
 
 """Tests for initial layer thickness Function."""
 

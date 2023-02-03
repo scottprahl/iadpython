@@ -127,10 +127,10 @@ class Sphere():
 
         tmp = self.a_detector * self.r_detector + self.a_sample * URU
         tmp = r_wall * (self._a_wall + (1 - self.a_entrance) * tmp)
-        if tmp == 1.0:
-            G = np.inf
-        else:
-            G = 1.0 + tmp / (1.0 - tmp)
+#         if tmp == 1.0:
+#             G = np.inf
+#         else:
+#             G = 1.0 + tmp / (1.0 - tmp)
 #        print(URU, 1 - stmp)
         return 1 - tmp
 
