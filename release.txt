@@ -13,8 +13,8 @@ A checklist for releasing a new version
   git push
 
 # create release tag on github
-  git tag v0.4.0
-  git push origin v0.4.0
+  git tag v0.5.1
+  git push origin v0.5.1
 
 # upload source to pypi
   python3 -m build
