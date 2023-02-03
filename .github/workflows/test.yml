@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 16
 
-      - name: Setup Node.js 16
+      - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
           node-version: 16
@@ -33,13 +33,15 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+        with:
+          node-version: 16
       
       - name: Install package and dependencies
         run: |
           pip install -U pip setuptools wheel
           pip install -r requirements-dev.txt
         
-      - name: Test with pytest
+      - name: Tests
         run: |
           pytest tests/test_boundary.py
           pytest tests/test_combo.py
