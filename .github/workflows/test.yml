@@ -17,18 +17,14 @@ jobs:
         python-version: ['3.7', '3.9']
     
     steps:
-      - uses: actions/checkout@v2
-
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout
  
       - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: 16
-
+        uses: actions/setup-node
+s
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python
         with:
           python-version: ${{ matrix.python-version }}
       
