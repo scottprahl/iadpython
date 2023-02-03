@@ -18,13 +18,13 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout
+        uses: actions/checkout@v3
  
       - name: Setup Node.js
-        uses: actions/setup-node
+        uses: actions/setup-node@v3
 s
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
       
