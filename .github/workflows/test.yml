@@ -22,7 +22,7 @@ jobs:
  
       - name: Setup Node.js
         uses: actions/setup-node@v3
-s
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
