@@ -32,7 +32,7 @@ An example::
     >>> print('  total reflection = %.5f' % uru)
     >>> print('  total transmission = %.5f' % utu)
 """
-__version__ = '0.5.1'
+__version__ = '0.5.2'
 __author__ = 'Scott Prahl'
 __email__ = 'scott.prahl@oit.edu'
 __copyright__ = 'Copyright 2018-23, Scott Prahl'
