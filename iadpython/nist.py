@@ -28,17 +28,44 @@ Example::
 
 Reference:
     <https://nvlpubs.nist.gov/nistpubs/jres/122/jres.122.026.pdf>
+    nist_db = 'https://doi.org/10.18434/M38597'
 """
 
-import pkg_resources
+import os
 import numpy as np
-
-# nist_db = 'https://doi.org/10.18434/M38597'
 
 __all__ = ('subject_reflectances',
            'subject_average_reflectance',
            'all_average_reflectances',
            )
+
+def get_subject_data(cols):
+    """
+    Load and return data from a CSV file based on specified columns.
+
+    This function reads data from a CSV file located in the 'data' directory relative to the script's location.
+    It allows you to specify which columns of data to extract from the file.
+
+    Args:
+        cols: A tuple of column indices to extract from the CSV file.
+
+    Returns:
+        An array containing the requested data.
+
+    Example:
+        To extract columns 1 and 2 from the CSV file, you can call the function like this:
+        >>> cols_to_extract = (1, 2)
+        >>> data = get_subject_data(cols_to_extract)
+
+    Note:
+        - The data file is expected to have headers with at least 8 rows of metadata before the data.
+        - The delimiter for the CSV file is assumed to be ',' (comma).
+        - The encoding of the file is assumed to be 'latin1'.
+    """
+    script_dir = os.path.dirname(__file__)  # Path to directory of this file
+    data_file_path = os.path.join(script_dir, 'data', 'M38597.csv')
+    data = np.loadtxt(data_file_path, skiprows=8, usecols=cols, delimiter=',', encoding='latin1')
+    return data
 
 
 def subject_reflectances(subject_number):
@@ -50,8 +77,7 @@ def subject_reflectances(subject_number):
 
     cols = (0, col, col + 1, col + 2, col + 3)
 
-    nist_db = pkg_resources.resource_filename(__name__, 'data/M38597.csv')
-    data = np.loadtxt(nist_db, skiprows=8, usecols=cols, delimiter=',', encoding='latin1')
+    data = get_subject_data(cols)
 
     lambda0 = data[:, 0]
     r_1 = data[:, 1]
@@ -71,8 +97,7 @@ def subject_average_reflectance(subject_number):
 
     cols = (0, col)
 
-    nist_db = pkg_resources.resource_filename(__name__, 'data/M38597.csv')
-    data = np.loadtxt(nist_db, skiprows=8, usecols=cols, delimiter=',', encoding='latin1')
+    data = get_subject_data(cols)
 
     lambda0 = data[:, 0]
     r_ave = data[:, 1]
@@ -84,8 +109,7 @@ def all_average_reflectances():
     """Extract average reflectance for all subjects."""
     cols = [4 * i for i in range(101)]
 
-    nist_db = pkg_resources.resource_filename(__name__, 'data/M38597.csv')
-    data = np.loadtxt(nist_db, skiprows=8, usecols=cols, delimiter=',', encoding='latin1')
+    data = get_subject_data(cols)
 
     lambda0 = data[:, 0]
     r_ave = data[:, 1:]
