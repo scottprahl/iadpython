@@ -1,7 +1,6 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-locals
 # pylint: disable=consider-using-f-string
-# pylint: disable=no-self-use
 
 """Compare speed of pure python implementation with c-library."""
 

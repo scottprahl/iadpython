@@ -4,22 +4,20 @@
 # pylint: disable=consider-using-f-string
 # pylint: disable=line-too-long
 
-"""
-Class for managing integrating spheres.
+"""Class for managing integrating spheres.
 
-    Example:
-        >>> import iadpython
-        >>> s = iadpython.Sphere(250,20)
-        >>> print(s)
+Example::
 
+    >>> import iadpython
+    >>> s = iadpython.Sphere(250,20)
+    >>> print(s)
 """
 
 import numpy as np
 
 
 class Sphere():
-    """
-    Container class for an integrating sphere.
+    """Container class for an integrating sphere.
 
     Attributes:
         - d_sphere: diameter of integrating sphere [mm]
@@ -30,7 +28,8 @@ class Sphere():
         - r_wall: reflectivity of the wall
         - r_std: reflectivity of the standard used with the sphere
 
-    Example:
+    Example::
+
         >>> import iadpython as iad
         >>> s = iad.Sphere(200, 20)
         >>> print(s)
@@ -98,8 +97,7 @@ class Sphere():
         return s
 
     def gain(self, URU, r_wall=None):
-        """
-        Determine the gain relative to a black sphere.
+        r"""Determine the gain relative to a black sphere.
 
         If the walls of the sphere are black then the light falling on the
         detector is the diffuse light entering the sphere divided by the
@@ -110,11 +108,11 @@ class Sphere():
 
         The gain caused by 0% reflecting sphere walls (no port refl) is
 
-        .. math:: \\mbox{gain} = \\frac{(P/A)}{(P/A)} = 1
+        .. math:: \mbox{gain} = \frac{(P/A)}{(P/A)} = 1
 
         The gain caused by 100% reflecting sphere walls (no port refl) is
 
-        .. math:: \\mbox{gain} = \\frac{(P/A_ports)}{(P/A)} = \\frac{A_total}{A_ports}
+        .. math:: \mbox{gain} = \frac{(P/A_ports)}{(P/A)} = \frac{A_total}{A_ports}
 
         Args:
             URU: reflectance from sample port for diffuse light
@@ -135,8 +133,7 @@ class Sphere():
         return 1 - tmp
 
     def multiplier(self, UR1=None, URU=None, r_wall=None):
-        """
-        Determine the average reflectance of a sphere.
+        """Determine the average reflectance of a sphere.
 
         The idea here is that UR1 is the reflection of the incident light
         for the first bounce.  Three cases come to mind
@@ -288,18 +285,17 @@ class Sphere():
 
 
 def Gain_11(RS, TS, URU, tdiffuse):
-    """
-    Net gain for on detector in reflection sphere for two sphere configuration.
+    r"""Net gain for on detector in reflection sphere for two sphere configuration.
 
     The light on the detector in the reflectance sphere is affected by interactions
     between the two spheres.  This function calculates the net gain on a detector
     in the reflection sphere for diffuse light starting in the reflectance sphere.
 
-    .. math:: G_{11} = \\frac{(P_1/A_d)}{(P/A)}
+    .. math:: G_{11} = \frac{(P_1/A_d)}{(P/A)}
 
     then the full expression for the gain is
 
-    .. math:: \\frac{G(r_s)}{(1-a_s a_s' r_w r_w' (1-a_e)(1-a_e') G(r_s) G'(r_s)t_s^2)}
+    .. math:: \frac{G(r_s)}{(1-a_s a_s' r_w r_w' (1-a_e)(1-a_e') G(r_s) G'(r_s)t_s^2)}
 
     """
     G = RS.gain(URU)
@@ -311,14 +307,13 @@ def Gain_11(RS, TS, URU, tdiffuse):
 
 
 def Gain_22(RS, TS, URU, tdiffuse):
-    """
-    Two sphere gain in T sphere for light starting in T sphere.
+    r"""Two sphere gain in T sphere for light starting in T sphere.
 
     Similarly, when the light starts in the second sphere, the gain for light
     on the detector in the second sphere :math:`G_{22}` is found by switching
     all primed variables to unprimed.  Thus :math:`G_{21}(r_s,t_s)` is
 
-    .. math:: G_{22}(r_s,t_s) =\\frac{G'(r_s)}{1-a_s a_s'r_w r_w'(1-a_e)(1-a_e')G(r_s)G'(r_s)t_s^2}
+    .. math:: G_{22}(r_s,t_s) =\frac{G'(r_s)}{1-a_s a_s'r_w r_w'(1-a_e)(1-a_e')G(r_s)G'(r_s)t_s^2}
 
     """
     G = RS.gain(URU)
@@ -330,8 +325,7 @@ def Gain_22(RS, TS, URU, tdiffuse):
 
 
 def Two_Sphere_R(RS, TS, UR1, URU, UT1, UTU, f=0):
-    """
-    Total gain in R sphere for two sphere configuration.
+    """Total gain in R sphere for two sphere configuration.
 
     The light on the detector in the reflection sphere arises from three
     sources: the fraction of light directly reflected off the sphere wall
@@ -371,8 +365,7 @@ def Two_Sphere_R(RS, TS, UR1, URU, UT1, UTU, f=0):
 
 
 def Two_Sphere_T(RS, TS, UR1, URU, UT1, UTU, f=0):
-    """
-    Total gain in T sphere for two sphere configuration.
+    """Total gain in T sphere for two sphere configuration.
 
     For the power on the detector in the transmission (second) sphere we
     have the same three sources.  The only difference is that the subscripts

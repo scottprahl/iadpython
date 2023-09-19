@@ -1,11 +1,12 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-arguments
-"""
-Module for adding layers together.
+
+"""Module for adding layers together.
 
 Two types of starting methods are possible.
 
 Example::
+
     >>> import iadpython as iad
 
     >>> # Isotropic finite layer with mismatched slides the hard way.
@@ -35,8 +36,7 @@ __all__ = ('add_layers',
 
 
 def add_layers_basic(sample, R10, T01, R12, R21, T12, T21):
-    """
-    Add two layers together.
+    """Add two layers together.
 
     The basic equations for the adding-doubling sample (neglecting sources) are
 
@@ -58,9 +58,9 @@ def add_layers_basic(sample, R10, T01, R12, R21, T12, T21):
 
     where the diagonal matrices C and E are
 
-    .. math:: E_{ij}= 1/(2\\nu_i w_i) \\delta_{ij}
+    .. math:: E_{ij}= 1/(2𝜈_i w_i) 𝛿_{ij}
 
-    .. math:: C_{ij}= 2*\\nu_i w_i \\delta_{ij}
+    .. math:: C_{ij}= 2𝜈_i w_i 𝛿_{ij}
 
     """
     C = np.diagflat(sample.twonuw)
@@ -74,8 +74,7 @@ def add_layers_basic(sample, R10, T01, R12, R21, T12, T21):
 
 
 def add_layers(sample, R01, R10, T01, T10, R12, R21, T12, T21):
-    """
-    Add two layers together.
+    """Add two layers together.
 
     Use this when the combined system is asymmetric R02!=R20 and T02!=T20.
     """
@@ -141,8 +140,7 @@ def simple_layer_matrices(sample):
 
 
 def _add_boundary_config_a(sample, R12, R21, T12, T21, R10, T01):
-    """
-    Find two matrices when slide is added to top of slab.
+    """Find two matrices when slide is added to top of slab.
 
     Compute the resulting 'R20' and 'T02' matrices for a glass slide
     on top of an inhomogeneous layer characterized by 'R12', 'R21', 'T12',
@@ -173,8 +171,7 @@ def _add_boundary_config_a(sample, R12, R21, T12, T21, R10, T01):
 
 
 def _add_boundary_config_b(sample, R12, T21, R01, R10, T01, T10):
-    """
-    Find two other matrices when slide is added to top of slab.
+    """Find two other matrices when slide is added to top of slab.
 
     Compute the resulting 'R02' and 'T20' matrices for a glass slide
     on top of an inhomogeneous layer characterized by 'R12', 'R21', 'T12',
@@ -206,8 +203,7 @@ def _add_boundary_config_b(sample, R12, T21, R01, R10, T01, T10):
 
 
 def add_slide_above(sample, R01, R10, T01, T10, R12, R21, T12, T21):
-    """
-    Calculate matrices for a slab with a boundary placed above.
+    """Calculate matrices for a slab with a boundary placed above.
 
     This routine should be used before the slide is been added below!
 
@@ -233,8 +229,7 @@ def add_slide_above(sample, R01, R10, T01, T10, R12, R21, T12, T21):
 
 
 def add_slide_below(sample, R01, R10, T01, T10, R12, R21, T12, T21):
-    """
-    Calculate matrices for a slab with a boundary placed below.
+    """Calculate matrices for a slab with a boundary placed below.
 
     This routine should be used after the slide has been added to the top.
 
@@ -256,8 +251,7 @@ def add_slide_below(sample, R01, R10, T01, T10, R12, R21, T12, T21):
 
 
 def add_same_slides(sample, R01, R10, T01, T10, R, T):
-    """
-    Find matrix when slab is sandwiched between identical slides.
+    """Find matrix when slab is sandwiched between identical slides.
 
     This routine is optimized for a slab with equal boundaries on each side.
     It is assumed that the slab is homogeneous and therefore the 'R' and 'T'
@@ -290,7 +284,7 @@ def add_same_slides(sample, R01, R10, T01, T10, R, T):
 
     .. math:: T_{03} = B_{XX} A_{XX} T_{01}
 
-    .. math:: R_{30} = B_{XX} R_{20} T_{01} + R_{01}/(2\\nu w)^2
+    .. math:: R_{30} = B_{XX} R_{20} T_{01} + R_{01}/(2 𝜈 w)^2
 
     Args:
         R01: R, T for slide assuming 0=air and 1=slab

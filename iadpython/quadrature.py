@@ -1,32 +1,32 @@
 # pylint: disable=invalid-name
 
-"""
-Module for obtaining quadrature points and weights.
+"""Module for obtaining quadrature points and weights.
 
 Three types of gaussian quadrature are supported: normal Gaussian,
 Radau quadrature, and Lobatto quadrature.  The first method does not
 include either endpoint of integration, Radau quadrature includes one
 endpoint of the integration range, and Lobatto quadrature includes both
-endpoints.::
+endpoints.
 
-    Example:
-        >>> import iad.quadrature
+Example::
 
-        >>> n=8
-        >>> x, w = iad.quadrature.gauss(n)
-        >>> print(" i        x         weight")
-        >>> for i,x in enumerate(xi):
-        >>>     print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
+    >>> import iad.quadrature
 
-        >>> x, w = iad.quadrature.radau(n)
-        >>> print(" i        x         weight")
-        >>> for i,x in enumerate(xi):
-        >>>     print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
+    >>> n=8
+    >>> x, w = iad.quadrature.gauss(n)
+    >>> print(" i        x         weight")
+    >>> for i,x in enumerate(xi):
+    >>>     print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
 
-        >>> x, w = iad.quadrature.lobatto(n)
-        >>> print(" i        x         weight")
-        >>> for i,x in enumerate(xi):
-        >>>     print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
+    >>> x, w = iad.quadrature.radau(n)
+    >>> print(" i        x         weight")
+    >>> for i,x in enumerate(xi):
+    >>>     print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
+
+    >>> x, w = iad.quadrature.lobatto(n)
+    >>> print(" i        x         weight")
+    >>> for i,x in enumerate(xi):
+    >>>     print("%2d   %+.12f %+.12f" % (i, x[i], w[i]))
 
 """
 
@@ -57,12 +57,11 @@ def _lobatto_func(n, x):
 
 
 def gauss(n, a=-1, b=1):
-    """
-    Return abscissas and weights for Gaussian quadrature.
+    """Return abscissas and weights for Gaussian quadrature.
 
     The definite integral ranges from a to b.  The default
     interval is -1 to 1.  The quadrature approximation is
-    just the sum of w_i f(x_i).  Neither a nor b is included
+    just the sum of :math:`w_i f(x_i)`.  Neither a nor b is included
     in the list of quadrature abscissas.
 
     The result should be exact when integrating any polynomial
@@ -89,12 +88,11 @@ def gauss(n, a=-1, b=1):
 
 
 def radau(n, a=-1, b=1):
-    """
-    Return abscissas and weights for Radau quadrature.
+    """Return abscissas and weights for Radau quadrature.
 
     The definite integral ranges from a to b.  The default
     interval is -1 to 1.  The quadrature approximation is
-    just the sum of w_i f(x_i).  The upper endpoint b is include
+    just the sum of :math:`w_i f(x_i)`.  The upper endpoint b is include
     in the list of quadrature abscissas.
 
     The result should be exact when integrating any polynomial
@@ -132,8 +130,7 @@ def radau(n, a=-1, b=1):
 
 
 def lobatto(n, a=-1, b=1):
-    """
-    Return abscissas and weights for Lobatto quadrature.
+    """Return abscissas and weights for Lobatto quadrature.
 
     The definite integral ranges from a to b.  The default
     interval is -1 to 1.  The quadrature approximation is

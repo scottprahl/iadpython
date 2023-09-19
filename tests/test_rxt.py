@@ -1,6 +1,5 @@
 # pylint: disable=invalid-name
 # pylint: disable=bad-whitespace
-# pylint: disable=no-self-use
 
 """Tests for NIST reflectance data."""
 

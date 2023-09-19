@@ -2,25 +2,27 @@
 # pylint: disable=too-many-locals
 # pylint: disable=consider-using-f-string
 # pylint: disable=too-many-branches
-"""
-Module for reading rxt files.
+
+"""Module for reading rxt files.
 
 This reads an input rxt file and saves the parameters into an
 Experiment object.
 
-    Example:
-        >>> import numpy
-        >>> import matplotlib.pyplot as plt
-        >>> import iadpython
-        >>> filename = 'ink.rxt'
-        >>> exp = iadpython.read_iad_input(filename)
-        >>> if exp.lambda0 is None:
-        >>>     plt.plot(exp.m_r)
-        >>> else:
-        >>>     plt.plot(exp.lambda0, exp.m_r)
-        >>> plt.ylabel("measured reflectance")
-        >>> plt.title(filename)
-        >>> plt.show()
+Example::
+
+    >>> import numpy
+    >>> import matplotlib.pyplot as plt
+    >>> import iadpython
+    >>>
+    >>> filename = 'ink.rxt'
+    >>> exp = iadpython.read_iad_input(filename)
+    >>> if exp.lambda0 is None:
+    >>>     plt.plot(exp.m_r)
+    >>> else:
+    >>>     plt.plot(exp.lambda0, exp.m_r)
+    >>> plt.ylabel("measured reflectance")
+    >>> plt.title(filename)
+    >>> plt.show()
 """
 
 import re
@@ -41,7 +43,7 @@ def read_and_remove_notation(filename):
             s += line
 
     if len(re.findall('IAD1', s)) == 0:
-        raise Exception("Not an .rxt file. (Does not start with IAD1)")
+        raise ValueError("Not an .rxt file. (Does not start with IAD1)")
 
     s = re.sub(r'IAD1', '', s)
     s = re.sub(r'\s+', ' ', s)
@@ -51,8 +53,7 @@ def read_and_remove_notation(filename):
 
 
 def read_rxt(filename):
-    """
-    Read an IAD input file in .rxt format.
+    """Read an IAD input file in .rxt format.
 
     Args:
         filename: .rxt filename

@@ -1,6 +1,5 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-statements
-# pylint: disable=no-self-use
 
 """Tests for Fresnel reflection."""
 

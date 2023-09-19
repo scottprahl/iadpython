@@ -3,16 +3,17 @@
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-arguments
 # pylint: disable=consider-using-f-string
-"""
-Class for doing adding-doubling calculations for a sample.
 
-    Example:
-        >>> import iadpython as iad
-        >>> n=4
-        >>> sample = iad.Sample(a=0.9, b=10, g=0.9, n=1.5, quad_pts=4)
-        >>> r, t = sample.rt()
-        >>> print(r)
-        >>> print(t)
+"""Class for doing adding-doubling calculations for a sample.
+
+Example::
+
+    >>> import iadpython as iad
+    >>> n=4
+    >>> sample = iad.Sample(a=0.9, b=10, g=0.9, n=1.5, quad_pts=4)
+    >>> r, t = sample.rt()
+    >>> print(r)
+    >>> print(t)
 """
 
 import copy
@@ -24,25 +25,24 @@ import iadpython.combine
 
 
 class Sample():
-    """
-    Container class for details of a sample.
+    """Container class for details of a sample.
 
-        Most things can be changed after creation by assigning to an element.
+    Most things can be changed after creation by assigning to an element.
 
-        The angle of incidence is assumed to be perpendicular to the
-        surface.  This is stored as the cosine of the angle and therefore to
-        change it to 60° from the normal, one does
+    The angle of incidence is assumed to be perpendicular to the
+    surface.  This is stored as the cosine of the angle and therefore to
+    change it to 60° from the normal, one does
 
-        Example:
+    Example::
 
-            sample.nu_0 = 0.5
+        sample.nu_0 = 0.5
 
-        To avoid needing to calculate the quadrature angles each time a
-        calculation is done, the `Sample` object stores the quadrature angles as
-        well as the redistribution function.  A bit of trouble is taken
-        to ensure that these values get updated when something changes
-        e.g., the anisotropy, the angle of incidence, or the number of
-        quadrature points.
+    To avoid needing to calculate the quadrature angles each time a
+    calculation is done, the `Sample` object stores the quadrature angles as
+    well as the redistribution function.  A bit of trouble is taken
+    to ensure that these values get updated when something changes
+    e.g., the anisotropy, the angle of incidence, or the number of
+    quadrature points.
 
     Attributes:
         - a: albedo
@@ -57,8 +57,7 @@ class Sample():
     """
 
     def __init__(self, a=0, b=1, g=0, d=1, n=1, n_above=1, n_below=1, quad_pts=4):
-        """
-        Object initialization.
+        """Object initialization.
 
         Returns:
             object with all details needed to do a radiative calculation
@@ -270,8 +269,7 @@ class Sample():
         print("%9.5f]]" % a[-1, -1])
 
     def update_quadrature(self):
-        """
-        Calculate the correct set of quadrature points.
+        """Calculate the correct set of quadrature points.
 
         This returns the quadrature angles using Radau quadrature over the
         interval 0 to 1 if there is no critical angle for total internal reflection
@@ -330,8 +328,7 @@ class Sample():
         self.twonuw = 2 * self.nu * np.append(w1, w2)
 
     def rt_matrices(self):
-        """
-        Total reflection and transmission.
+        """Total reflection and transmission.
 
         This is the top level routine for accessing the adding-doubling
         algorithm. By passing the optical paramters characteristic of the sample,
@@ -385,8 +382,7 @@ class Sample():
         return R03, R30, T03, T30
 
     def UX1_and_UXU(self, R, T):
-        """
-        Calculate total reflected and transmitted fluxes from matrices.
+        """Calculate total reflected and transmitted fluxes from matrices.
 
         The trick here is that the integration must be done over the fluxes
         that leave the sample.  This is not much of an issue for the transmitted
@@ -405,8 +401,7 @@ class Sample():
         return URx[-1], UTx[-1], URU, UTU
 
     def rt(self):
-        """
-        Find the total reflected and transmitted flux for a sample.
+        """Find the total reflected and transmitted flux for a sample.
 
         This is extended so that arrays can be handled.
         """

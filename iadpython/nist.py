@@ -1,34 +1,33 @@
-"""
-Module for importing reflection spectra from NIST database.
+"""Module for importing reflection spectra from NIST database.
 
-https://nvlpubs.nist.gov/nistpubs/jres/122/jres.122.026.pdf
+Example::
 
-Two types of starting methods are possible.
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> import iadpython as iad
 
-    Example:
-        >>> import numpy as np
-        >>> import matplotlib.pyplot as plt
-        >>> import iadpython as iad
+    >>> # Retrieve and plot subject 5
 
-        >>> # Retrieve and plot subject 5
+    >>> subject_number = 5
+    >>> lambda0, R = iad.subject_average_reflectance(subject_number)
+    >>> plt.plot(lambda0, R)
+    >>> plt.xlabel("Wavelength (nm)")
+    >>> plt.ylabel("Total Reflectance")
+    >>> plt.title("Subject #%d" % subject_number)
+    >>> plt.show()
 
-        >>> subject_number = 5
-        >>> lambda0, R = iad.subject_average_reflectance(subject_number)
-        >>> plt.plot(lambda0, R)
-        >>> plt.xlabel("Wavelength (nm)")
-        >>> plt.ylabel("Total Reflectance")
-        >>> plt.title("Subject #%d" % subject_number)
-        >>> plt.show()
+    >>> # Retrieve and plot all subjects
 
-        >>> # Retrieve and plot all subjects
+    >>> lambda0, R = iad.all_average_reflectances()
+    >>> for i in range(100):
+    >>>     plt.plot(lambda0, R[:, i])
+    >>> plt.xlabel("Wavelength (nm)")
+    >>> plt.ylabel("Total Reflectance")
+    >>> plt.title("All Subjects")
+    >>> plt.show()
 
-        >>> lambda0, R = iad.all_average_reflectances()
-        >>> for i in range(100):
-        >>>     plt.plot(lambda0, R[:, i])
-        >>> plt.xlabel("Wavelength (nm)")
-        >>> plt.ylabel("Total Reflectance")
-        >>> plt.title("All Subjects")
-        >>> plt.show()
+Reference:
+    <https://nvlpubs.nist.gov/nistpubs/jres/122/jres.122.026.pdf>
 """
 
 import pkg_resources
@@ -45,7 +44,7 @@ __all__ = ('subject_reflectances',
 def subject_reflectances(subject_number):
     """Extract all reflection data for one subject."""
     if subject_number <= 0 or subject_number > 100:
-        raise Exception("subject_number must be 1 to 100")
+        raise ValueError("subject_number must be 1 to 100")
 
     col = (subject_number - 1) * 4 + 1
 
@@ -66,7 +65,7 @@ def subject_reflectances(subject_number):
 def subject_average_reflectance(subject_number):
     """Extract average reflection for one subject."""
     if subject_number <= 0 or subject_number > 100:
-        raise Exception("subject_number must be 1 to 100")
+        raise ValueError("subject_number must be 1 to 100")
 
     col = (subject_number - 1) * 4 + 4
 

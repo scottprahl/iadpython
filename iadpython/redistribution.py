@@ -1,26 +1,25 @@
 # pylint: disable=invalid-name
 # pylint: disable=no-member
 
-"""
-Module for calculating the redistribution function.
+r"""Module for calculating the redistribution function.
 
-The single scattering phase function p(nu) for a tissue determines the
+The single scattering phase function ..math:`p(\nu)` for a tissue determines the
 amount of light scattered at an angle nu=cos(theta) from the direction of
 incidence.  The subtended angle nu is the dot product incident and exiting
 of the unit vectors.
 
-The redistribution function `h[i,j]` determines the fraction of light
-scattered from an incidence cone with angle `nu_i` into a cone with angle
-`nu_j`.  The redistribution function is calculated by averaging the phase
-function over all possible azimuthal angles for fixed angles `nu_i` and
-`nu_j`,
+The redistribution function ..math:`h[i,j]` determines the fraction of light
+scattered from an incidence cone with angle `\nu_i` into a cone with angle
+..math:`\nu_j`.  The redistribution function is calculated by averaging the phase
+function over all possible azimuthal angles for fixed angles ..math:`\nu_i` and
+..math:`nu_j`,
 
-Note that the angles `nu_i` and `nu_j` may also be negative (light
+Note that the angles ..math:`\nu_i` and ..math:`\nu_j` may also be negative (light
 travelling in the opposite direction).
 
-When the cosine of the angle of incidence or exitance is unity (`nu_i=1` or
-`nu_j=1`), then the redistribution function is equivalent to the phase
-function p(nu_j).
+When the cosine of the angle of incidence or exitance is unity (..math:`\nu_i=1` or
+..math:`\nu_j=1`), then the redistribution function is equivalent to the phase
+function ..math:`p(\nu_j)`.
 """
 
 import scipy.special
@@ -33,19 +32,19 @@ __all__ = ('hg_elliptic',
 
 
 def hg_legendre(sample):
-    """
-    Calculate the HG redistribution matrix using Legendre polynomials.
+    """Calculate the HG redistribution matrix using Legendre polynomials.
 
     This is a straightforward implementation of Wiscombe's delta-M
     method for calculating the redistribution function for a Henyey-
-    Greenstein phase function as given in
-
-    Wiscombe, "The Delta-M Method : Rapid Yet Accurate Radiative Flux
-    Calculations for Strongly Asymmetric Phase Functions,"
-    J. Atmos. Sci., 34, 1978.
+    Greenstein phase function.
 
     Probably should generate all the Legendre polynomials one
     time and then calculate.
+    
+    Reference:
+        Wiscombe, "The Delta-M Method : Rapid Yet Accurate Radiative Flux
+        Calculations for Strongly Asymmetric Phase Functions,"
+        J. Atmos. Sci., 34, 1978.
     """
     if sample.nu is None:
         sample.update_quadrature()
@@ -79,8 +78,7 @@ def hg_legendre(sample):
 
 
 def hg_elliptic(sample):
-    """
-    Calculate redistribution function using elliptic integrals.
+    """Calculate redistribution function using elliptic integrals.
 
     This is the result of a direct integration of the Henyey-
     Greenstein phase function.
@@ -116,7 +114,7 @@ def hg_elliptic(sample):
             arg = np.sqrt(2 * gamma / (alpha + gamma))
             hm[i, j] = const * scipy.special.ellipe(arg)
 
-# 	fill symmetric entries
+    # fill symmetric entries
     for i in range(n):
         for j in range(i + 1, n):
             hp[i, j] = hp[j, i]

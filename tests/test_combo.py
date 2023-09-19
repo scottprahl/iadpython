@@ -1,7 +1,6 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-locals
 # pylint: disable=redefined-outer-name
-# pylint: disable=no-self-use
 
 """Tests for slide-sample-slide combinations."""
 

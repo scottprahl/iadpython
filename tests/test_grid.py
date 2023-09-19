@@ -1,5 +1,4 @@
 # pylint: disable=invalid-name
-# pylint: disable=no-self-use
 
 """Tests for Inverse Adding Doubling."""
 

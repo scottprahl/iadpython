@@ -7,7 +7,7 @@ html:
 	$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
 	open docs/_build/index.html
 
-lintcheck:
+lint:
 	-pylint iadpython/ad.py
 	-pylint iadpython/combine.py
 	-pylint iadpython/constants.py
@@ -39,18 +39,18 @@ xpylint:
 	-pylint tests/test_iadc.py
 	
 doccheck:
-	-pydocstyle iadpython/ad.py
-	-pydocstyle --ignore D301 iadpython/combine.py
-	-pydocstyle iadpython/constants.py
-	-pydocstyle --ignore D301 iadpython/iad.py
-	-pydocstyle --ignore D301 iadpython/fresnel.py
-	-pydocstyle iadpython/grid.py
-	-pydocstyle iadpython/nist.py
-	-pydocstyle iadpython/quadrature.py
-	-pydocstyle iadpython/redistribution.py
-	-pydocstyle iadpython/rxt.py
-	-pydocstyle --ignore D301 iadpython/sphere.py
-	-pydocstyle iadpython/start.py
+	-pydocstyle --convention=google iadpython/ad.py
+	-pydocstyle --convention=google iadpython/combine.py
+	-pydocstyle --convention=google iadpython/constants.py
+	-pydocstyle --convention=google iadpython/iad.py
+	-pydocstyle --convention=google iadpython/fresnel.py
+	-pydocstyle --convention=google iadpython/grid.py
+	-pydocstyle --convention=google iadpython/nist.py
+	-pydocstyle --convention=google iadpython/quadrature.py
+	-pydocstyle --convention=google iadpython/redistribution.py
+	-pydocstyle --convention=google iadpython/rxt.py
+	-pydocstyle --convention=google iadpython/sphere.py
+	-pydocstyle --convention=google iadpython/start.py
 	-pydocstyle tests/test_boundary.py
 	-pydocstyle tests/test_combo.py
 	-pydocstyle tests/test_fresnel.py
@@ -77,12 +77,12 @@ notecheck:
 
 rcheck:
 	make doccheck
-	make lintcheck
-	make notecheck
+	make lint
 	make test
 	-flake8 .
 	pyroma -d .
 	check-manifest
+	make notecheck
 
 test:
 	pytest tests

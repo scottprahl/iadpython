@@ -4,25 +4,26 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=consider-using-f-string
 # pylint: disable=unused-argument
+# pylint: disable=too-many-branches
 
-"""
-Class for doing inverse adding-doubling calculations for a sample.
+"""Class for doing inverse adding-doubling calculations for a sample.
 
-    Example:
-        >>> import iadpython as iad
+Example::
 
-        >>> exp = iad.Experiment(0.5,0.1,0.01)
-        >>> a, b, g = exp.invert()
-        >>> print("a = %7.3f" % a)
-        >>> print("b = %7.3f" % b)
-        >>> print("g = %7.3f" % g)
+    >>> import iadpython as iad
 
-        >>> s = iad.Sample(0.5,0.1,0.01,n=1.4, n_top=1.5, n_bottom=1.5)
-        >>> exp = iad.Experiment(s)
-        >>> a, b, g = exp.invert()
-        >>> print("a = %7.3f" % a)
-        >>> print("b = %7.3f" % b)
-        >>> print("g = %7.3f" % g)
+    >>> exp = iad.Experiment(0.5,0.1,0.01)
+    >>> a, b, g = exp.invert()
+    >>> print("a = %7.3f" % a)
+    >>> print("b = %7.3f" % b)
+    >>> print("g = %7.3f" % g)
+
+    >>> s = iad.Sample(0.5,0.1,0.01,n=1.4, n_top=1.5, n_bottom=1.5)
+    >>> exp = iad.Experiment(s)
+    >>> a, b, g = exp.invert()
+    >>> print("a = %7.3f" % a)
+    >>> print("b = %7.3f" % b)
+    >>> print("g = %7.3f" % g)
 """
 
 import copy
@@ -130,19 +131,19 @@ class Experiment():
         if not (self.m_r is None or np.isscalar(self.m_r)) or \
            not (self.m_t is None or np.isscalar(self.m_t)) or \
            not (self.m_u is None or np.isscalar(self.m_u)):
-            raise Exception("invert_scalar_rt() is only for scalar m_r, m_t, m_u")
+            raise ValueError("invert_scalar_rt() is only for scalar m_r, m_t, m_u")
 
         if self.m_r is not None:
             if self.m_r < 0 or self.m_r > 1:
-                raise Exception("Invalid refl. %.4f" % self.m_r + between)
+                raise ValueError("Invalid refl. %.4f" % self.m_r + between)
 
         if self.m_t is not None:
             if self.m_t < 0 or self.m_t > 1:
-                raise Exception("Invalid trans. %.4f" % self.m_t + between)
+                raise ValueError("Invalid trans. %.4f" % self.m_t + between)
 
         if self.m_u is not None:
             if self.m_u < 0 or self.m_u > 1:
-                raise Exception("Invalid unscattered trans. %.4f." % self.m_u + between)
+                raise ValueError("Invalid unscattered trans. %.4f." % self.m_u + between)
 
     def useful_measurements(self):
         """Count the number of useful measurements."""
@@ -223,8 +224,7 @@ class Experiment():
             self.determine_two_parameter_search()
 
     def invert_scalar_rt(self):
-        """
-        Find a,b,g for a single experimental measurement.
+        """Find a,b,g for a single experimental measurement.
 
         This routine assumes that `m_r`, `m_t`, and `m_u` are scalars.
 
@@ -297,8 +297,7 @@ class Experiment():
         return self.sample.a, self.sample.b, self.sample.g
 
     def invert_rt(self):
-        """
-        Find a,b,g for experimental measurements.
+        """Find a,b,g for experimental measurements.
 
         This method works if `m_r`, `m_t`, and `m_u` are scalars or arrays.
 
@@ -369,8 +368,7 @@ class Experiment():
         return s.nu_0 * np.log(ratio)
 
     def measured_rt(self):
-        """
-        Calculate measured reflection and transmission.
+        r"""Calculate measured reflection and transmission.
 
         The direct incident power is :math:`(1-f)P`. The reflected power will
         be :math:`(1-f)R_{direct} P`.  Since baffles ensure that the light cannot
@@ -381,22 +379,22 @@ class Experiment():
 
         The measured power will be
 
-        .. math:: P_d = a_d (1-a_e) r_w [(1-f) r_{direct} + f r_w] P \\cdot G(r_s)
+        .. math:: P_d = a_d (1-a_e) r_w [(1-f) r_{direct} + f r_w] P ⋅ G(r_s)
 
         Similarly the power falling on the detector measuring transmitted light is
 
-        .. math:: P_d'= a_d' t_{direct} r_w' (1-a_e') P \\cdot G'(r_s)
+        .. math:: P_d'= a_d' t_{direct} r_w' (1-a_e') P ⋅ G'(r_s)
 
         when the entrance port in the transmission sphere is closed,
         :math:`a_e'=0`.
 
         The normalized sphere measurements are
 
-        .. math:: M_R = r_{std}\\cdot\\frac{R(r_{direct},r_s)-R(0,0)}{R(r_{std},r_{std})-R(0,0)}
+        .. math:: M_R = r_{std}⋅\frac{R(r_{direct},r_s)-R(0,0)}{R(r_{std},r_{std})-R(0,0)}
 
         and
 
-        .. math:: M_T = t_{std}\\cdot{T(t_{direct},r_s)-T(0,0) \\over T(t_{std},r_{std})-T(0,0)}
+        .. math:: M_T = t_{std}⋅\frac{T(t_{direct},r_s)-T(0,0)}{T(t_{std},r_{std})-T(0,0)}
 
         Args:
             ur1: reflection for collimated incidence

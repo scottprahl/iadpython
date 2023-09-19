@@ -4,23 +4,23 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=consider-using-f-string
 
-"""
-Class for doing inverse adding-doubling calculations for a sample.
+"""Class for doing inverse adding-doubling calculations for a sample.
 
-import iadpython
+Example::
 
-exp = iadpython.Experiment(0.5, 0.1, default_g=0.5)
-grid = iadpython.Grid()
-grid.calc(exp)
-print(grid)
+    >>> import iadpython
+
+    >>> exp = iadpython.Experiment(0.5, 0.1, default_g=0.5)
+    >>> grid = iadpython.Grid()
+    >>> grid.calc(exp)
+    >>> print(grid)
 """
 
 import numpy as np
 
 
 class Grid():
-    """
-    Class to track pre-calculated R & T values.
+    """Class to track pre-calculated R & T values.
 
     There is a long story associated with these routines.  I spent a lot of time
     trying to find an empirical function to allow a guess at a starting value for
@@ -95,7 +95,7 @@ class Grid():
     def min_abg(self, mr, mt):
         """Find closest a, b, g closest to mr and mt."""
         if self.ur1 is None:
-            raise Exception("Grid.calc(exp) must be called before Grid.min_abg")
+            raise ValueError("Grid.calc(exp) must be called before Grid.min_abg")
 
         A = np.abs(mr - self.ur1) + np.abs(mt - self.ut1)
         ii_flat = A.argmin()

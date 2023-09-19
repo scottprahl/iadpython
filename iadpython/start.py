@@ -1,17 +1,16 @@
 # pylint: disable=invalid-name
 
-"""
-Module for generating the starting thinnest_layer for adding-doubling.
+"""Module for generating the starting layer for adding-doubling.
 
 Two types of starting methods are possible IGI and Diamond.
 
-    Example:
-        >>> import iadpython as iad
-        >>> s = iad.Sample(a=0.9, b=10, g=0.9, n=1.5)
-        >>> r, t = iad.init_layer(s)
-        >>> print(r)
-        >>> print(t)
+Example::
 
+    >>> import iadpython as iad
+    >>> s = iad.Sample(a=0.9, b=10, g=0.9, n=1.5)
+    >>> r, t = iad.init_layer(s)
+    >>> print(r)
+    >>> print(t)
 """
 
 import numpy as np
@@ -30,8 +29,7 @@ __all__ = ('zero_layer',
 
 
 def zero_layer(sample):
-    """
-    Create R and T matrices for thinnest_layer with zero thickness.
+    """Create R and T matrices for thinnest_layer with zero thickness.
 
     Need to include quadrature normalization so R+T=1.
     """
@@ -43,8 +41,7 @@ def zero_layer(sample):
 
 
 def starting_thickness(sample):
-    """
-    Find the best starting thickness to start the doubling process.
+    """Find the best starting thickness to start the doubling process.
 
     The criterion is based on an assessment of the (1) round-off error,
     (2) the angular initialization error, and (3) the thickness
@@ -80,8 +77,7 @@ def starting_thickness(sample):
 
 
 def igi(sample):
-    """
-    Infinitesmal Generator Initialization.
+    r"""Infinitesmal Generator Initialization.
 
     igi_start() generates the starting matrix with the inifinitesimal generator method.
     The accuracy is O(d) and assumes that the average irradiance upwards is
@@ -90,11 +86,11 @@ def igi(sample):
 
     Ultimately the formulas for the reflection matrix is
 
-    R_ij = a*d/(4*nu_i*nu_j) hpm_ij
+    .. math:: R_{ij} = a d/(4\nu_i\nu_j) hpm_{ij}
 
     and
 
-    T_ij = a*d/(4*nu_i*nu_j) hpp_ij + delta_ij*(1-d/nu_i)/(2*nu_i w_i)
+    .. math:: T_{ij} = a d/(4\nu_i\nu_j) hpp_{ij} + \delta_{ij}(1-d/\nu_i)/(2\nu_i w_i)
     """
     if sample.nu is None:
         sample.update_quadrature()
@@ -117,8 +113,7 @@ def igi(sample):
 
 
 def diamond(sample):
-    """
-    Diamond initialization.
+    """Diamond initialization.
 
     The diamond method uses the same `r_hat` and `t_hat` as was used for infinitesimal
     generator method.  Division by `2*nu_j*w_j` is not needed until the
@@ -154,8 +149,7 @@ def diamond(sample):
 
 
 def thinnest_layer(sample):
-    """
-    Reflection and transmission matrices for a thin thinnest_layer.
+    """Reflection and transmission matrices for a thin thinnest_layer.
 
     The optimal method for calculating a thin thinnest_layer depends on the
     thinness of the thinnest_layer and the quadrature angles.  This chooses
@@ -173,8 +167,7 @@ def thinnest_layer(sample):
 
 
 def _boundary(sample, n_i, n_g, n_t, b):
-    """
-    Find matrix for R and T for air/glass/slab interface.
+    """Find matrix for R and T for air/glass/slab interface.
 
     The resulting matrix is a diagonal matrix that is represented as an
     array.
@@ -198,8 +191,7 @@ def _boundary(sample, n_i, n_g, n_t, b):
 
 
 def boundary_layer(s, top=True):
-    """
-    Create reflection and transmission arrays for a boundary_layer.
+    """Create reflection and transmission arrays for a boundary_layer.
 
     If 'boundary_layer=="top"' then the arrays returned are for the top
     surface and the labels are as expected i.e. 'T01' is the reflection for
@@ -231,8 +223,7 @@ def boundary_layer(s, top=True):
 
 
 def boundary_matrices(s, top=True):
-    """
-    Create reflection and transmission matrices for a boundary_layer.
+    """Create reflection and transmission matrices for a boundary_layer.
 
     These can be treated like any other layer in the adding-doubling
     formalism.
@@ -256,8 +247,7 @@ def boundary_matrices(s, top=True):
 
 
 def unscattered_rt(s):
-    """
-    Unscattered reflection and transmission for a slide-slab-slide sandwich.
+    """Unscattered reflection and transmission for a slide-slab-slide sandwich.
 
     The sample is characterized by the record 'slab'.  The total unscattered_layer
     reflection and transmission for oblique irradiance ('urx' and 'utx')
@@ -300,8 +290,7 @@ def unscattered_rt(s):
 
 
 def unscattered(s):
-    """
-    Unscattered reflection and transmission for a slide-slab-slide sandwich.
+    """Unscattered reflection and transmission for a slide-slab-slide sandwich.
 
     The sample is characterized by the record 'slab'.  The total unscattered_layer
     reflection and transmission for oblique irradiance ('urx' and 'utx')

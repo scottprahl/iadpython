@@ -4,19 +4,18 @@
 # pylint: disable = too-many-locals
 # pylint: disable = consider-using-in
 
-"""
-Module for generating boundary matrices.
+"""Module for generating boundary matrices.
 
 Two types of starting methods are possible.
 
-    Example:
-        >>> import iadpython as iad
-        >>> n = 4
-        >>> slab = iad.Slab(a = 0.9, b = 10, g = 0.9, n = 1.5)
-        >>> method = iad.Method(slab)
-        >>> r, t = iad.init_layer(slab, method)
-        >>> print(r)
-        >>> print(t)
+Example:
+    >>> import iadpython as iad
+    >>> n = 4
+    >>> slab = iad.Slab(a = 0.9, b = 10, g = 0.9, n = 1.5)
+    >>> method = iad.Method(slab)
+    >>> r, t = iad.init_layer(slab, method)
+    >>> print(r)
+    >>> print(t)
 
 """
 import numpy as np
@@ -33,19 +32,18 @@ __all__ = ('cos_critical',
 
 
 def cos_critical(n_i, n_t):
-    """
-    Calculate the cosine of the critical angle.
+    r"""Calculate the cosine of the critical angle.
 
     This works for arrays too.  If there is no critical angle then
-    cos(pi/2)=0 is returned.
+    cos(\pi/2)=0 is returned.
 
-        .. math:: \\theta_c = \\sin^{-1}(n_t / n_i)
+        .. math:: \theta_c = \sin^{-1}(n_t / n_i)
 
     The cosine of this angle is then
 
-        .. math:: \\cos(\\theta_c) = \\cos(\\sin^{-1}(n_t / n_i))
+        .. math:: \cos(\theta_c) = \cos(\sin^{-1}(n_t / n_i))
 
-        .. math:: \\cos(\\theta_c) = \\sqrt{1-(n_t/n_i)^2}
+        .. math:: \cos(\theta_c) = \sqrt{1-(n_t/n_i)^2}
 
     Args:
         n_i: index of refraction of incident medium
@@ -65,29 +63,28 @@ def cos_critical(n_i, n_t):
 
 
 def cos_snell(n_i, nu_i, n_t):
-    """
-    Return the cosine of the transmitted angle.
+    r"""Return the cosine of the transmitted angle.
 
     Snell's law states
 
-    .. math:: n_i\\sin(\\theta_i) = n_t \\sin(\\theta_t)
+    .. math:: n_i\sin(\theta_i) = n_t \sin(\theta_t)
 
     but if the angles are expressed as cosines,
-    :math:`\\nu_i = \\cos(\\theta_i)` then
+    :math:`\nu_i = \cos(\theta_i)` then
 
-    .. math:: n_i\\sin(\\cos^{-1}\\nu_i) = n_t \\sin(\\cos^{-1}\\nu_t)
+    .. math:: n_i\sin(\cos^{-1}\nu_i) = n_t \sin(\cos^{-1}\nu_t)
 
-    Solving for :math:`\\nu_t` yields
+    Solving for :math:`\nu_t` yields
 
-    .. math:: \\nu_t = \\cos(\\sin^{-1}[(n_i/n_t) \\sin(\\cos^{-1}\\nu_i)])
+    .. math:: \nu_t = \cos(\sin^{-1}[(n_i/n_t) \sin(\cos^{-1}\nu_i)])
 
     which is pretty ugly.  However, note that
 
-    .. math:: \\sin(\\cos^{-1}\\nu) = \\sqrt{1-\\nu^2}
+    .. math:: \sin(\cos^{-1}\nu) = \sqrt{1-\nu^2}
 
     and the above becomes
 
-    .. math:: \\nu_t = \\sqrt{1-(n_i/n_t)^2 (1- \\nu_i^2)}
+    .. math:: \nu_t = \sqrt{1-(n_i/n_t)^2 (1- \nu_i^2)}
 
     Args:
         n_i: index of refraction of incident medium
@@ -108,8 +105,7 @@ def cos_snell(n_i, nu_i, n_t):
 
 
 def fresnel_reflection(n_i, nu_i, n_t):
-    """
-    Fresnel Reflection.
+    r"""Fresnel Reflection.
 
     Calculates the specular reflection for light incident at
     an angle  theta_i from the normal (having a cosine equal to  nu_i)
@@ -121,8 +117,8 @@ def fresnel_reflection(n_i, nu_i, n_t):
 
     .. math::
 
-      R = \\frac{1}{2} \\left[\\frac{\\sin^2(\\theta_i-\\theta_t)}{\\sin^2(\\theta_i+\\theta_t)} +
-      \\frac{\\tan^2(\\theta_i-\\theta_t)}{\\tan^2(\\theta_i+\\theta_t)} \\right]
+      R = \frac{1}{2} \left[\frac{\sin^2(\theta_i-\theta_t)}{\sin^2(\theta_i+\theta_t)} +
+      \frac{\tan^2(\theta_i-\theta_t)}{\tan^2(\theta_i+\theta_t)} \right]
 
     where  theta_i and  theta_t represent the angle (from normal) that light is incident
     and the angle at which light is transmitted.
@@ -141,21 +137,21 @@ def fresnel_reflection(n_i, nu_i, n_t):
 
     .. math::
 
-      R_\\parallel = \\left[\\frac{n_t\\cos\\theta_i-n_i\\cos\\theta_t}
-                                  {n_t\\cos\\theta_i+n_i\\cos\\theta_t}\\right]^2,
+      R_\parallel = \left[\frac{n_t\cos\theta_i-n_i\cos\theta_t}
+                               {n_t\cos\theta_i+n_i\cos\theta_t}\right]^2,
 
     .. math::
 
-      R_\\perp = \\left[\\frac{n_i\\cos\\theta_i-n_t\\cos\\theta_t}
-                              {n_i\\cos\\theta_i+n_t\\cos\\theta_t}\\right]^2.
+      R_\perp = \left[\frac{n_i\cos\theta_i-n_t\cos\theta_t}
+                           {n_i\cos\theta_i+n_t\cos\theta_t}\right]^2.
 
     The formula for unpolarized light, written in terms of
-    :math:`\\nu_i = \\cos \\theta_i` and :math:`\\nu_t = \\cos \\theta_t` is
+    :math:`\nu_i = \cos \theta_i` and :math:`\nu_t = \cos \theta_t` is
 
     .. math::
 
-      R = \\frac{1}{2} \\left[\\frac{n_t\\nu_i-n_i\\nu_t}{n_t \\nu_i+n_i \\nu_t}\\right]^2 +
-          \\frac{1}{2} \\left[\\frac{n_i\\nu_i-n_t\\nu_t}{n_i \\nu_i+n_t \\nu_t}\\right]^2
+      R = \frac{1}{2} \left[\frac{n_t\nu_i-n_i\nu_t}{n_t \nu_i+n_i \nu_t}\right]^2 +
+          \frac{1}{2} \left[\frac{n_i\nu_i-n_t\nu_t}{n_i \nu_i+n_t \nu_t}\right]^2
 
     This formula has the advantage that no trig routines need to be called and that the
     case of normal irradiance does not cause division by zero.  Near normal incidence
@@ -194,8 +190,7 @@ def fresnel_reflection(n_i, nu_i, n_t):
 
 
 def glass(n_i, n_g, n_t, nu_i):
-    """
-    Reflection from a glass slide.
+    r"""Reflection from a glass slide.
 
     'glass' calculates the total specular reflection (i.e., including
     multiple internal reflections) based on
@@ -217,7 +212,7 @@ def glass(n_i, n_g, n_t, nu_i):
     result for the reflection from a non-absorbing glass layer (equation A2.21
     in my dissertation) in which multiple reflections are properly accounted for
 
-    .. math:: r_g = \\frac{r_1 + r_2 - 2  r_1  r_2 }{ 1 - r_1  r_2}
+    .. math:: r_g = \frac{r_1 + r_2 - 2  r_1  r_2 }{ 1 - r_1  r_2}
 
     Here :math:`r_1` is the reflection at the air-glass interface and :math:`r_2` is the
     reflection at the glass-sample interface.
@@ -252,8 +247,7 @@ def glass(n_i, n_g, n_t, nu_i):
 
 
 def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
-    """
-    Reflection and transmission of an absorbing slide.
+    r"""Reflection and transmission of an absorbing slide.
 
     Calculates the total specular reflection and transmission
     (i.e., including multiple internal reflections) based on
@@ -268,7 +262,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
     absorption.  Anyway, it is not hard to extend the result for non-absorbing slides
     to the absorbing case
 
-    .. math:: r = r_1 + \\frac{(1-r_1)^2 r_2 e^{-2b/\\nu_g}}{1 - r_1 r_2e^{-2b/\\nu_g}}
+    .. math:: r = r_1 + \frac{(1-r_1)^2 r_2 e^{-2b/\nu_g}}{1 - r_1 r_2e^{-2b/\nu_g}}
 
     Here r_1 is the reflection at the sample-glass interface and r_2 is the
     reflection at the glass-air interface and  nu_g is the cosine of the
@@ -278,7 +272,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
 
     The corresponding result for transmission is
 
-    .. math:: t = \\frac{(1-r_1)(1-r_2)e^{-b/\\nu_g}} {1 - r_1 r_2e^{-2b/\\nu_g}}
+    .. math:: t = \frac{(1-r_1)(1-r_2)e^{-b/\nu_g}} {1 - r_1 r_2e^{-2b/\nu_g}}
 
     There are two potential pitfalls in the calculation.  The first is
     when the angle of incidence exceeds the critical angle then the formula causes
@@ -322,8 +316,7 @@ def absorbing_glass_RT(n_i, n_g, n_t, nu_i, b):
 
 
 def _specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top=0, b_bot=0):
-    """
-    Unscattered reflection and transmission through a glass-slab-glass sandwich.
+    """Unscattered reflection and transmission through a glass-slab-glass sandwich.
 
     Light is incident at nu=cos(theta) from air onto a absorbing glass
     plate onto a slab resting on another absorbing glass plate before
@@ -343,10 +336,10 @@ def _specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top=0, b_bot=0):
         n_top: index of glass slide on top
         n_slab: index of the slab
         n_bot: index of glass on bottom
-        b_top: optical thickness of top slide
         b_slab: optical thickness of the slab
-        b_bot: optical thickness of the bottom slide
         nu: cosine of angle(s) in slab
+        b_top: optical thickness of top slide
+        b_bot: optical thickness of the bottom slide
     Returns
         r, t: unscattered reflectance(s) and transmission(s)
     """
@@ -393,8 +386,7 @@ def _specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top=0, b_bot=0):
 
 
 def specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top=0, b_bot=0, flip=False):
-    """
-    Unscattered refl and trans for a sample.
+    """Unscattered refl and trans for a sample.
 
     Find the reflectance to incorporate flipping of the sample.  This
     is needed when the sample is flipped between measurements.
@@ -404,10 +396,10 @@ def specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top=0, b_bot=0, flip=False):
         n_slab: index of the slab
         n_bot: index of glass on bottom
         b_slab: optical thickness of the slab
+        nu: cosine of angle(s) in slab
         b_top: optical thickness of top slide
         b_bot: optical thickness of the bottom slide
-        nu: cosine of angle(s) in slab
-        flipped: True if light hits bottom first
+        flip: True if light hits bottom first
     Returns
         r, t: unscattered reflectance(s) and transmission(s)
     """
@@ -417,37 +409,45 @@ def specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top=0, b_bot=0, flip=False):
     return _specular_rt(n_top, n_slab, n_bot, b_slab, nu, b_top, b_bot)
 
 
-def R1(ni, nt):
+def R1(n_i, n_t):
+    r"""Calculate the total diffuse reflection using the formula by Walsh.
+
+    This function computes the first moment of the Fresnel reflectance (R₁) based on
+    the analytical solution developed by Walsh. The formula used for R₁ is:
+
+    .. math::
+
+        R₁ = 1/2 + \\frac{(m-1)(3m+1)}{6(m+1)²}
+             + \\frac{m²(m²-1)²}{(m²+1)³} \\log\\left(\\frac{m-1}{m+1}\\right)
+             - \\frac{2m³(m²+2m-1)}{(m²+1)(m⁴-1)}
+             + \\frac{8m⁴(m⁴+1)}{(m²+1)(m⁴-1)²} \\log(m)
+
+    where Walsh's parameter m = n_t / n_i. This equation is valid when n_i < n_t.
+
+    If n_i > n_t, you can use the following relationship (see Egan and Hilgeman 1973):
+
+    .. math::
+
+        R(1/m) = 1 - m²[1 - R(m)]
+
+    Args:
+        n_i: The refractive index of the incident medium.
+        n_t: The refractive index of the transmitting medium.
+
+    Returns:
+        float: The calculated total diffuse reflection (R₁).
+
+    References:
+        - Walsh's analytical solution: [see Ryde 1931]
+        - Relationship for n_i > n_t: [see Egan and Hilgeman 1973]
     """
-    Total diffuse reflection.
-
-    Calculate the first moment of the Fresnel reflectance using the analytic
-    solution of Walsh.
-
-    The integral of the first moment of the Fresnel reflection (R_1)
-    has been found analytically by Walsh, [see Ryde 1931]
-
-    R_1 & = 1 / 2 + (m-1)(3m+1) / 6(m+1)**2
-            + [ m**2(m**2-1)**2 / (m**2+1)**3 ] log( m-1 / m+1) cr
-            - 2m**3 (m**2+2m-1) / (m**2+1)(m**4-1)
-            + [ 8m**4(m**4+1) / (m**2+1)(m**4-1)**2 ] log(m)
-
-    where Walsh's parameter m = n_t/n_i.    This equation is only valid when
-    n_i<n_t.  If n_i>n_t then using (see Egan and Hilgeman 1973),
-
-    1-R_1(n_i/n_t) / n_t**2 = 1-R_1(n_t/n_i) / n_i**2
-
-    or
-
-    R(1/m) = 1-m**2[1-R(m)]
-    """
-    if ni == nt:
+    if n_i == n_t:
         return 0.0
 
-    if ni < nt:
-        m = nt / ni
+    if n_i < n_t:
+        m = n_t / n_i
     else:
-        m = ni / nt
+        m = n_i / n_t
 
     m2 = m * m
     m4 = m2 * m2
@@ -460,23 +460,32 @@ def R1(ni, nt):
     r -= 2 * m * m2 * (m2 + 2 * m - 1) / (m2 + 1) / (m4 - 1)
     r += 8 * m4 * (m4 + 1) / (m2 + 1) / (m4 - 1) / (m4 - 1) * np.log(m)
 
-    if ni < nt:
+    if n_i < n_t:
         return r
 
     return 1 - (1 - r) / m2
 
 
-def diffuse_glass_R(nair, nslide, nslab):
-    """
-    Diffusion reflection from a glass slide.
+def diffuse_glass_R(n_air, n_slide, n_slab):
+    """Calculate the total diffuse specular reflection for air-glass-tissue interface.
 
-    returns the total diffuse specular reflection from the air-glass-tissue
-    interface
+    This function computes the total diffuse specular reflection from the interface
+    between air, a glass slide, and tissue. It utilizes the Fresnel reflection coefficients
+    for the air-glass and glass-tissue interfaces to computes the total diffuse reflection.
+
+    Args:
+        n_air: The refractive index of the surrounding air.
+        n_slide: The refractive index of the glass slide.
+        n_slab: The refractive index of the tissue slab.
+
+    Returns:
+        The total diffuse specular reflection coefficient.
     """
-    r_airglass = R1(nair, nslide)
-    r_glasstissue = R1(nslide, nslab)
-    rtemp = r_airglass * r_glasstissue
-    if rtemp >= 1:
+    r_airglass = R1(n_air, n_slide)
+    r_glasstissue = R1(n_slide, n_slab)
+    r_temp = r_airglass * r_glasstissue
+
+    if r_temp >= 1:
         return 1.0
 
-    return (r_airglass + r_glasstissue - 2 * rtemp) / (1 - rtemp)
+    return (r_airglass + r_glasstissue - 2 * r_temp) / (1 - r_temp)
