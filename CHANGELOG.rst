@@ -3,13 +3,14 @@ Changelog for `iadpython` package
 
 0.5.3
 ------
+* add github actions
 * add citation with zenodo DOI
 * add copyright to docs
 * add conda support
 * improve badges
-* fix doc build
 * add github auto testing
 * lint files
+* start fixing math in docstrings
 * remove tox
 
 v0.5.2
