@@ -49,7 +49,6 @@ napoleon_use_rtype = False
 
 # List of patterns, relative to source directory, of files to ignore
 exclude_patterns = ['_build',
-                    '.tox',
                     '**.ipynb_checkpoints',
                     'IAD-with-spheres.ipynb',
                     ]
