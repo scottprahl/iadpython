@@ -8,4 +8,4 @@ doi: 10.5281/zenodo.8358112
 message: If you use this software, please cite it as below.
 title: 'iadpython: a python module implementation of adding-doubling.'
 url: https://zenodo.org/badge/latestdoi/99259684
-version: 0.5.2
+version: 0.5.3
