@@ -11,8 +11,8 @@ by Scott Prahl
    :target: https://anaconda.org/conda-forge/iadpython
    :alt: conda
 
-.. image:: https://zenodo.org/badge/131667397.svg
-   :target: https://zenodo.org/badge/latestdoi/131667397
+.. image:: https://zenodo.org/badge/102148844.svg
+   :target: https://zenodo.org/badge/latestdoi/102148844
    :alt: doi
 
 |
