@@ -10,6 +10,7 @@ Changelog for `iadpython` package
 * fix doc build
 * add github auto testing
 * lint files
+* remove tox
 
 v0.5.2
 ------

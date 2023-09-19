@@ -4,7 +4,6 @@ iadpython/__pycache__/*
 iadpython/ad-simple.nb
 docs/.ipynb_checkpoints/
 iadpython.egg-info/*
-.tox/*
 dist/*
 docs/_build/*
 docs/ad-classes.graffle

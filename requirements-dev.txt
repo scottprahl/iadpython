@@ -2,7 +2,6 @@
 #
 # Test
 pytest
-tox
 #
 # Testing notebooks
 numpy

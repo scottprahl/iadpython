@@ -92,7 +92,6 @@ xtest:
 
 clean:
 	rm -rf .pytest_cache
-	rm -rf .tox
 	rm -rf __pycache__
 	rm -rf dist
 	rm -rf iadpython.egg-info
