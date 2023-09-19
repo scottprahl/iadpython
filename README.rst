@@ -25,8 +25,8 @@ by Scott Prahl
    :target: https://github.com/scottprahl/iadpython/actions/workflows/test.yml
    :alt: Testing
 
-.. image:: https://readthedocs.org/projects/iadpython2/badge
-   :target: https://iadpython2.readthedocs.io
+.. image:: https://readthedocs.org/projects/iadpython/badge
+   :target: https://iadpython.readthedocs.io
    :alt: Docs
 
 .. image:: https://img.shields.io/pypi/dm/iadpython
