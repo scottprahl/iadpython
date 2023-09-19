@@ -3,24 +3,35 @@ iadpython
 
 by Scott Prahl
 
-
-.. image:: https://img.shields.io/pypi/v/iadpython.svg
+.. image:: https://img.shields.io/pypi/v/iadpython
    :target: https://pypi.org/project/iadpython/
+   :alt: pypi
 
-.. image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: https://colab.research.google.com/github/scottprahl/iadpython/blob/master
+.. image:: https://img.shields.io/conda/v/conda-forge/iadpython.svg
+   :target: https://anaconda.org/conda-forge/iadpython
+   :alt: conda
 
-.. image:: https://img.shields.io/badge/readthedocs-latest-blue.svg
-   :target: https://iadpython.readthedocs.io
+.. image:: https://zenodo.org/badge/131667397.svg
+   :target: https://zenodo.org/badge/latestdoi/131667397
+   :alt: doi
 
-.. image:: https://img.shields.io/badge/github-code-green.svg
-   :target: https://github.com/scottprahl/iadpython
+|
 
-.. image:: https://img.shields.io/badge/BSD-license-yellow.svg
+.. image:: https://img.shields.io/github/license/scottprahl/iadpython
    :target: https://github.com/scottprahl/iadpython/blob/master/LICENSE.txt
+   :alt: License
 
 .. image:: https://github.com/scottprahl/iadpython/actions/workflows/test.yml/badge.svg
    :target: https://github.com/scottprahl/iadpython/actions/workflows/test.yml
+   :alt: Testing
+
+.. image:: https://readthedocs.org/projects/iadpython2/badge
+   :target: https://iadpython2.readthedocs.io
+   :alt: Docs
+
+.. image:: https://img.shields.io/pypi/dm/iadpython
+   :target: https://pypi.org/project/iadpython/
+   :alt: Downloads
 
 __________
 
@@ -84,9 +95,9 @@ The following will do a forward calculation::
 Installation
 ------------
 
-To install::
+Use `pip`::
 
-    pip3 install iadpython
+    pip install iadpython
 
 If you just want to do forward calculations then you're done.
 
