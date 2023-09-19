@@ -40,7 +40,7 @@ def hg_legendre(sample):
 
     Probably should generate all the Legendre polynomials one
     time and then calculate.
-    
+
     Reference:
         Wiscombe, "The Delta-M Method : Rapid Yet Accurate Radiative Flux
         Calculations for Strongly Asymmetric Phase Functions,"
