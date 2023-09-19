@@ -1,14 +1,24 @@
 Changelog for `iadpython` package
 =================================
 
-v0.5.1
+0.5.3
+------
+* add citation with zenodo DOI
+* add copyright to docs
+* add conda support
+* improve badges
+* fix doc build
+* add github auto testing
+* lint files
+
+v0.5.2
 ------
 * fix search, one-sphere round-trips now
 * fix packaging
 * fix html generation
 * linting
 
-v0.5.0
+v0.5.1
 ------
 * inverse calculation works for 0 spheres
 * much more testing
