@@ -39,12 +39,13 @@ __all__ = ('subject_reflectances',
            'all_average_reflectances',
            )
 
+
 def get_subject_data(cols):
     """
     Load and return data from a CSV file based on specified columns.
 
-    This function reads data from a CSV file located in the 'data' directory relative to the script's location.
-    It allows you to specify which columns of data to extract from the file.
+    This function reads data from a CSV file located in the 'data' directory relative
+    to the script's location and allows you to specify the columns to extract.
 
     Args:
         cols: A tuple of column indices to extract from the CSV file.
@@ -56,11 +57,6 @@ def get_subject_data(cols):
         To extract columns 1 and 2 from the CSV file, you can call the function like this:
         >>> cols_to_extract = (1, 2)
         >>> data = get_subject_data(cols_to_extract)
-
-    Note:
-        - The data file is expected to have headers with at least 8 rows of metadata before the data.
-        - The delimiter for the CSV file is assumed to be ',' (comma).
-        - The encoding of the file is assumed to be 'latin1'.
     """
     script_dir = os.path.dirname(__file__)  # Path to directory of this file
     data_file_path = os.path.join(script_dir, 'data', 'M38597.csv')
