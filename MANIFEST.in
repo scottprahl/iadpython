@@ -2,6 +2,8 @@ include CHANGELOG.rst
 include CITATION.cff
 include LICENSE.txt
 include README.rst
+include requirements.txt
+include requirements-dev.txt
 
 include iadpython/data/M38597.csv
 include tests/data/*.rxt
