@@ -12,7 +12,7 @@ jobs:
 
     environment:
       name: pypi repository
-      url: https://pypi.org/p/pypolar
+      url: https://pypi.org/p/iadpython
 
     permissions:
       id-token: write
