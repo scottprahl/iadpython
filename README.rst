@@ -95,9 +95,19 @@ The following will do a forward calculation::
 Installation
 ------------
 
-Use `pip`::
+Use ``pip``::
 
     pip install iadpython
+
+or ``conda``::
+
+    conda install -c conda-forge iadpython
+
+or use immediately by clicking the Google Colaboratory button below
+
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+  :target: https://colab.research.google.com/github/scottprahl/iadpython/blob/master
+  :alt: Colab
 
 If you just want to do forward calculations then you're done.
 
