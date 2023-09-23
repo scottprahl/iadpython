@@ -109,15 +109,14 @@ or use immediately by clicking the Google Colaboratory button below
   :target: https://colab.research.google.com/github/scottprahl/iadpython/blob/master
   :alt: Colab
 
-If you just want to do forward calculations then you're done.
+Inverse Calculations
+---------------------
 
-If you want to do inverse calculations, then you'll need to build and
-install the `libiad` library::
+As of version 0.5.3, the forward and inverse calculations work fine as long as you do not need to
+include integrating sphere effects or lost-light calculations.
 
-    git clone https://github.com/scottprahl/iad.git
-    cd iad
-    # edit Makefile as needed
-    make install-lib
+If you want to do these, then you're probably best served by downloading and compiling
+the C-code (on unix or macos) or the `.exe` file for Windows.  <https://omlc.org/software/iad/>
 
 
 Dependencies
