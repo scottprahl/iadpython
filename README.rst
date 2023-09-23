@@ -3,12 +3,16 @@ iadpython
 
 by Scott Prahl
 
-.. image:: https://img.shields.io/pypi/v/iadpython
+.. image:: https://img.shields.io/pypi/v/iadpython?color=green
    :target: https://pypi.org/project/iadpython/
    :alt: pypi
 
-.. image:: https://img.shields.io/conda/v/conda-forge/iadpython.svg
-   :target: https://anaconda.org/conda-forge/iadpython
+.. image:: https://img.shields.io/github/v/tag/scottprahl/iadpython?label=github&color=green
+   :target: https://github.com/scottprahl/iadpython
+   :alt: github
+
+.. image:: https://img.shields.io/conda/vn/conda-forge/iadpython?label=conda&color=green
+   :target: https://github.com/conda-forge/iadpython-feedstock
    :alt: conda
 
 .. image:: https://zenodo.org/badge/102148844.svg
