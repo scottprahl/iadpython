@@ -35,7 +35,7 @@ An example::
 __version__ = '0.5.3'
 __author__ = 'Scott Prahl'
 __email__ = 'scott.prahl@oit.edu'
-__copyright__ = '2018-23, Scott Prahl'
+__copyright__ = '2018-24, Scott Prahl'
 __license__ = 'MIT'
 __url__ = 'https://github.com/scottprahl/iadpython'
 
