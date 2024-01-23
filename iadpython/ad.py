@@ -47,7 +47,7 @@ class Sample():
     Attributes:
         - a: albedo
         - b: optical thickness
-        - b: physical thickness [mm]
+        - d: physical thickness [mm]
         - g: scattering anisotropy [-]
         - n: index of refraction of sample
         - n_above: index of refraction of slide above
@@ -71,7 +71,7 @@ class Sample():
         self.n_below = n_below
         self.d_above = 1  # thickness of top slide in mm
         self.d_below = 1  # thickness of bot slide in mm
-        self.nu_0 = 1.0
+        self._nu_0 = 1.0
         self.b_above = 0
         self.b_below = 0
         self._quad_pts = quad_pts
@@ -90,6 +90,21 @@ class Sample():
     def n(self, value):
         """When index is changed quadrature becomes invalid."""
         if value != self._n:
+            self.nu = None
+            self.twonuw = None
+            self.hp = None
+            self.hm = None
+            self._n = value
+
+    @property
+    def nu_0(self):
+        """Getter property for index of refraction."""
+        return self._nu_0
+
+    @nu_0.setter
+    def nu_0(self, value):
+        """When index is changed quadrature becomes invalid."""
+        if value != self._nu_0:
             self.nu = None
             self.twonuw = None
             self.hp = None
