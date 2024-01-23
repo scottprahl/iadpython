@@ -34,9 +34,9 @@ lint:
 	-pylint tests_iadc/test_iadc.py
 	-pylint tests_iadc/test_performance.py
 
-xpylint:
+lintc:
 	-pylint iadpython/iadc.py
-	-pylint tests/test_iadc.py
+	-pylint tests_iadc/test_iadc.py
 	
 doccheck:
 	-pydocstyle --convention=google iadpython/ad.py
@@ -66,8 +66,8 @@ doccheck:
 	-pydocstyle tests_iadc/test_iadc.py
 	-pydocstyle tests_iadc/test_performance.py
 
-xpydoc:
-	-pydocstyle iadpython/iadc.py
+doccheckc:
+	-pydocstyle --convention=google iadpython/iadc.py
 	-pydocstyle tests/test_iadc.py
 
 notecheck:
@@ -85,10 +85,26 @@ rcheck:
 	make notecheck
 
 test:
-	pytest tests
+	pytest --verbose tests/test_boundary.py
+	pytest --verbose tests/test_combo.py
+	pytest --verbose tests/test_fresnel.py
+	pytest --verbose tests/test_grid.py
+	pytest --verbose tests/test_iad.py
+	pytest --verbose tests/test_layer.py
+	pytest --verbose tests/test_layers.py
+	pytest --verbose tests/test_nist.py
+	pytest --verbose tests/test_one_sphere.py
+	pytest --verbose tests/test_quadrature.py
+	pytest --verbose tests/test_redistribution.py
+	pytest --verbose tests/test_rxt.py
+	pytest --verbose tests/test_sphere.py
+	pytest --verbose tests/test_start.py
+	pytest --verbose tests/test_ur1_uru.py
+	pytest --verbose tests/test_all_notebooks.py
 
-xtest:
-	pytest tests_iadc
+testc:
+	pytest --verbose tests_iadc/test_iadc.py
+	pytest --verbose tests_iadc/test_performance.py
 
 clean:
 	rm -rf .pytest_cache
