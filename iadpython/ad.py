@@ -24,6 +24,11 @@ import iadpython.start
 import iadpython.combine
 
 
+def stringify(form, x):
+    if x is None:
+        return 'None'
+    return form % x
+
 class Sample():
     """Container class for details of a sample.
 
@@ -143,14 +148,20 @@ class Sample():
 
     def mu_a(self):
         """Absorption coefficient for the sample."""
+        if self.a is None or self.b is None or self.d is None:
+            return None
         return (1 - self.a) * self.b / self.d
 
     def mu_s(self):
         """Scattering coefficient for the sample."""
+        if self.a is None or self.b is None or self.d is None:
+            return None
         return self.a * self.b / self.d
 
     def mu_sp(self):
         """Reduced scattering coefficient for the sample."""
+        if self.a is None or self.b is None or self.d is None or self.g is None:
+            return None
         return (1 - self.g) * self.a * self.b / self.d
 
     def nu_c(self):
@@ -182,25 +193,25 @@ class Sample():
     def __str__(self):
         """Return basic details as a string for printing."""
         s = "Intrinsic Properties\n"
-        s += "   albedo            = %.3f\n" % self.a
-        s += "   optical thickness = %.3f\n" % self.b
-        s += "   anisotropy        = %.3f\n" % self.g
-        s += "   thickness         = %.3f mm\n" % self.d
-        s += "   sample index      = %.3f\n" % self.n
-        s += "   top slide index   = %.3f\n" % self.n_above
+        s += "   albedo            = %s\n" % stringify("%.3f", self.a)
+        s += "   optical thickness = %s\n" % stringify("%.3f", self.b)
+        s += "   anisotropy        = %s\n" % stringify("%.3f", self.g)
+        s += "   thickness         = %s mm\n" % stringify("%.3f", self.d)
+        s += "   sample index      = %s\n" % stringify("%.3f", self.n)
+        s += "   top slide index   = %s\n" % stringify("%.3f", self.n_above)
         if self.b_above != 0:
-            s += "   top slide OD      = %.3f\n" % self.b_above
-        s += "   bottom slide index= %.3f\n" % self.n_below
+            s += "   top slide OD      = %s\n" % stringify("%.3f", self.b_above)
+        s += "   bottom slide index= %s\n" % stringify("%.3f", self.n_below)
         if self.b_below != 0:
-            s += "   bottom slide OD   = %.3f\n" % self.b_below
-        s += " cos(theta incident) = %.3f\n" % self.nu_0
+            s += "   bottom slide OD   = %s\n" % stringify("%.3f", self.b_below)
+        s += " cos(theta incident) = %s\n" % stringify("%.3f", self.nu_0)
         s += "   quadrature points = %d\n" % self.quad_pts
 
         s += "\n"
         s += "Derived quantities\n"
-        s += "   mu_a              = %.3f 1/mm\n" % self.mu_a()
-        s += "   mu_s              = %.3f 1/mm\n" % self.mu_s()
-        s += "   mu_s*(1-g)        = %.3f 1/mm\n" % self.mu_sp()
+        s += "   mu_a              = %s 1/mm\n" % stringify("%.3f", self.mu_a())
+        s += "   mu_s              = %s 1/mm\n" % stringify("%.3f", self.mu_s())
+        s += "   mu_s*(1-g)        = %s 1/mm\n" % stringify("%.3f", self.mu_sp())
         s += "      theta incident = %.1f°\n" % np.degrees(np.arccos(self.nu_0))
         s += " cos(theta critical) = %.4f\n" % self.nu_c()
         s += "      theta critical = %.1f°\n" % np.degrees(np.arccos(self.nu_c()))
