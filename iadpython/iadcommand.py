@@ -1,6 +1,10 @@
+#!/usr/bin/env python3
+
 # pylint: disable=line-too-long
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-branches
+# pylint: disable=too-many-return-statements
+# pylint: disable=global-statement
 
 import sys
 from enum import Enum
@@ -11,6 +15,7 @@ import iadpython
 
 # Global COUNTER to mimic static behavior in C
 COUNTER = 0
+ANY_ERROR = False
 
 class SlidePosition(Enum):
     """All the combinations of glass and sample."""
@@ -64,18 +69,18 @@ def validator_positive(value):
 arg_specs = [
     {"flags": ["-1"], "dest": "r_sphere", "nargs": 5, "type": float, "help": "Five numbers separated by spaces"},
     {"flags": ["-2"], "dest": "t_sphere", "nargs": 5, "type": float, "help": "Five numbers separated by spaces"},
-    {"flags": ["-a"], "type": validator_01, "help": "Use this albedo"},
-    {"flags": ["-A"], "type": validator_positive, "help": "Use this absorption coefficient"},
-    {"flags": ["-b"], "type": validator_positive, "help": "Use this optical thickness"},
-    {"flags": ["-B"], "type": validator_positive, "help": "Beam diameter"},
-    {"flags": ["-c"], "type": validator_01, "help": "Fraction of unscattered refl in MR"},
-    {"flags": ["-C"], "type": validator_01, "help": "Fraction of unscattered trans in MT"},
-    {"flags": ["-d"], "type": validator_positive, "help": "Thickness of sample"},
-    {"flags": ["-D"], "type": validator_positive, "help": "Thickness of slide"},
-    {"flags": ["-e"], "type": float, "default": 0.0001, "help": "Error tolerance (default 0.0001)"},
-    {"flags": ["-E"], "type": validator_positive, "help": "Optical depth (=mua*D) for slides"},
-    {"flags": ["-f"], "type": validator_01, "help": "Fraction 0.0-1.0 of light to hit sphere wall first"},
-    {"flags": ["-F"], "type": validator_positive, "help": "Use this scattering coefficient"},
+    {"flags": ["-a", "--albedo"], "dest": "albedo", "type": validator_01, "help": "Use this albedo"},
+    {"flags": ["-A", "--mua"], "dest": "mua", "type": validator_positive, "help": "Use this absorption coefficient"},
+    {"flags": ["-b"], "dest": "b", "type": validator_positive, "help": "Use this optical thickness"},
+    {"flags": ["-B", "--diameter"], "dest": "diameter", "type": validator_positive, "help": "Beam diameter"},
+    {"flags": ["-c"], "dest": "f_r", "type": validator_01, "help": "Fraction of unscattered refl in MR"},
+    {"flags": ["-C"], "dest": "f_t", "type": validator_01, "help": "Fraction of unscattered trans in MT"},
+    {"flags": ["-d"], "dest": "thickness", "type": validator_positive, "help": "Thickness of sample"},
+    {"flags": ["-D"], "dest": "slide_thickness", "type": validator_positive, "help": "Thickness of slide"},
+    {"flags": ["-e"], "dest": "error", "type": float, "default": 0.0001, "help": "Error tolerance (default 0.0001)"},
+    {"flags": ["-E"], "dest": "E", "type": validator_positive, "help": "Optical depth (=mua*D) for slides"},
+    {"flags": ["-f"], "dest": "f_wall", "type": validator_01, "help": "Fraction 0.0-1.0 of light to hit sphere wall first"},
+    {"flags": ["-F", "--mus"], "dest": "mus", "type": validator_positive, "help": "Use this scattering coefficient"},
     {"flags": ["-g"], "type": validator_11, "default": 0, "help": "Scattering anisotropy (default 0)"},
     {"flags": ["-G"], "type": str, "choices": ['0', '2', 't', 'b', 'n', 'f'], "help": "Type of boundary "},
     {"flags": ["-i"], "type": float, "help": "Light incident at this angle in degrees"},
@@ -86,29 +91,33 @@ arg_specs = [
     {"flags": ["-p"], "type": int, "help": "# of Monte Carlo photons (default 100000)"},
     {"flags": ["-q"], "type": int, "default": 8, "help": "Number of quadrature points (default=8)"},
     {"flags": ["-r"], "type": validator_01, "help": "Total reflection measurement"},
-    {"flags": ["-R"], "type": validator_01, "help": "Actual reflectance for 100% measurement"},
+    {"flags": ["-R"], "type": validator_01, "help": "Actual reflectance for 100%% measurement"},
     {"flags": ["-S"], "type": int, "choices": [0, 1, 2], "help": "Number of spheres used"},
     {"flags": ["-t"], "type": validator_01, "help": "Total transmission measurement"},
-    {"flags": ["-T"], "type": validator_01, "help": "Actual transmission for 100% measurement"},
+    {"flags": ["-T"], "type": validator_01, "help": "Actual transmission for 100%% measurement"},
     {"flags": ["-u"], "type": validator_01, "help": "Unscattered transmission measurement"},
-    {"flags": ["-v"], "action": "store_true", "help": "Version information"},
-    {"flags": ["-V"], "type": int, "choices": [0, 1, 2], "help": "Verbosity level"},
+    {"flags": ["-v", "--version"], "action": 'version', 'version': "iadp " + iadpython.__version__, "help": "short version"},
+    {"flags": ["-V"], "action": "store_true", "help": "long version"},
+    {"flags": ["--verbosity"], "type": int, "choices": [0, 1, 2], "help": "Verbosity level"},
     {"flags": ["-x"], "type": int, "help": "Set debugging level"},
     {"flags": ["-X"], "action": "store_true", "help": "Dual beam configuration"},
     {"flags": ["-z"], "action": "store_true", "help": "Do forward calculation"},
-    {"flags": ["filename"], "help": "Input filename"}
+    {"flags": ["filename"], "nargs": "?", "type": str, "default": None, "help": "Input filename"}
 ]
 
-def print_version():
+def print_long_version():
     """Print the version information and quit."""
-    print("iadpython version:", iadpython.__version__)
-    print("Author:", iadpython.__author__, "-", iadpython.__email__)
-    print("Copyright:", iadpython.__copyright__)
-    print("License:", iadpython.__license__)
-    print("URL:", iadpython.__url__)
-    print("\nForward and inverse adding-doubling radiative transport calculations.")
-    print("Extensive documentation is at <https://iadpython.readthedocs.io>\n")
+    s = ''
+    s += "    version: " + iadpython.__version__ + "\n"
+    s += "    Author: " + iadpython.__author__ + "\n"
+    s += "    Copyright: " + iadpython.__copyright__ + "\n"
+    s += "    License: " + iadpython.__license__ + "\n"
+    s += "    URL:" + iadpython.__url__ + "\n"
+    s += "\n    Forward and inverse adding-doubling radiative transport calculations.\n"
+    s += "    Extensive documentation is at <https://iadpython.readthedocs.io>\n"
+    print(s)
     sys.exit(0)
+    
 
 def example_text():
     """return a string with some command-line examples."""
@@ -161,13 +170,14 @@ def what_char(err):
         return '!'
     return '?'
 
-def print_dot(start_time, err, points, final, verbosity, any_error):
+def print_dot(start_time, err, points, final, verbosity):
     """Print a character for each datapoint during analysis."""
     global COUNTER
+    global ANY_ERROR
     COUNTER += 1
 
     if err != InputError.NO_ERROR:
-        any_error = err
+        ANY_ERROR = err
 
     if verbosity == 0:
         return
@@ -189,12 +199,12 @@ def print_dot(start_time, err, points, final, verbosity, any_error):
 
 def add_sample_constraints(exp, args):
     """Command-line constraints on sample."""
-    if args.d is not None:
-        exp.sample.d = args.d
+    if args.thickness is not None:
+        exp.sample.d = args.thickness
 
-    if args.D is not None:
-        exp.sample.d_above = args.D
-        exp.sample.d_below = args.D
+    if args.slide_thickness is not None:
+        exp.sample.d_above = args.slide_thickness
+        exp.sample.d_below = args.slide_thickness
 
     if args.E is not None:
         exp.sample.b_above = args.E
@@ -254,8 +264,8 @@ def add_experiment_constraints(exp, args):
     if args.t_sphere is not None:
         exp.r_sphere = args.t_sphere
 
-    if args.B is not None:
-        exp.d_beam = args.B
+    if args.diameter is not None:
+        exp.d_beam = args.diameter
 
     if args.r is not None:
         exp.m_r = args.r
@@ -269,8 +279,8 @@ def add_experiment_constraints(exp, args):
 def add_analysis_constraints(exp, args):
     """Add command line constraints on analysis."""
     # constraints on analysis
-    if args.a is not None:
-        exp.default_a = args.a
+    if args.albedo is not None:
+        exp.default_a = args.albedo
 
     if args.b is not None:
         exp.default_b = args.b
@@ -278,28 +288,74 @@ def add_analysis_constraints(exp, args):
     if args.g is not None:
         exp.default_g = args.g
 
-    if args.A is not None:
-        exp.default_mua = args.A
+    if args.mua is not None:
+        exp.default_mua = args.mua
 
-    if args.F is not None:
-        exp.default_mua = args.F
+    if args.mus is not None:
+        exp.default_mus = args.mus
 
-    if args.c is not None:
-        exp.fraction_of_rc_in_mr = args.c
+    if args.f_r is not None:
+        exp.fraction_of_rc_in_mr = args.f_r
 
-    if args.C is not None:
-        exp.fraction_of_tc_in_mt = args.C
-
-    if args.F is not None:
-        pass
+    if args.f_t is not None:
+        exp.fraction_of_tc_in_mt = args.f_t
 
     if args.M is not None:
         # MC iterations
         pass
 
-    if args.P is not None:
+    if args.p is not None:
         # photons
         pass
+
+def forward_calculation(exp):
+    """Do a forward calculation."""
+
+# set up albedo
+    if exp.default_a is None:
+        if exp.default_mus is None:
+            exp.sample.a = 0
+        elif exp.default_mua is None:
+            exp.sample.a = 1
+        else:
+            exp.sample.a = exp.default_mus / (exp.default_mua + exp.default_mus)
+    else:
+        exp.sample.a = exp.default_a
+        
+# set up optical thickness
+    if exp.default_b is None:
+        if exp.sample.d is None:
+            exp.sample.b = Inf
+        elif exp.sample.a == 0:
+            if exp.default_mua is None:
+                exp.sample.b = Inf
+            else:
+                exp.sample.b = exp.default_mua * exp.sample.d
+        elif exp.default_mus is None:
+            exp.sample.b = Inf
+        else:
+            exp.sample.b = exp.default_muas/exp.sample.a * exp.sample.d
+    else:
+        exp.sample.b = exp.default_b
+
+    if exp.default_g is None:
+        exp.sample.g = 0
+    else:
+        exp.sample.g = exp.default_g
+
+    print(exp.sample)
+
+    r, t = exp.sample.rt()
+    print(r, t)
+
+#     	Calculate_MR_MT(m, r, MC_iterations, &m_r, &m_t);
+# 		Calculate_Mua_Musp(m, r,&mu_sp,&mu_a);
+# 		if (cl_verbosity>0) {
+# 			Write_Header (m, r, -1);
+# 			print_results_header(stdout);
+# 		}
+# 		print_optical_property_result(stdout,m,r,m_r,m_t,mu_a,mu_sp,0,0);
+
 
 def main():
     """Main command-line interface."""
@@ -309,18 +365,16 @@ def main():
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog=example_text())
 
-    parser = argparse.ArgumentParser(
-        description="This script processes data. Here's how you can use it.",
-        epilog="Example usage: script.py -a 123 -b 'input.txt'"
-    )
-
     for spec in arg_specs:
         parser.add_argument(*spec.pop("flags"), **spec)
     args = parser.parse_args()
 
+    if args.V:
+        print_long_version()
+
     # If there is a file then read it, otherwise create a blank experiment
     if args.filename:
-        exp = iadpython.read_iad_input(args.filename)
+        exp = iadpython.read_rxt(args.filename)
     else:
         exp = iadpython.Experiment()
 
@@ -329,13 +383,11 @@ def main():
     add_experiment_constraints(exp, args)
     add_analysis_constraints(exp, args)
 
-    if args.z is not None:
-        r, t = exp.sample.rt()
-        print(r, t)
-        print(t)
+    if args.z:
+        forward_calculation(exp)
 
     else:
-        a, b, g = exp.invert()
+        a, b, g = exp.invert_rt()
         print(a, b, g)
 
 if __name__ == "__main__":
