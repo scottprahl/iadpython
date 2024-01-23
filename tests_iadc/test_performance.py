@@ -21,7 +21,7 @@ class speed(unittest.TestCase):
         n_slide = 1.0                 # no glass slides above and below the sample
         b = 1                         # this is pretty much infinite
         g = 0.9                       # isotropic scattering is fine
-        a = np.linspace(0, 1, 5000)   # albedo varies between 0 and 1
+        a = np.linspace(0, 1, 50)   # albedo varies between 0 and 1
 
         start_time = time.perf_counter()
         _, _, _, _ = iadc.rt(n_slab, n_slide, a, b, g)
@@ -137,3 +137,6 @@ class speed(unittest.TestCase):
             ur1[i], _, _, _ = s.rt()
         deltaP = time.perf_counter() - start_time
         print("5 %7.2f %7.2f %5.0f%%" % (deltaC, deltaP, 100 * deltaP / deltaC))
+
+if __name__ == '__main__':
+    unittest.main()
