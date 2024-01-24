@@ -325,16 +325,16 @@ def forward_calculation(exp):
     # set optical thickness
     if exp.default_b is None:
         if exp.sample.d is None:
-            exp.sample.b = Inf
+            exp.sample.b = float('inf')
         elif exp.sample.a == 0:
             if exp.default_mua is None:
-                exp.sample.b = Inf
+                exp.sample.b = float('inf')
             else:
                 exp.sample.b = exp.default_mua * exp.sample.d
         elif exp.default_mus is None:
-            exp.sample.b = Inf
+            exp.sample.b = float('inf')
         else:
-            exp.sample.b = exp.default_muas/exp.sample.a * exp.sample.d
+            exp.sample.b = exp.default_mus/exp.sample.a * exp.sample.d
     else:
         exp.sample.b = exp.default_b
 
@@ -365,7 +365,10 @@ def main():
                                      epilog=example_text())
 
     for spec in arg_specs:
-        parser.add_argument(*spec.pop("flags"), **spec)
+        flags = spec["flags"]
+        other_args = {k: v for k, v in spec.items() if k != "flags"}
+        parser.add_argument(*flags, **other_args)
+
     args = parser.parse_args()
 
     if args.V:
