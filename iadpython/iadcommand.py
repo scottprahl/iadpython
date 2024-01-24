@@ -44,6 +44,72 @@ class InputError(Enum):
     MU_TOO_SMALL = 7
     TOO_MUCH_LIGHT = 8
 
+
+def print_error_legend():
+    """Print error explanation and quit."""
+    print("----------------- Sorry, but ... errors encountered ---------------")
+    print("   *  ==> Success          ")
+    print("  0-9 ==> Monte Carlo Iteration")
+    print("   R  ==> M_R is too big   ")
+    print("   r  ==> M_R is too small")
+    print("   T  ==> M_T is too big   ")
+    print("   t  ==> M_T is too small")
+    print("   U  ==> M_U is too big   ")
+    print("   u  ==> M_U is too small")
+    print("   !  ==> M_R + M_T > 1    ")
+    print("   +  ==> Did not converge\n")
+    sys.exit(0)
+
+def what_char(err):
+    """Return appropriate character for analysis of current datapoint."""
+    if err == InputError.NO_ERROR:
+        return '*'
+    if err == InputError.TOO_MANY_ITERATIONS:
+        return '+'
+    if err == InputError.MR_TOO_BIG:
+        return 'R'
+    if err == InputError.MR_TOO_SMALL:
+        return 'r'
+    if err == InputError.MT_TOO_BIG:
+        return 'T'
+    if err == InputError.MT_TOO_SMALL:
+        return 't'
+    if err == InputError.MU_TOO_BIG:
+        return 'U'
+    if err == InputError.MU_TOO_SMALL:
+        return 'u'
+    if err == InputError.TOO_MUCH_LIGHT:
+        return '!'
+    return '?'
+
+def print_dot(start_time, err, points, final, verbosity):
+    """Print a character for each datapoint during analysis."""
+    global COUNTER
+    global ANY_ERROR
+    COUNTER += 1
+
+    if err != InputError.NO_ERROR:
+        ANY_ERROR = err
+
+    if verbosity == 0:
+        return
+
+    if final == 99:
+        print(what_char(err), end='')
+    else:
+        COUNTER -= 1
+        print(f"{final % 10}\b", end='')
+
+    if final == 99:
+        if COUNTER % 50 == 0:
+            rate = (time.time() - start_time) / points
+            print(f"  {points} done ({rate:.2f} s/pt)")
+        elif COUNTER % 10 == 0:
+            print(" ", end='')
+
+    sys.stdout.flush()
+
+
 def validator_01(value):
     """Is value between 0 and 1."""
     fvalue = float(value)
@@ -132,71 +198,6 @@ def example_text():
     s += "  iad -o out file.rxt       Calculated values in out\n"
     s += "  iad -r 0.3                R_total=0.\n"
     return s
-
-def print_error_legend():
-    """Print error explanation and quit."""
-    print("----------------- Sorry, but ... errors encountered ---------------")
-    print("   *  ==> Success          ")
-    print("  0-9 ==> Monte Carlo Iteration")
-    print("   R  ==> M_R is too big   ")
-    print("   r  ==> M_R is too small")
-    print("   T  ==> M_T is too big   ")
-    print("   t  ==> M_T is too small")
-    print("   U  ==> M_U is too big   ")
-    print("   u  ==> M_U is too small")
-    print("   !  ==> M_R + M_T > 1    ")
-    print("   +  ==> Did not converge\n")
-    sys.exit(0)
-
-def what_char(err):
-    """Return appropriate character for analysis of current datapoint."""
-    if err == InputError.NO_ERROR:
-        return '*'
-    if err == InputError.TOO_MANY_ITERATIONS:
-        return '+'
-    if err == InputError.MR_TOO_BIG:
-        return 'R'
-    if err == InputError.MR_TOO_SMALL:
-        return 'r'
-    if err == InputError.MT_TOO_BIG:
-        return 'T'
-    if err == InputError.MT_TOO_SMALL:
-        return 't'
-    if err == InputError.MU_TOO_BIG:
-        return 'U'
-    if err == InputError.MU_TOO_SMALL:
-        return 'u'
-    if err == InputError.TOO_MUCH_LIGHT:
-        return '!'
-    return '?'
-
-def print_dot(start_time, err, points, final, verbosity):
-    """Print a character for each datapoint during analysis."""
-    global COUNTER
-    global ANY_ERROR
-    COUNTER += 1
-
-    if err != InputError.NO_ERROR:
-        ANY_ERROR = err
-
-    if verbosity == 0:
-        return
-
-    if final == 99:
-        print(what_char(err), end='')
-    else:
-        COUNTER -= 1
-        print(f"{final % 10}\b", end='')
-
-    if final == 99:
-        if COUNTER % 50 == 0:
-            rate = (time.time() - start_time) / points
-            print(f"  {points} done ({rate:.2f} s/pt)")
-        elif COUNTER % 10 == 0:
-            print(" ", end='')
-
-    sys.stdout.flush()
-
 def add_sample_constraints(exp, args):
     """Command-line constraints on sample."""
     if args.thickness is not None:
@@ -310,8 +311,7 @@ def add_analysis_constraints(exp, args):
 
 def forward_calculation(exp):
     """Do a forward calculation."""
-
-# set up albedo
+    # set albedo
     if exp.default_a is None:
         if exp.default_mus is None:
             exp.sample.a = 0
@@ -322,7 +322,7 @@ def forward_calculation(exp):
     else:
         exp.sample.a = exp.default_a
         
-# set up optical thickness
+    # set optical thickness
     if exp.default_b is None:
         if exp.sample.d is None:
             exp.sample.b = Inf
@@ -338,6 +338,7 @@ def forward_calculation(exp):
     else:
         exp.sample.b = exp.default_b
 
+    # set scattering anisotropy
     if exp.default_g is None:
         exp.sample.g = 0
     else:
@@ -345,17 +346,15 @@ def forward_calculation(exp):
 
     print(exp.sample)
 
-    r, t = exp.sample.rt()
-    print(r, t)
-
-#     	Calculate_MR_MT(m, r, MC_iterations, &m_r, &m_t);
-# 		Calculate_Mua_Musp(m, r,&mu_sp,&mu_a);
-# 		if (cl_verbosity>0) {
-# 			Write_Header (m, r, -1);
-# 			print_results_header(stdout);
-# 		}
-# 		print_optical_property_result(stdout,m,r,m_r,m_t,mu_a,mu_sp,0,0);
-
+    ur1, ut1, uru, utu = exp.sample.rt()
+    ru, tu = exp.sample.unscattered_rt()
+    print("Calculated quantities")
+    print("   R total         = %.3f" % ur1)
+    print("   R scattered     = %.3f" % (ur1 - ru))
+    print("   R unscattered   = %.3f" % ru)
+    print("   T total         = %.3f" % ut1)
+    print("   R scattered     = %.3f" % (ut1 - tu))
+    print("   T unscattered   = %.3f" % tu)
 
 def main():
     """Main command-line interface."""
@@ -385,10 +384,11 @@ def main():
 
     if args.z:
         forward_calculation(exp)
-
     else:
         a, b, g = exp.invert_rt()
-        print(a, b, g)
+        print("   a = %.3f" % a)
+        print("   b = %.3f" % b)
+        print("   g = %.3f" % g)
 
 if __name__ == "__main__":
     main()
