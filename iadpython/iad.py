@@ -26,6 +26,7 @@ Example::
     >>> print("g = %7.3f" % g)
 """
 
+import sys
 import copy
 import numpy as np
 import scipy.optimize
@@ -84,6 +85,7 @@ class Experiment():
         self.error = 1
         self.num_measurements = 0
         self.grid = None
+        self.counter = 0
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -296,6 +298,14 @@ class Experiment():
 
         return self.sample.a, self.sample.b, self.sample.g
 
+    def print_dot(self):
+        """Print a character for each datapoint during analysis."""
+        self.counter += 1
+        if self.counter % 50 == 0:
+            print(file=sys.stderr)
+        print('.', end='', file=sys.stderr)
+        sys.stderr.flush()
+
     def invert_rt(self):
         """Find a,b,g for experimental measurements.
 
@@ -338,7 +348,9 @@ class Experiment():
             if self.m_u is not None:
                 x.m_u = self.m_u[i]
             a[i], b[i], g[i] = x.invert_scalar_rt()
+            self.print_dot()
 
+        print(file=sys.stderr)
         return a, b, g
 
     def what_is_b(self):

@@ -6,6 +6,7 @@
 # pylint: disable=too-many-return-statements
 # pylint: disable=global-statement
 
+import os
 import sys
 from enum import Enum
 import argparse
@@ -43,7 +44,6 @@ class InputError(Enum):
     MU_TOO_BIG = 6
     MU_TOO_SMALL = 7
     TOO_MUCH_LIGHT = 8
-
 
 def print_error_legend():
     """Print error explanation and quit."""
@@ -112,29 +112,40 @@ def print_dot(start_time, err, points, final, verbosity):
 
 def validator_01(value):
     """Is value between 0 and 1."""
-    fvalue = float(value)
+    try:
+        fvalue = float(value)
+    except argparse.ArgumentTypeError:
+        raise argparse.ArgumentTypeError(f"Commandline: {value} is not a valid number")
     if not 0 <= fvalue <= 1:
-        raise ValueError(argparse.ArgumentTypeError(f"{value} is not between 0 and 1"))
+        raise argparse.ArgumentTypeError(f"Commandline: {value} is not between 0 and 1")
     return fvalue
 
 def validator_11(value):
     """Is value between -1 and 1."""
-    fvalue = float(value)
+    try:
+        fvalue = float(value)
+    except argparse.ArgumentTypeError:
+        raise argparse.ArgumentTypeError(f"{value} is not a valid number")
     if not -1 <= fvalue <= 1:
-        raise ValueError(argparse.ArgumentTypeError(f"{value} is not between 0 and 1"))
+        raise argparse.ArgumentTypeError(f"Commandline: {value} is not between 0 and 1")
     return fvalue
 
 def validator_positive(value):
     """Is value non-negative."""
-    fvalue = float(value)
+    try:
+        fvalue = float(value)
+    except argparse.ArgumentTypeError:
+        raise argparse.ArgumentTypeError(f"Commandline: {value} is not a valid number")
     if fvalue < 0:
-        raise ValueError(argparse.ArgumentTypeError(f"{value} is not positive"))
+        raise argparse.ArgumentTypeError(f"{value} is not positive")
     return fvalue
 
 # Argument specifications
 arg_specs = [
-    {"flags": ["-1"], "dest": "r_sphere", "nargs": 5, "type": float, "help": "Five numbers separated by spaces"},
-    {"flags": ["-2"], "dest": "t_sphere", "nargs": 5, "type": float, "help": "Five numbers separated by spaces"},
+    {"flags": ["-1"], "dest": "r_sphere", "metavar": ("SPHERE_D", "SAMPLE_D", "ENTRANCE_D", "DETECTOR_D", "WALL_R"),
+     "nargs": 5, "type": float, "help": "Reflection sphere parameters"},
+    {"flags": ["-2"], "dest": "t_sphere", "metavar": ("SPHERE_D", "SAMPLE_D", "ENTRANCE_D", "DETECTOR_D", "WALL_R"),
+     "nargs": 5, "type": float, "help": "Transmission sphere parameters"},
     {"flags": ["-a", "--albedo"], "dest": "albedo", "type": validator_01, "help": "Use this albedo"},
     {"flags": ["-A", "--mua"], "dest": "mua", "type": validator_positive, "help": "Use this absorption coefficient"},
     {"flags": ["-b"], "dest": "b", "type": validator_positive, "help": "Use this optical thickness"},
@@ -147,13 +158,13 @@ arg_specs = [
     {"flags": ["-E"], "dest": "E", "type": validator_positive, "help": "Optical depth (=mua*D) for slides"},
     {"flags": ["-f"], "dest": "f_wall", "type": validator_01, "help": "Fraction 0.0-1.0 of light to hit sphere wall first"},
     {"flags": ["-F", "--mus"], "dest": "mus", "type": validator_positive, "help": "Use this scattering coefficient"},
-    {"flags": ["-g"], "type": validator_11, "default": 0, "help": "Scattering anisotropy (default 0)"},
+    {"flags": ["-g"], "type": validator_11, "help": "Scattering anisotropy"},
     {"flags": ["-G"], "type": str, "choices": ['0', '2', 't', 'b', 'n', 'f'], "help": "Type of boundary "},
     {"flags": ["-i"], "type": float, "help": "Light incident at this angle in degrees"},
     {"flags": ["-M"], "type": int, "help": "Number of Monte Carlo iterations"},
-    {"flags": ["-n"], "type": validator_positive, "help": "Index of refraction of slab"},
-    {"flags": ["-N"], "type": validator_positive, "help": "Index of refraction of slides"},
-    {"flags": ["-o"], "type": str, "help": "Filename for output"},
+    {"flags": ["-n", "--nslab"], "dest": "nslab", "type": validator_positive, "help": "Index of refraction of slab"},
+    {"flags": ["-N", "--nslide"], "dest": "nslide", "type": validator_positive, "help": "Index of refraction of slides"},
+    {"flags": ["-o"], "dest": "out_fname", "type": str, "help": "Filename for output"},
     {"flags": ["-p"], "type": int, "help": "# of Monte Carlo photons (default 100000)"},
     {"flags": ["-q"], "type": int, "default": 8, "help": "Number of quadrature points (default=8)"},
     {"flags": ["-r"], "type": validator_01, "help": "Total reflection measurement"},
@@ -183,7 +194,7 @@ def print_long_version():
     s += "    Extensive documentation is at <https://iadpython.readthedocs.io>\n"
     print(s)
     sys.exit(0)
-    
+
 
 def example_text():
     """return a string with some command-line examples."""
@@ -198,6 +209,7 @@ def example_text():
     s += "  iad -o out file.rxt       Calculated values in out\n"
     s += "  iad -r 0.3                R_total=0.\n"
     return s
+
 def add_sample_constraints(exp, args):
     """Command-line constraints on sample."""
     if args.thickness is not None:
@@ -211,47 +223,47 @@ def add_sample_constraints(exp, args):
         exp.sample.b_above = args.E
         exp.sample.b_below = args.E
 
-    if args.n is not None:
-        exp.sample.n = args.n
+    if args.nslab is not None:
+        exp.sample.n = args.nslab
 
-    if args.N is not None:
-        exp.sample.n_above = args.N
-        exp.sample.n_below = args.N
+    if args.nslide is not None:
+        exp.sample.n_above = args.nslide
+        exp.sample.n_below = args.nslide
 
     if args.G is not None:
-        if args.N is None:
-            raise ValueError('Cannot use -G without also specifing slide index with -N')
+        if args.nslide is None:
+            raise argparse.ArgumentTypeError('Commandline: Cannot use -G without also specifing slide index with -N')
         if args.G == 0:
             exp.sample.n_above = 1
             exp.sample.n_below = 1
         elif args.G == 't':
-            exp.sample.n_above = args.N
+            exp.sample.n_above = args.nslide
             exp.sample.n_below = 1
         elif args.G == 'b':
             exp.sample.n_above = 1
-            exp.sample.n_below = args.N
+            exp.sample.n_below = args.nslide
         elif args.G == 2:
-            exp.sample.n_above = args.N
-            exp.sample.n_below = args.N
+            exp.sample.n_above = args.nslide
+            exp.sample.n_below = args.nslide
         elif args.G == 'n':
             exp.flip_sample = True
-            exp.sample.n_above = args.N
+            exp.sample.n_above = args.nslide
             exp.sample.n_below = 1
         else:  # must be 'f'
             exp.flip_sample = True
             exp.sample.n_above = 1
-            exp.sample.n_below = args.N
+            exp.sample.n_below = args.nslide
 
     if args.i is not None:
         if abs(args.i) > 90:
-            raise ValueError('bad argument to -i, value must be between -90 and 90')
+            raise argparse.ArgumentTypeError('Commandline: Bad argument to -i, value must be between -90 and 90')
         exp.sample.nu_0 = np.cos(np.radians(args.i))
 
     if args.q is not None:
         if args.q % 4:
-            raise ValueError('Number of quadrature points must be a multiple of 4')
+            raise argparse.ArgumentTypeError('Commandline: Number of quadrature points must be a multiple of 4')
         if exp.sample.nu_0 !=1 and args.q % 12:
-            raise ValueError('Quadrature must be 12, 24, 36,... for oblique incidence')
+            raise argparse.ArgumentTypeError('Commandline: Quadrature must be 12, 24, 36,... for oblique incidence')
         exp.sample.quad_pts = args.q
 
 def add_experiment_constraints(exp, args):
@@ -321,7 +333,7 @@ def forward_calculation(exp):
             exp.sample.a = exp.default_mus / (exp.default_mua + exp.default_mus)
     else:
         exp.sample.a = exp.default_a
-        
+
     # set optical thickness
     if exp.default_b is None:
         if exp.sample.d is None:
@@ -355,43 +367,79 @@ def forward_calculation(exp):
     print("   T total         = %.3f" % ut1)
     print("   R scattered     = %.3f" % (ut1 - tu))
     print("   T unscattered   = %.3f" % tu)
+    sys.exit(0)
+
+def redirect_output(args):
+    """Redirect output as needed."""
+    if args.out_fname is None:
+        root, ext = os.path.splitext(args.filename)
+        if ext == ".rxt":
+            args.out_fname = root + '.txt'
+        else:
+            args.out_fname = args.filename + '.txt'
+    sys.stdout = open(args.out_fname, 'w')
+
+def invert_file(exp, args):
+    """Process an entire .rxt file."""
+    redirect_output(args)
+    print(exp)
+
+    a, b, g = exp.invert_rt()
+    print("   a = %.3f" % a)
+    print("   b = %.3f" % b)
+    print("   g = %.3f" % g)
+
+    sys.stdout.close()
+    sys.stdout = sys.__stdout__
+    sys.exit(0)
 
 def main():
     """Main command-line interface."""
-
-    # Initialize the parser and parse options
     parser = argparse.ArgumentParser(description='iad command line program',
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog=example_text())
-
     for spec in arg_specs:
         flags = spec["flags"]
         other_args = {k: v for k, v in spec.items() if k != "flags"}
         parser.add_argument(*flags, **other_args)
 
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
 
-    if args.V:
-        print_long_version()
+        if args.V:
+            print_long_version()
 
-    # If there is a file then read it, otherwise create a blank experiment
-    if args.filename:
-        exp = iadpython.read_rxt(args.filename)
-    else:
-        exp = iadpython.Experiment()
+        # If there is a file then read it, otherwise create a blank experiment
+        if args.filename:
+            exp = iadpython.read_rxt(args.filename)
+        else:
+            exp = iadpython.Experiment()
 
-    # update the search to include the command line constraints
-    add_sample_constraints(exp, args)
-    add_experiment_constraints(exp, args)
-    add_analysis_constraints(exp, args)
+        # update the search to include the command line constraints
+        add_sample_constraints(exp, args)
+        add_experiment_constraints(exp, args)
+        add_analysis_constraints(exp, args)
 
-    if args.z:
-        forward_calculation(exp)
-    else:
+        if args.z:
+            forward_calculation(exp)
+
+        if args.filename:
+            invert_file(exp, args)
+
+        print(exp)
+        if (exp.m_r is None) and (exp.m_t is None) and (exp.m_u is None):
+            raise argparse.ArgumentTypeError("Commandline: One measurement needed or use '-z' for forward calc.")
+
+        # invert parameters specified on the commandline
         a, b, g = exp.invert_rt()
         print("   a = %.3f" % a)
         print("   b = %.3f" % b)
         print("   g = %.3f" % g)
+        sys.exit(0)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
