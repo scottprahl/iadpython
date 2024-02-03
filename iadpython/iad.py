@@ -86,6 +86,7 @@ class Experiment():
         self.num_measurements = 0
         self.grid = None
         self.counter = 0
+        self.include_measurements=True
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -100,31 +101,32 @@ class Experiment():
         if self.t_sphere is not None:
             s += "Transmission Sphere--------\n"
             s += self.t_sphere.__str__()
-        s += "\n------------- Measurements ------------\n"
 
-        s += "   Reflection               = "
-        if self.m_r is None:
-            s += "Missing\n"
-        elif np.isscalar(self.m_r):
-            s += "%.5f\n" % self.m_r
-        else:
-            s += "%s\n" % self.m_r.__str__()
+        if self.include_measurements:
+            s += "\n------------- Measurements ------------\n"
+            s += "   Reflection               = "
+            if self.m_r is None:
+                s += "Missing\n"
+            elif np.isscalar(self.m_r):
+                s += "%.5f\n" % self.m_r
+            else:
+                s += "%s\n" % self.m_r.__str__()
 
-        s += "   Transmission             = "
-        if self.m_t is None:
-            s += "Missing\n"
-        elif np.isscalar(self.m_r):
-            s += "%.5f\n" % self.m_t
-        else:
-            s += "%s\n" % self.m_t.__str__()
+            s += "   Transmission             = "
+            if self.m_t is None:
+                s += "Missing\n"
+            elif np.isscalar(self.m_r):
+                s += "%.5f\n" % self.m_t
+            else:
+                s += "%s\n" % self.m_t.__str__()
 
-        s += "   Unscattered Transmission = "
-        if self.m_u is None:
-            s += "Missing\n"
-        elif np.isscalar(self.m_r):
-            s += "%.5f\n" % self.m_u
-        else:
-            s += "%s\n" % self.m_u.__str__()
+            s += "   Unscattered Transmission = "
+            if self.m_u is None:
+                s += "Missing\n"
+            elif np.isscalar(self.m_r):
+                s += "%.5f\n" % self.m_u
+            else:
+                s += "%s\n" % self.m_u.__str__()
         return s
 
     def check_measurements(self):
@@ -278,11 +280,11 @@ class Experiment():
             if self.grid.is_stale(grid_constant):
                 self.grid.calc(self, grid_constant)
             a, b, g = self.grid.min_abg(self.m_r, self.m_t)
-#            print('grid constant %8.5f' % grid_constant)
+            print('grid constant %8.5f' % grid_constant)
 
-#            print('grid start a=%8.5f' % a)
-#            print('grid start b=%8.5f' % b)
-#            print('grid start g=%8.5f' % g)
+            print('grid start a=%8.5f' % a)
+            print('grid start b=%8.5f' % b)
+            print('grid start g=%8.5f' % g)
 
         if self.search == 'find_ab':
             x = scipy.optimize.Bounds(np.array([0, 0]), np.array([1, np.inf]))
@@ -513,6 +515,7 @@ def abfun(x, *args):
     exp.sample.b = x[1]
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    print("%7.4f %7.4f %7.4f %7.4f %7.4f"%(exp.sample.a, exp.sample.b, m_r, m_t, delta))
     return delta
 
 
