@@ -5,6 +5,8 @@
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-return-statements
 # pylint: disable=global-statement
+# pylint: disable=consider-using-f-string
+# pylint: disable=consider-using-with
 
 import os
 import sys
@@ -114,8 +116,8 @@ def validator_01(value):
     """Is value between 0 and 1."""
     try:
         fvalue = float(value)
-    except argparse.ArgumentTypeError:
-        raise argparse.ArgumentTypeError(f"Commandline: {value} is not a valid number")
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"Commandline: {value} is not a valid number") from exc
     if not 0 <= fvalue <= 1:
         raise argparse.ArgumentTypeError(f"Commandline: {value} is not between 0 and 1")
     return fvalue
@@ -124,8 +126,8 @@ def validator_11(value):
     """Is value between -1 and 1."""
     try:
         fvalue = float(value)
-    except argparse.ArgumentTypeError:
-        raise argparse.ArgumentTypeError(f"{value} is not a valid number")
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"{value} is not a valid number") from exc
     if not -1 <= fvalue <= 1:
         raise argparse.ArgumentTypeError(f"Commandline: {value} is not between 0 and 1")
     return fvalue
@@ -134,8 +136,8 @@ def validator_positive(value):
     """Is value non-negative."""
     try:
         fvalue = float(value)
-    except argparse.ArgumentTypeError:
-        raise argparse.ArgumentTypeError(f"Commandline: {value} is not a valid number")
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"Commandline: {value} is not a valid number") from exc
     if fvalue < 0:
         raise argparse.ArgumentTypeError(f"{value} is not positive")
     return fvalue
@@ -369,28 +371,74 @@ def forward_calculation(exp):
     print("   T unscattered   = %.3f" % tu)
     sys.exit(0)
 
-def redirect_output(args):
-    """Redirect output as needed."""
+def print_results_header(debug_lost_light=False):
+    """Print the header for results to stdout."""
+    print("#     \tMeasured \t   M_R   \tMeasured \t   M_T   \tEstimated\tEstimated\tEstimated", end='')
+    if debug_lost_light:
+        print("\t  Lost   \t  Lost   \t  Lost   \t  Lost   \t   MC    \t   IAD   \t  Error  ", end='')
+    print()
+
+    print("##wave\t   M_R   \t   fit   \t   M_T   \t   fit   \t  mu_a   \t  mu_s'  \t    g    ", end='')
+    if debug_lost_light:
+        print("\t   UR1   \t   URU   \t   UT1   \t   UTU   \t    #    \t    #    \t  State  ", end='')
+    print()
+
+    print("# [nm]\t  [---]  \t  [---]  \t  [---]  \t  [---]  \t  1/mm   \t  1/mm   \t  [---]  ", end='')
+    if debug_lost_light:
+        print("\t  [---]  \t  [---]  \t  [---]  \t  [---]  \t  [---]  \t  [---]  \t  [---]  ", end='')
+    print()
+
+def invert_file(exp, args):
+    """Process an entire .rxt file."""
+    # determine output file name
     if args.out_fname is None:
         root, ext = os.path.splitext(args.filename)
         if ext == ".rxt":
             args.out_fname = root + '.txt'
         else:
             args.out_fname = args.filename + '.txt'
-    sys.stdout = open(args.out_fname, 'w')
 
-def invert_file(exp, args):
-    """Process an entire .rxt file."""
-    redirect_output(args)
-    print(exp)
+    original_stdout = sys.stdout
+    try:
+        sys.stdout = open(args.out_fname, 'w', encoding='utf-8')
 
-    a, b, g = exp.invert_rt()
-    print("   a = %.3f" % a)
-    print("   b = %.3f" % b)
-    print("   g = %.3f" % g)
+        a, b, g = exp.invert_rt()
 
-    sys.stdout.close()
-    sys.stdout = sys.__stdout__
+        print_results_header()
+        for i in range(len(a)):
+            exp.sample.a = a[i]
+            exp.sample.b = b[i]
+            exp.sample.g = g[i]
+
+            mr, mt = exp.measured_rt()
+
+            if exp.lambda0:
+                print("%6.1f" % exp.lambda0[i], end='\t')
+            else:
+                print("%6d" % i, end='\t')
+
+            if exp.m_r is not None:
+                print("% 9.4f" % exp.m_r[i], end='\t')
+            else:
+                print("% 9.4f" % 0, end='\t')
+            print("% 9.4f" % mr, end='\t')
+
+            if exp.m_t is not None:
+                print("% 9.4f" % exp.m_t[i], end='\t')
+            else:
+                print("% 9.4f" % 0, end='\t')
+
+            print("% 9.4f" % mt, end='\t')
+
+#            print("% 9.4f" % exp.sample.a, end='\t')
+#            print("% 9.4f" % exp.sample.b, end='\t')
+            print("% 9.4f" % exp.sample.mu_a(), end='\t')
+            print("% 9.4f" % exp.sample.mu_sp(), end='\t')
+            print("% 9.4f" % exp.sample.g, end='\t')
+            print()
+    finally:
+        sys.stdout.close()
+        sys.stdout = original_stdout
     sys.exit(0)
 
 def main():
