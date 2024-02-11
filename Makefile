@@ -120,6 +120,7 @@ clean:
 	rm -rf docs/.ipynb_checkpoints
 	rm -rf tests/__pycache__
 	rm -rf tests/tests_iadc/__pycache__
+	rm -rf tests/data/*txt
 
 realclean:
 	make clean
