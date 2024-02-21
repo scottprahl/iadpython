@@ -19,6 +19,8 @@ lint:
 	-pylint iadpython/redistribution.py
 	-pylint iadpython/rxt.py
 	-pylint iadpython/sphere.py
+	-pylint iadpython/port.py
+	-pylint iadpython/mc_sphere.py
 	-pylint iadpython/start.py
 	-pylint tests/test_boundary.py
 	-pylint tests/test_combo.py
@@ -50,6 +52,8 @@ doccheck:
 	-pydocstyle --convention=google iadpython/redistribution.py
 	-pydocstyle --convention=google iadpython/rxt.py
 	-pydocstyle --convention=google iadpython/sphere.py
+	-pydocstyle --convention=google iadpython/port.py
+	-pydocstyle --convention=google iadpython/mc_sphere.py
 	-pydocstyle --convention=google iadpython/start.py
 	-pydocstyle tests/test_boundary.py
 	-pydocstyle tests/test_combo.py
@@ -63,6 +67,7 @@ doccheck:
 	-pydocstyle tests/test_start.py
 	-pydocstyle tests/test_ur1_uru.py
 	-pydocstyle tests/test_nist.py
+	-pydocstyle tests/test_port.py
 	-pydocstyle tests_iadc/test_iadc.py
 	-pydocstyle tests_iadc/test_performance.py
 
@@ -89,7 +94,6 @@ test:
 	pytest --verbose tests/test_combo.py
 	pytest --verbose tests/test_fresnel.py
 	pytest --verbose tests/test_grid.py
-	pytest --verbose tests/test_iad.py
 	pytest --verbose tests/test_layer.py
 	pytest --verbose tests/test_layers.py
 	pytest --verbose tests/test_nist.py
@@ -98,8 +102,10 @@ test:
 	pytest --verbose tests/test_redistribution.py
 	pytest --verbose tests/test_rxt.py
 	pytest --verbose tests/test_sphere.py
+	pytest --verbose tests/test_port.py
 	pytest --verbose tests/test_start.py
 	pytest --verbose tests/test_ur1_uru.py
+	pytest --verbose tests/test_iad.py
 	pytest --verbose tests/test_all_notebooks.py
 
 testc:

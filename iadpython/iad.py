@@ -399,7 +399,7 @@ class Experiment():
 
         .. math:: P_d'= a_d' t_{direct} r_w' (1-a_e') P ⋅ G'(r_s)
 
-        when the entrance port in the transmission sphere is closed,
+        when the empty port in the transmission sphere is closed,
         :math:`a_e'=0`.
 
         The normalized sphere measurements are

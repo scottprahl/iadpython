@@ -4,236 +4,206 @@
 # pylint: disable=consider-using-f-string
 # pylint: disable=line-too-long
 
-"""Class for managing integrating spheres.
+"""
+Class for managing integrating spheres.
 
-Example::
+This module contains the Sphere class, designed to simulate and analyze the
+behavior of light within an integrating sphere. An integrating sphere is a
+device used in optical measurements, which allows for the uniform scattering
+of light. It is commonly used for reflection and transmission measurements
+of materials.
 
+The Sphere class models the geometrical and optical properties of an
+integrating sphere, enabling the calculation of various parameters such as
+the areas of spherical caps given port diameters, relative port areas,
+and the gain caused by reflections within the sphere. It supports different
+measurements scenarios by adjusting port diameters, detector reflectivity,
+wall reflectivity, and using a reflectance standard.
+
+Attributes:
+    d_sphere (float): Diameter of the integrating sphere in millimeters.
+    d_sample (float): Diameter of the port that holds the sample.
+    d_empty (float): Diameter of the empty port.
+    d_detector (float): Diameter of the port with the detector.
+    r_detector (float): Reflectivity of the detector.
+    r_wall (float): Reflectivity of the sphere's internal wall.
+    r_std (float): Reflectivity of the standard used for calibration.
+
+Methods:
+    cap_area: actual area of a spherical cap for a port
+    relative_cap_area: relative area of spherical cap to the sphere's area.
+    gain: sphere gain relative to a black sphere
+    multiplier: multiplier for wall power due to sphere
+
+Example usage:
     >>> import iadpython
     >>> s = iadpython.Sphere(250,20)
     >>> print(s)
+
+    >>> s = iadpython.Sphere(200, 20, d_empty=10, d_detector=10, r_detector=0.8, r_wall=0.99, r_std=0.99)
+    >>> print(sphere)
+    >>> area_sample = sphere.cap_area(sphere.d_sample)
+    >>> print(f"Sample port area: {area_sample:.2f} mm²")
 """
 
+import random
 import numpy as np
+import iadpython
+
+def uniform_disk():
+    """
+    Generate a point uniformly distributed on a unit disk.
+
+    This function generates and returns a point (x, y) that is uniformly distributed
+    over the area of a unit disk centered at the origin (0, 0). The unit disk is
+    defined as the set of all points (x, y) such that x^2 + y^2 <= 1. The method
+    uses rejection sampling, where random points are generated within the square
+    that bounds the unit disk, and only points that fall within the disk are accepted.
+
+    Returns:
+        tuple of (float, float, float): A point (x, y) where x and y are the
+        coordinates of the point uniformly distributed within the unit disk,
+        and s is the square of the distance from the origin to this point.
+    """
+    s = 2
+    while s > 1:
+        x = 2 * random.random() - 1
+        y = 2 * random.random() - 1
+        s = x*x + y*y
+    return x, y, s
 
 
 class Sphere():
     """Container class for an integrating sphere.
+    
+    For a reflection measurement, the empty port is the diameter of through
+    which the light enters to hit the sample.  For a transmission measurement
+    this is the port that might allow unscattered transmission to leave. In
+    either case, the reflectance from this port is assumed to be zero.
+    
+    By default, the sample port is on top (z=-R), the empty port is on the bottom (z=R)
+    and the detector is on the side (x=R)
 
     Attributes:
-        - d_sphere: diameter of integrating sphere [mm]
-        - d_sample: diameter of the sample port [mm]
-        - d_entrance: diameter of the port that light enters the sphere [mm]
-        - d_detector: diameter of the detector port [mm]
-        - r_detector: reflectivity of the detector
+        - d: diameter of integrating sphere [mm]
         - r_wall: reflectivity of the wall
+        - a_wall: fraction of the sphere that is walls (relative
         - r_std: reflectivity of the standard used with the sphere
+        - sample: port object representing sample port
+        - empty: port object representing empty port
+        - detector: port object representing detector port
+        - x: x-coordinate of photon on wall
+        - y: y-coordinate of photon on wall
+        - z: z-coordinate of photon on wall
 
     Example::
 
         >>> import iadpython as iad
         >>> s = iad.Sphere(200, 20)
         >>> print(s)
-
     """
 
-    def __init__(self, d_sphere, d_sample, d_entrance=0,
+    def __init__(self, d_sphere, d_sample, d_empty=0,
                  d_detector=0, r_detector=0, r_wall=0.99, r_std=0.99):
-        """Object initialization."""
-        self._d_sphere = d_sphere
-        self._d_sample = d_sample
-        self._d_entrance = d_entrance
-        self._d_detector = d_detector
-
-        self.a_sample = self.relative_cap_area(d_sample)
-        self.a_detector = self.relative_cap_area(d_detector)
-        self.a_entrance = self.relative_cap_area(d_entrance)
-        self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-        self.r_detector = r_detector
+        self._d = d_sphere
         self._r_wall = r_wall
         self._r_std = r_std
-
-    def cap_area(self, d_port):
-        """Calculate area of spherical cap."""
-        R = self.d_sphere / 2
-        r = d_port / 2
-        h = R - np.sqrt(R**2 - r**2)
-        return 2 * np.pi * R * h
-
-    def approx_relative_cap_area(self, d_port):
-        """Calculate approx relative area of spherical cap."""
-        R = self.d_sphere / 2
-        r = d_port / 2
-        return r**2 / (4 * R**2)
-
-    def relative_cap_area(self, d_port):
-        """Calculate relative area of spherical cap."""
-#        R = self.d_sphere/2
-#        r = d_port/2
-#        h = R - np.sqrt(R**2-r**2)
-#        return 2*np.pi*R*h / (4*np.pi*R**2)
-        h = (self.d_sphere - np.sqrt(self.d_sphere**2 - d_port**2)) / 2
-        return h / self.d_sphere
+        R = d_sphere/2
+        self.sample = iadpython.Port(self, d_sample, x=0, y=0, z=-R)
+        self.detector = iadpython.Port(self, d_detector, uru=r_detector, x=R, y=0, z=0)
+        self.empty = iadpython.Port(self, d_empty, uru=0, x=0, y=0, z=R)
+        self._a_wall = 1 - self.sample.a - self.empty.a - self.detector.a
+        self.x = 0
+        self.y = 0
+        self.z = 0
+        self.baffle = False
+        self.weight = 0
 
     def __str__(self):
         """Return basic details as a string for printing."""
         s = ""
-        s += "Sphere diameter = %.1f mm\n" % self._d_sphere
-        s += "Port diameters\n"
-        s += "         sample = %.1f mm\n" % self._d_sample
-        s += "       entrance = %.1f mm\n" % self._d_entrance
-        s += "       detector = %.1f mm\n" % self._d_detector
-        s += "Fractional areas of sphere\n"
-        s += "          walls = %.5f\n" % self.a_wall
-        s += "         sample = %.5f\n" % self.a_sample
-        s += "       entrance = %.5f\n" % self.a_entrance
-        s += "       detector = %.5f\n" % self.a_detector
-        s += "Diffuse reflectivities\n"
-        s += "          walls = %.1f%%\n" % (self.r_wall * 100)
-        s += "       detector = %.1f%%\n" % (self.r_detector * 100)
-        s += "       standard = %.1f%%\n" % (self.r_std * 100)
-        s += "Gain\n"
-        s += "        nothing = %.1f\n" % self.multiplier(0, 0)
-        s += "       standard = %.1f\n" % self.multiplier(self.r_std, self.r_std)
+        s += "Sphere\n"
+        s += "        diameter = %7.2f mm\n" % self.d
+        s += "          radius = %7.2f mm\n" % (self.d/2)
+        s += "   relative area = %7.4f\n" % self.a_wall
+        s += "       uru walls = %7.1f%%\n" % (self.r_wall * 100)
+        s += "    uru standard = %7.1f%%\n" % (self.r_std * 100)
+        s += "          baffle = %s\n" % self.baffle
+        s += "Sample Port\n" + str(self.sample)
+        s += "Detector Port\n" + str(self.detector)
+        s += "Empty Port\n" + str(self.empty)
+        s += "Multipliers\n"
+        s += "        nothing = %7.3f\n" % self.multiplier(0, 0)
+        s += "       standard = %7.3f\n" % self.multiplier(self.r_std, self.r_std)
+        s += "Monte Carlo\n"
+        s += "       location = (%6.1f, %6.1f, %6.1f) mm\n" % (self.x, self.y, self.z)
+        s += "         weight = %7.3f\n" % self.weight
         return s
 
-    def gain(self, URU, r_wall=None):
-        r"""Determine the gain relative to a black sphere.
-
-        If the walls of the sphere are black then the light falling on the
-        detector is the diffuse light entering the sphere divided by the
-        surface area on the sphere (P/A).
-
-        If the walls are perfectly white (and ports are perfectly absorbing)
-        then all the entering light exits through the ports. (P/A_ports)
-
-        The gain caused by 0% reflecting sphere walls (no port refl) is
-
-        .. math:: \mbox{gain} = \frac{(P/A)}{(P/A)} = 1
-
-        The gain caused by 100% reflecting sphere walls (no port refl) is
-
-        .. math:: \mbox{gain} = \frac{(P/A_ports)}{(P/A)} = \frac{A_total}{A_ports}
-
-        Args:
-            URU: reflectance from sample port for diffuse light
-            r_wall: wall reflectance
-        Returns:
-            gain on detector caused by bounces inside sphere
+    def multiplier(self, UX1=None, URU=None):
         """
-        if r_wall is None:
-            r_wall = self.r_wall
+        Determine detected light in a sphere.
 
-        tmp = self.a_detector * self.r_detector + self.a_sample * URU
-        tmp = r_wall * (self._a_wall + (1 - self.a_entrance) * tmp)
-#         if tmp == 1.0:
-#             G = np.inf
-#         else:
-#             G = 1.0 + tmp / (1.0 - tmp)
-#        print(URU, 1 - stmp)
-        return 1 - tmp
+        The idea here is that UX1 is the diffuse light entering the sphere.  This 
+        might be diffuse light reflected by the sample or diffuse light transmitted
+        through the sample.  
 
-    def multiplier(self, UR1=None, URU=None, r_wall=None):
-        """Determine the average reflectance of a sphere.
+        We assume that the sample is characterized by the reflection and tranmission
+        for collimated normally incident light (UR1 and UT1) and by the reflection 
+        and transmission for diffuse incident light (URU and UTU).
 
-        The idea here is that UR1 is the reflection of the incident light
-        for the first bounce.  Three cases come to mind
+        There are four common cases
 
-        1. If the light hits the sample first, then UR1 should be
-        the sample reflectance for collimated illumination.
+        1. For a reflection experiment, `UX1=UR1` and `URU=URU`
 
-        2. If light hits the sphere wall first, then UR1 should be the wall
-        reflectance.
+        2. For a transmission experiment, `UX1=UT1` and `URU=URU`
 
-        3. If light is enters the sphere completely diffuse then UR1=1
+        3. If light hits the sphere wall first, then `UX1=r_wall`
 
-        As defined by LabSphere, "Technical Guide: integrating Sphere Theory
-        and application" using equation 14
+        4. If light is enters the sphere completely diffuse then `UX1=1`
+
+        This matches LabSphere, "Technical Guide: integrating Sphere Theory
+        and application" using equation 14 for case 3
 
         Args:
-            UR1: sample reflectance for normal collimated irradiance
+            UX1: diffuse light entering the sphere
             URU: sample reflectance for diffuse irradiance
-            r_wall: wall reflectance
         Returns:
             sphere multiplier
         """
-        if r_wall is None:
-            r_wall = self._r_wall
-
-        if UR1 is None:
-            UR1 = r_wall
+        if UX1 is None:
+            UX1 = self.r_wall
 
         if URU is None:
-            URU = UR1
+            URU = UX1
 
         denom = 1
-        denom -= self._a_wall * r_wall
-        denom -= self.a_sample * URU
-        denom -= self.a_detector * self.r_detector
+        denom -= self._a_wall * self.r_wall
+        denom -= self.sample.a * URU
+        denom -= self.detector.a * self.detector.uru
 
         if np.isscalar(denom):
-            if denom < 1e-8:
-                m = np.inf
+            if denom > 1e-8:
+                m = UX1 * self._a_wall / denom
             else:
-                m = UR1 / denom
+                m = np.inf
         else:
-            m = np.where(denom > 1e-8, UR1 / denom, np.inf)
+            m = np.where(denom > 1e-8, UX1 * self._a_wall / denom, np.inf)
         return m
 
     @property
-    def d_sphere(self):
+    def d(self):
         """Getter property for sphere diameter."""
-        return self._d_sphere
+        return self._d
 
-    @d_sphere.setter
-    def d_sphere(self, value):
+    @d.setter
+    def d(self, value):
         """When size is changed ratios become invalid."""
-        assert self.d_sample <= value, "sphere must be bigger than sample port"
-        assert self.d_entrance <= value, "sphere must be bigger than entrance port"
-        assert self.d_detector <= value, "sphere must be bigger than detector port"
-        self._d_sphere = value
-        self.a_sample = self.relative_cap_area(self._d_sample)
-        self.a_detector = self.relative_cap_area(self._d_detector)
-        self.a_entrance = self.relative_cap_area(self._d_entrance)
-        self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-
-    @property
-    def d_sample(self):
-        """Getter property for sample port diameter."""
-        return self._d_sample
-
-    @d_sample.setter
-    def d_sample(self, value):
-        """When size is changed ratios become invalid."""
-        assert 0 <= value <= self._d_sphere, "sample port must be between 0 and sphere diameter"
-        self._d_sample = value
-        self.a_sample = self.relative_cap_area(value)
-        self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-
-    @property
-    def d_entrance(self):
-        """Getter property for entrance port diameter."""
-        return self._d_entrance
-
-    @d_entrance.setter
-    def d_entrance(self, value):
-        """When size is changed ratios become invalid."""
-        assert 0 <= value <= self._d_sphere, "entrance port must be between 0 and sphere diameter"
-        self._d_entrance = value
-        self.a_entrance = self.relative_cap_area(value)
-        self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
-
-    @property
-    def d_detector(self):
-        """Getter property for detector port diameter."""
-        return self._d_detector
-
-    @d_detector.setter
-    def d_detector(self, value):
-        """When size is changed ratios become invalid."""
-        assert 0 <= value <= self._d_sphere, "detector port must be between 0 and sphere diameter"
-        self._d_detector = value
-        self.a_detector = self.relative_cap_area(value)
-        self._a_wall = 1 - self.a_sample - self.a_entrance - self.a_detector
+        assert self.sample.d <= value, "sphere must be bigger than sample port"
+        assert self.empty.d <= value, "sphere must be bigger than empty port"
+        assert self.detector.d <= value, "sphere must be bigger than detector port"
+        self._d = value
+        self._a_wall = 1 - self.sample.a - self.empty.a - self.detector.a
 
     @property
     def a_wall(self):
@@ -246,13 +216,10 @@ class Sphere():
         assert 0 <= value <= 1, "relative wall are must be between 0 and 1"
         # Find the diameter of a spherical cap assuming all non-wall
         # port area is assigned to a single sample port
-        self._d_sample = 2 * self._d_sphere * np.sqrt(value - value**2)
-        self._d_entrance = 0
-        self._d_detector = 0
-        self.a_entrance = 0
-        self.a_detector = 0
+        self.sample.d = 2 * self._d * np.sqrt(value - value**2)
+        self.empty.d = 0
+        self.detector.d = 0
         self._a_wall = value
-        self.a_sample = 1 - value
 
     @property
     def r_std(self):
@@ -283,6 +250,82 @@ class Sphere():
             assert 0 <= value.all() <= 1, "Reflectivity of standard must be between 0 and 1"
         self._r_wall = value
 
+    def uniform(self):
+        """
+        Generate a point uniformly distributed on the surface of a sphere.
+    
+        This function returns a point that is uniformly distributed over the surface
+        of a sphere with a specified radius. It utilizes the method described in
+        "Choosing a Point from the Surface of a Sphere" by George Marsaglia (1972),
+        which is an efficient algorithm for generating such points using a transformation
+        from points uniformly distributed on a unit disk.
+    
+        Returns:
+            A numpy array of the coordinates (x, y, z) of a random point on the sphere's surface.
+        """
+        ux, uy, s = uniform_disk()
+        root = 2 * np.sqrt(1-s)
+        return np.array([ux * root, uy * root, 1 - 2 * s]) * self.d/2
+
+    def do_one_photon(self):
+        """Bounce photon inside sphere until it leaves."""
+        bounces = 0
+        detected = 0
+
+        # assume photon launched form sample
+        weight = 1
+        last_location = PortType.SAMPLE
+
+        while weight > 1e-4:
+
+            self.x, self.y, self.z = self.uniform()
+
+            if self.detector.hit():
+                if last_location == PortType.DETECTOR:   # avoid hitting self
+                    continue
+                if last_location == PortType.SAMPLE and self.baffle: # sample --> detector prohibited
+                    continue
+
+                # record detected light and update weight
+                transmitted = weight * (1-self.r_detector)
+                detected += transmitted
+                weight -= transmitted
+                last_location = PortType.DETECTOR
+
+            elif self.sample.hit():
+                if last_location == PortType.SAMPLE:    # avoid hitting self
+                    continue
+                if last_location == PortType.DETECTOR and self.baffle: # detector --> sample prohibited
+                    continue
+                weight *= self.r_sample
+                last_location = PortType.SAMPLE
+
+            elif self.empty.hit():
+                weight = 0
+                last_location = PortType.EMPTY
+
+            else:
+                # must have hit wall
+                weight *= self.r_wall
+                last_location = PortType.WALL
+
+            bounces +=1
+
+        return detected, bounces
+        
+    def do_N_photons(self):
+        
+        total_detected = 0
+        total_bounces = 0
+        
+        for i in range(N):
+            detected, bounces = self.do_one_photon()
+            total_detected += detected
+            total_bounces += bounces
+        
+        print("average detected = %.5f" % (total_detected/N))
+        print("average bounces  = %.5f" % (total_bounces/N))
+                
 
 def Gain_11(RS, TS, URU, tdiffuse):
     r"""Net gain for on detector in reflection sphere for two sphere configuration.
@@ -301,7 +344,7 @@ def Gain_11(RS, TS, URU, tdiffuse):
     G = RS.gain(URU)
     GP = TS.gain(URU)
 
-    areas = RS.a_sample * TS.a_sample * (1 - RS.a_entrance) * (1 - TS.a_entrance)
+    areas = RS.a_sample * TS.a_sample * (1 - RS.a_empty) * (1 - TS.a_empty)
     G11 = G / (1 - areas * RS.r_wall * TS.r_wall * G * GP * tdiffuse**2)
     return G11
 
@@ -319,7 +362,7 @@ def Gain_22(RS, TS, URU, tdiffuse):
     G = RS.gain(URU)
     GP = TS.gain(URU)
 
-    areas = RS.a_sample * TS.a_sample * (1 - RS.a_entrance) * (1 - TS.a_entrance)
+    areas = RS.a_sample * TS.a_sample * (1 - RS.a_empty) * (1 - TS.a_empty)
     G22 = GP / (1 - areas * RS.r_wall * TS.r_wall * G * GP * tdiffuse**2)
     return G22
 
@@ -357,10 +400,10 @@ def Two_Sphere_R(RS, TS, UR1, URU, UT1, UTU, f=0):
     GP = TS.gain(URU)
     G11 = Gain_11(RS, TS, URU, UTU)
 
-    x = RS.a_detector * (1 - RS.a_entrance) * RS.r_wall * G11
+    x = RS.a_detector * (1 - RS.a_empty) * RS.r_wall * G11
     p1 = (1 - f) * UR1
     p2 = RS.r_wall * f
-    p3 = (1 - f) * TS.a_sample * (1 - TS.a_entrance) * TS.r_wall * UT1 * UTU * GP
+    p3 = (1 - f) * TS.a_sample * (1 - TS.a_empty) * TS.r_wall * UT1 * UTU * GP
     return x * (p1 + p2 + p3)
 
 
@@ -387,7 +430,7 @@ def Two_Sphere_T(RS, TS, UR1, URU, UT1, UTU, f=0):
     G = RS.gain(URU)
     G22 = Gain_11(RS, TS, URU, UTU)
 
-    x = TS.a_detector * (1 - TS.a_entrance) * TS.r_wall * G22
-    x *= (1 - f) * UT1 + (1 - RS.a_entrance) * RS.r_wall * \
+    x = TS.a_detector * (1 - TS.a_empty) * TS.r_wall * G22
+    x *= (1 - f) * UT1 + (1 - RS.a_empty) * RS.r_wall * \
         RS.a_sample * UTU * (f * RS.r_wall + (1 - f) * UR1) * G
     return x

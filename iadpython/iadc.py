@@ -785,7 +785,7 @@ class CSphere():
         """Initialize class."""
         self.d_sphere = 8.0 * 25.4
         self.d_sample = 1.0 * 25.4
-        self.d_entrance = 1.0 * 25.4
+        self.d_empty = 1.0 * 25.4
         self.d_detector = 0.5 * 25.4
         self.refl_wall = 0.98
         self.refl_detector = 0.05
@@ -794,14 +794,14 @@ class CSphere():
         """Initialize with an array."""
         self.d_sphere = a[0]
         self.d_sample = a[1]
-        self.d_entrance = a[2]
+        self.d_empty = a[2]
         self.d_detector = a[3]
         self.refl_wall = a[4]
         self.refl_detector = a[5]
 
     def as_array(self):
         """Representation class as an array."""
-        return [self.d_sphere, self.d_sample, self.d_entrance,
+        return [self.d_sphere, self.d_sample, self.d_empty,
                 self.d_detector, self.refl_wall, self.refl_detector]
 
     def as_c_array(self):
@@ -814,7 +814,7 @@ class CSphere():
         s = ""
         s += "sphere diameter        = %.1f mm\n" % self.d_sphere
         s += "sample port diameter   = %.1f mm\n" % self.d_sample
-        s += "entrance port diameter = %.1f mm\n" % self.d_entrance
+        s += "empty port diameter = %.1f mm\n" % self.d_empty
         s += "detector port diameter = %.1f mm\n" % self.d_detector
         s += "wall reflectivity      = %.3f\n" % self.refl_wall
         s += "detector reflectivity  = %.3f" % self.refl_detector
