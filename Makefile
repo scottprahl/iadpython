@@ -20,7 +20,6 @@ lint:
 	-pylint iadpython/rxt.py
 	-pylint iadpython/sphere.py
 	-pylint iadpython/port.py
-	-pylint iadpython/mc_sphere.py
 	-pylint iadpython/start.py
 	-pylint tests/test_boundary.py
 	-pylint tests/test_combo.py
@@ -53,7 +52,6 @@ doccheck:
 	-pydocstyle --convention=google iadpython/rxt.py
 	-pydocstyle --convention=google iadpython/sphere.py
 	-pydocstyle --convention=google iadpython/port.py
-	-pydocstyle --convention=google iadpython/mc_sphere.py
 	-pydocstyle --convention=google iadpython/start.py
 	-pydocstyle tests/test_boundary.py
 	-pydocstyle tests/test_combo.py
