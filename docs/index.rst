@@ -27,6 +27,8 @@ Example Usage
    
    sphere-single
    
+   sphere-random
+   
    sphere-double
    
    impossible
