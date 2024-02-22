@@ -1,6 +1,17 @@
 Changelog for `iadpython` package
 =================================
 
+0.6.0
+------
+* add command-line support
+* add Monte Carlo sphere simulations
+* add Port class for Sphere class
+* change entrance port to empty port
+* improve sphere-single.ipynb
+* add sphere-random.ipynb
+* improve single sphere testing
+* add port testig
+
 0.5.3
 ------
 * add github actions
