@@ -79,7 +79,7 @@ class SimpleSphere(unittest.TestCase):
 #         np.testing.assert_allclose(g, gg, atol=1e-5)
 
 
-class SphereMultiplier(unittest.TestCase):
+class SphereMultiplierSamplePortOnly(unittest.TestCase):
     """Relative increase in radiative flux on sphere walls."""
 
     def setUp(self):
@@ -88,9 +88,6 @@ class SphereMultiplier(unittest.TestCase):
         d_sphere = 2 * R
         d_sample = 20
         self.sphere = iadpython.Sphere(d_sphere, d_sample, r_wall=0)
-        self.sphere.sample.set_center(0,0,-R)
-        self.sphere.empty.set_center(0,0,R)
-        self.sphere.detector.set_center(R,0,0)
 
     def test_01_multiplier(self):
         """Scalar calculations no reflection from sample, black walls."""
@@ -130,6 +127,94 @@ class SphereMultiplier(unittest.TestCase):
         M1[3] = np.inf
         np.testing.assert_allclose(M, M1, atol=1e-5)
 
+class SphereMultiplier(unittest.TestCase):
+    """Relative increase in radiative flux on sphere walls."""
+
+    def setUp(self):
+        """Set up test conditions for SphereMultiplier tests."""
+        R = 100
+        d_sphere = 2 * R
+        d_sample = 20
+        d_empty = 20
+        d_detector = 10
+        self.sphere = iadpython.Sphere(d_sphere, d_sample, 
+                                       d_empty=d_empty, d_detector=d_detector, 
+                                       r_detector=0.5, r_wall=0.95)
+
+    def test_01_multiplier(self):
+        """Scalar calculations no reflection from sample, black walls."""
+        URU = 0
+        UX1 = 1
+        M = self.sphere.multiplier(UX1=UX1, URU=URU)
+        denom = 1
+        denom -= self.sphere._a_wall * self.sphere.r_wall
+        denom -= self.sphere.sample.a * URU
+        denom -= self.sphere.detector.a * self.sphere.detector.uru
+        M1 = UX1 * self.sphere.a_wall / denom
+        np.testing.assert_allclose(M1, M, atol=1e-5)
+
+    def test_02_multiplier(self):
+        """Scalar calculation 80% transmission."""
+        URU = 0
+        UX1 = 0.8
+        M = self.sphere.multiplier(UX1=UX1, URU=URU)
+        denom = 1
+        denom -= self.sphere._a_wall * self.sphere.r_wall
+        denom -= self.sphere.sample.a * URU
+        denom -= self.sphere.detector.a * self.sphere.detector.uru
+        M1 = UX1 * self.sphere.a_wall / denom
+        np.testing.assert_allclose(M1, M, atol=1e-5)
+
+    def test_03_multiplier(self):
+        """Scalar calculations total transmission with total sample reflection"""
+        URU = 1
+        UX1 = 1
+        M = self.sphere.multiplier(UX1=UX1, URU=URU)
+        denom = 1
+        denom -= self.sphere._a_wall * self.sphere.r_wall
+        denom -= self.sphere.sample.a * URU
+        denom -= self.sphere.detector.a * self.sphere.detector.uru
+        M1 = UX1 * self.sphere.a_wall / denom
+        np.testing.assert_allclose(M1, M, atol=1e-5)
+
+    def test_04_multiplier(self):
+        """Array of r_wall values."""
+        self.sphere.r_wall = np.linspace(0, 1, 4)
+        URU = 0
+        UX1 = 1
+        M = self.sphere.multiplier(UX1=UX1, URU=URU)
+        denom = 1
+        denom -= self.sphere._a_wall * self.sphere.r_wall
+        denom -= self.sphere.sample.a * URU
+        denom -= self.sphere.detector.a * self.sphere.detector.uru
+        M1 = UX1 * self.sphere.a_wall / denom
+        np.testing.assert_allclose(M1, M, atol=1e-5)
+
+    def test_05_multiplier(self):
+        """Array of r_wall values."""
+        self.sphere.r_wall = np.linspace(0, 1, 4)
+        URU = 0
+        UX1 = 0.8
+        M = self.sphere.multiplier(UX1=UX1, URU=URU)
+        denom = 1
+        denom -= self.sphere._a_wall * self.sphere.r_wall
+        denom -= self.sphere.sample.a * URU
+        denom -= self.sphere.detector.a * self.sphere.detector.uru
+        M1 = UX1 * self.sphere.a_wall / denom
+        np.testing.assert_allclose(M1, M, atol=1e-5)
+
+    def test_06_multiplier(self):
+        """Array of r_wall values."""
+        self.sphere.r_wall = np.linspace(0, 1, 4)
+        URU = 1
+        UX1 = 1
+        M = self.sphere.multiplier(UX1=UX1, URU=URU)
+        denom = 1
+        denom -= self.sphere._a_wall * self.sphere.r_wall
+        denom -= self.sphere.sample.a * URU
+        denom -= self.sphere.detector.a * self.sphere.detector.uru
+        M1 = UX1 * self.sphere.a_wall / denom
+        np.testing.assert_allclose(M1, M, atol=1e-5)
 
 if __name__ == '__main__':
     unittest.main()
