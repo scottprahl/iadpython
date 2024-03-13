@@ -187,9 +187,9 @@ class Port():
         r2 = (self.x - self.sphere.x)**2
         r2 += (self.y - self.sphere.y)**2
         r2 += (self.z - self.sphere.z)**2
-        print('cap center (%7.2f, %7.2f, %7.2f)' % (self.x,self.y,self.z))
-        print('pt on sph  (%7.2f, %7.2f, %7.2f)' % (self.sphere.x,self.sphere.y,self.sphere.z))
-        print("cap distance %7.2f %7.2f"% (r2, self.chord2))
+#        print('cap center (%7.2f, %7.2f, %7.2f)' % (self.x,self.y,self.z))
+#        print('pt on sph  (%7.2f, %7.2f, %7.2f)' % (self.sphere.x,self.sphere.y,self.sphere.z))
+#        print("cap distance %7.2f %7.2f"% (r2, self.chord2))
         return r2 < self.chord2
 
     def set_center(self, x, y, z):

@@ -32,6 +32,19 @@ import numpy as np
 import scipy.optimize
 import iadpython as iad
 
+def stringify(form, x):
+    if x is None:
+        s = 'None'
+    elif np.isscalar(x):
+        s = form % x
+    else:
+        mn = min(x)
+        mx = max(x)
+        s = form % mn
+        s += ' to '
+        s += form % mx
+    return s
+
 
 class Experiment():
     """Container class for details of an experiment."""
@@ -93,8 +106,14 @@ class Experiment():
         s = "---------------- Sample ---------------\n"
         s += self.sample.__str__()
         s += "\n--------------- Spheres ---------------\n"
-        if self.num_spheres == 0:
+        if not np.isscalar(self.num_spheres):
+            s += "number of spheres range (%s)\n" % stringify("%d",self.num_spheres)
+        elif self.num_spheres == 0:
             s += "No spheres used.\n"
+        elif self.num_spheres == 1:
+            s += "A single integrating sphere was used.\n"
+        elif self.num_spheres == 2:
+            s += "Double integrating spheres were used.\n"
         if self.r_sphere is not None:
             s += "Reflectance Sphere--------\n"
             s += self.r_sphere.__str__()
@@ -105,28 +124,11 @@ class Experiment():
         if self.include_measurements:
             s += "\n------------- Measurements ------------\n"
             s += "   Reflection               = "
-            if self.m_r is None:
-                s += "Missing\n"
-            elif np.isscalar(self.m_r):
-                s += "%.5f\n" % self.m_r
-            else:
-                s += "%s\n" % self.m_r.__str__()
-
+            s += stringify("%.5f", self.m_r) + "\n"
             s += "   Transmission             = "
-            if self.m_t is None:
-                s += "Missing\n"
-            elif np.isscalar(self.m_r):
-                s += "%.5f\n" % self.m_t
-            else:
-                s += "%s\n" % self.m_t.__str__()
-
+            s += stringify("%.5f", self.m_t) + "\n"
             s += "   Unscattered Transmission = "
-            if self.m_u is None:
-                s += "Missing\n"
-            elif np.isscalar(self.m_r):
-                s += "%.5f\n" % self.m_u
-            else:
-                s += "%s\n" % self.m_u.__str__()
+            s += stringify("%.5f", self.m_u) + "\n"
         return s
 
     def check_measurements(self):

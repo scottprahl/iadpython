@@ -26,8 +26,16 @@ import iadpython.combine
 
 def stringify(form, x):
     if x is None:
-        return 'None'
-    return form % x
+        s = 'None'
+    elif np.isscalar(x):
+        s = form % x
+    else:
+        mn = min(x)
+        mx = max(x)
+        s = form % mn
+        s += ' to '
+        s += form % mx
+    return s
 
 class Sample():
     """Container class for details of a sample.
