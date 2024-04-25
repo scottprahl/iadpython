@@ -1,9 +1,10 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
 # pylint: disable=consider-using-f-string
 # pylint: disable=line-too-long
-
+# pylint: disable=unused-variable
 """
 Class for managing integrating spheres.
 
@@ -23,7 +24,7 @@ wall reflectivity, and using a reflectance standard.
 Attributes:
     d_sphere (float): Diameter of the integrating sphere in millimeters.
     d_sample (float): Diameter of the port that holds the sample.
-    d_empty (float): Diameter of the empty port.
+    d_third (float): Diameter of the third port.
     d_detector (float): Diameter of the port with the detector.
     r_detector (float): Reflectivity of the detector.
     r_wall (float): Reflectivity of the sphere's internal wall.
@@ -39,26 +40,27 @@ Example usage:
     >>> s = iadpython.Sphere(250,20)
     >>> print(s)
 
-    >>> s = iadpython.Sphere(200, 20, d_empty=10, d_detector=10, r_detector=0.8, r_wall=0.99, r_std=0.99)
+    >>> s = iadpython.Sphere(200, 20, d_third=10, d_detector=10, r_detector=0.8, r_wall=0.99, r_std=0.99)
     >>> print(sphere)
     >>> area_sample = sphere.cap_area(sphere.d_sample)
     >>> print(f"Sample port area: {area_sample:.2f} mm²")
 """
 
 import random
+import time
+from enum import Enum
 import numpy as np
-from enum import Enum	
 import iadpython
 
-class PortType(Enum):	
-    """Possible sphere wall locations."""	
-    EMPTY = 0	
-    WALL = 1	
-    SAMPLE = 2	
-    DETECTOR = 3
-    FIRST = 4
+class PortType(Enum):
+    """Possible sphere wall locations."""
+    WALL = 0
+    SAMPLE = 1
+    DETECTOR = 2
+    THIRD = 3
 
 def stringify(form, x):
+    """Return different strings for scalar and array x."""
     if x is None:
         s = 'None'
     elif np.isscalar(x):
@@ -72,14 +74,14 @@ def stringify(form, x):
     return s
 
 class Sphere():
-    """Container class for an integrating sphere.
-    
-    For a reflection measurement, the empty port is the diameter of through
+    """Container class for a three-port integrating sphere.
+
+    For a reflection measurement, the third port is the diameter of through
     which the light enters to hit the sample.  For a transmission measurement
     this is the port that might allow unscattered transmission to leave. In
     either case, the reflectance from this port is assumed to be zero.
-    
-    By default, the sample port is on top (z=-R), the empty port is on the bottom (z=R)
+
+    By default, the sample port is on top (z=-R), the third port is on the bottom (z=R)
     and the detector is on the side (x=R)
 
     Attributes:
@@ -88,7 +90,8 @@ class Sphere():
         - a_wall: fraction of the sphere that is walls (relative
         - r_std: reflectivity of the standard used with the sphere
         - sample: port object representing sample port
-        - empty: port object representing empty port
+        - third: port object for empty port in reflection sphere
+                or the standard port in transmission sphere
         - detector: port object representing detector port
         - x: x-coordinate of photon on wall
         - y: y-coordinate of photon on wall
@@ -101,79 +104,135 @@ class Sphere():
         >>> print(s)
     """
 
-    def __init__(self, d_sphere, d_sample, d_empty=0,
-                 d_detector=0, r_detector=0, r_wall=0.99, r_std=0.99):
+    def __init__(self, d_sphere, d_sample, d_third=0, r_third=0,
+                 d_detector=0, r_detector=0, r_std=0.99, r_wall=0.99, refl=True):
         self._d = d_sphere
         self._r_wall = r_wall
         self._r_std = r_std
+        self.refl = refl
         R = d_sphere/2
-        self.sample = iadpython.Port(self, d_sample, x=0, y=0, z=-R)
+        self.sample = iadpython.Port(self, d_sample, uru=0, x=0, y=0, z=-R)
         self.detector = iadpython.Port(self, d_detector, uru=r_detector, x=R, y=0, z=0)
-        self.empty = iadpython.Port(self, d_empty, uru=0, x=0, y=0, z=R)
-        self._a_wall = 1 - self.sample.a - self.empty.a - self.detector.a
+        self.third = iadpython.Port(self, d_third, uru=r_third, x=0, y=0, z=R)
+        self._a_wall = 1 - self.sample.a - self.third.a - self.detector.a
         self.x = 0
         self.y = 0
         self.z = 0
         self.baffle = False
         self.weight = 0
 
-    def __str__(self):
+    def __repr__(self):
         """Return basic details as a string for printing."""
-        s = ""
+        s = ''
+        s += "Sphere: d=%s, " % stringify("%5.2f", self.d)
+        s += "r_wall=%s, " % stringify("%5.1f%%", self.r_wall * 100)
+        s += "r_std=%s, " % stringify("%5.1f%%", self.r_std * 100)
+        s += "baffle= %s\n" % self.baffle
+        s += "    Sample: " + repr(self.sample)
+        s += "     Third: " + repr(self.third)
+        s += "  Detector: " + repr(self.detector)
+        return s
+
+    def __str__(self):
+        """Return full details as a string for printing."""
+        if self.refl:
+            s = "Reflectance "
+        else:
+            s = "Transmittance "
         s += "Sphere\n"
         s += "        diameter = %s mm\n" % stringify("%7.2f", self.d)
         s += "          radius = %s mm\n" % stringify("%7.2f", self.d/2)
-        s += "   relative area = %7.4f\n" % self.a_wall
+        s += "   relative area = %s\n" % stringify("%7.1f%%", self.a_wall * 100)
         s += "       uru walls = %s\n" % stringify("%7.1f%%", self.r_wall * 100)
         s += "    uru standard = %s\n" % stringify("%7.1f%%", self.r_std * 100)
         s += "          baffle = %s\n" % self.baffle
         s += "Sample Port\n" + str(self.sample)
+        s += "Third Port\n" + str(self.third)
         s += "Detector Port\n" + str(self.detector)
-        s += "Empty Port\n" + str(self.empty)
         s += "Gain range\n"
         s += "         nothing = %s\n" % stringify("%7.3f", self.gain(0.0))
         s += "        standard = %s\n" % stringify("%7.3f", self.gain(self.r_std))
         s += "            100%% = %s\n" % stringify("%7.3f", self.gain(1.0))
         return s
 
-    def gain(self, sample_uru=None):
+    def gain(self, sample_uru=None, third_uru=None):
         """
         Determine gain due to multiple bounces in the sphere.
-        
+
         If UX1 is the power passing through the sample UT1 or reflected by the
         sample UR1, then power falling on the detector will be
-        
+
         P_detector = a_detector * gain * UX1 * P_0
 
         and power detected will be
-        
+
         P_detected = (1-r_detector) * a_detector * gain * UX1 * P_0
         """
-        if sample_uru is not None:
-            original_uru = self.sample.uru
-            self.sample.uru = sample_uru
-        
-        tmp = self.detector.a * self.detector.uru + self.sample.a * self.sample.uru
+        if sample_uru is None:
+            sample_uru = self.sample.uru
+
+        if third_uru is None:
+            third_uru = self.third.uru
 
         if self.baffle:
-            denom = 1 - self.r_wall * (self.a_wall + (1 - self.empty.a) * tmp)
+            tmp = self.detector.a * self.detector.uru + self.sample.a * sample_uru
+            r = self.r_wall + (self.third.a / self._a_wall) * third_uru 
+            denom = 1 - r * (self._a_wall + (1 - self.third.a) * tmp)
+            g = 1 / denom
         else:
-            denom = 1 - self._a_wall * self.r_wall - tmp
-        
-        g = 1 / denom
-        
-        # restore value
-        if sample_uru is not None:
-            self.sample.uru = original_uru
+            denom = 1 - self._a_wall * self.r_wall
+            denom -= self.detector.a * self.detector.uru
+            denom -= self.sample.a * sample_uru
+            denom -= self.third.a * third_uru
+            g = 1 / denom
+
         return g
 
+    def MR(self, sample_ur1, sample_uru=None):
+        """
+        Determine MR due to multiple bounces in the sphere.
+        """
+        if sample_uru is None:
+            sample_uru = sample_ur1
+
+        # sample in sample port, third (entrance) port is empty
+        gain = self.gain(sample_uru, 0)
+
+        # sample port has known standard, third (entrance) port is empty
+        gain100 = self.gain(self.r_std, 0)
+
+        P = sample_ur1 * gain
+        P100 = self.r_std * gain100
+
+        # this is the definition of MR
+        MR = self.r_std * P / P100
+        return MR
+
+    def MT(self, sample_ut1, sample_uru):
+        """
+        Determine MT due to multiple bounces in the sphere.
+        """
+        # sample in sample port, third port has known standard
+        gain = self.gain(sample_uru, self.r_std)
+
+        # sample port is empty, third port has known standard
+        gain100 = self.gain(0, self.r_std)
+
+        P = sample_ut1 * gain
+        P100 = self.r_std * gain100
+
+        # this is the definition of MT
+        MT = self.r_std * P / P100
+        return MT
+
     def pdetector(self):
-        P = (1-self.empty.a) * self.r_wall
+        """Print the detector power."""
+        P = (1-self.third.a) * self.r_wall
         N = 1000
         pd = np.zeros(N)
         pw = np.zeros(N)
         ps = np.zeros(N)
-        
+
         pd[0] = self.detector.a * P
         ps[0] = self.sample.a * P
         pw[0] = self.a_wall * P
@@ -181,10 +240,10 @@ class Sphere():
         for j in range(N-1):
             pd[j+1] = self.detector.a * self.r_wall * pw[j]
             ps[j+1] = self.sample.a * self.r_wall * pw[j]
-            pw[j+1] = self.a_wall * self.r_wall * pw[j] 
-            pw[j+1] += (1 - self.empty.a) * self.detector.uru * pd[j]
-            pw[j+1] += (1 - self.empty.a) * self.sample.uru * ps[j]
-            
+            pw[j+1] = self.a_wall * self.r_wall * pw[j]
+            pw[j+1] += (1 - self.third.a) * self.detector.uru * pd[j]
+            pw[j+1] += (1 - self.third.a) * self.sample.uru * ps[j]
+
         sumw = np.cumsum(pw)
         sumw -= sumw[1]
         sumd = np.cumsum(pd)
@@ -193,21 +252,21 @@ class Sphere():
             print("%3d %9.5f %9.5f %9.5f %9.5f" % (j+1, pd[j], pw[j], sumd[j], sumw[j]))
         print("%3d %9.5f %9.5f %9.5f %9.5f" % (N-1, pd[N-1], pw[N-1],  sumd[N-1], sumw[N-1]))
         print()
-        
+
         pd[0] = self.detector.a * P
         ps[0] = self.sample.a * P
         pw[0] = self.a_wall * P
 
-        pw[1] = self.a_wall * self.r_wall * pw[0] 
-        pw[1] += (1 - self.empty.a) * self.detector.uru * pd[0]
-        pw[1] += (1 - self.empty.a) * self.sample.uru * ps[0]
+        pw[1] = self.a_wall * self.r_wall * pw[0]
+        pw[1] += (1 - self.third.a) * self.detector.uru * pd[0]
+        pw[1] += (1 - self.third.a) * self.sample.uru * ps[0]
         pd[1] = self.detector.a * self.r_wall * pw[0]
 
-        beta = (1 - self.empty.a) 
+        beta = 1 - self.third.a
         beta *= self.detector.a * self.detector.uru + self.sample.a * self.sample.uru
         for j in range(1,N-1):
             pw[j+1] = self.r_wall * (self.a_wall * pw[j] + beta * pw[j-1])
-        
+
         sumw = np.cumsum(pw)
         sumw -= sumw[1]
         sumd = np.cumsum(pd)
@@ -217,24 +276,24 @@ class Sphere():
         print("%3d %9.5f %9.5f %9.5f %9.5f" % (N-1, pd[N-1], pw[N-1],  sumd[N-1], sumw[N-1]))
         print()
 
-        beta = (1 - self.empty.a) 
+        beta = 1 - self.third.a
         beta *= self.detector.a * self.detector.uru + self.sample.a * self.sample.uru
         numer = self.a_wall**3*self.r_wall+ beta*(2*self.a_wall + self.a_wall**2*self.r_wall + beta)
         denom = 1-self.r_wall *(self.a_wall +  beta)
         sum3 = self.r_wall * numer/denom * P
-        
+
         pdx = self.detector.a * P
         pdx += self.detector.a * self.r_wall * self.a_wall  * P
         pdx += self.detector.a * self.r_wall * (self.a_wall**2 * self.r_wall + beta) * P
         pdx += self.detector.a * self.r_wall * sum3
-        
+
         print("%9.5f" % pdx)
-        
-        beta = (1 - self.empty.a) 
+
+        beta = 1 - self.third.a
         beta *= self.detector.a * self.detector.uru + self.sample.a * self.sample.uru
         pdx = self.detector.a * P/(1-self.r_wall*(self.a_wall+beta))
         print("%9.5f" % pdx)
-        
+
     @property
     def d(self):
         """Getter property for sphere diameter."""
@@ -244,10 +303,10 @@ class Sphere():
     def d(self, value):
         """When size is changed ratios become invalid."""
         assert self.sample.d <= value, "sphere must be bigger than sample port"
-        assert self.empty.d <= value, "sphere must be bigger than empty port"
+        assert self.third.d <= value, "sphere must be bigger than third port"
         assert self.detector.d <= value, "sphere must be bigger than detector port"
         self._d = value
-        self._a_wall = 1 - self.sample.a - self.empty.a - self.detector.a
+        self._a_wall = 1 - self.sample.a - self.third.a - self.detector.a
 
     @property
     def a_wall(self):
@@ -261,7 +320,7 @@ class Sphere():
         # Find the diameter of a spherical cap assuming all non-wall
         # port area is assigned to a single sample port
         self.sample.d = 2 * self._d * np.sqrt(value - value**2)
-        self.empty.d = 0
+        self.third.d = 0
         self.detector.d = 0
         self._a_wall = value
 
@@ -297,12 +356,12 @@ class Sphere():
     def uniform(self):
         """
         Generate a point uniformly distributed on the surface of a sphere.
-    
+
         Using Gaussian distribution for all three coordinates ensures a
         uniform distribution on the surface of the sphere. See
-        
+
         https://math.stackexchange.com/questions/1585975
-        
+
         Returns:
             (x, y, z) for a random point on the sphere's surface.
         """
@@ -319,15 +378,16 @@ class Sphere():
         bounces = 0
         detected = 0
 
-        # assume photon launched form sample
+        # assume photon launched from sample
         weight = 1
         last_location = PortType.SAMPLE
 #        R = self.d/2
-        while weight > 1e-4:
+        slop = 0
+        while weight > 0:
 
-            lastx = self.x
-            lasty = self.y
-            lastz = self.z
+#             lastx = self.x
+#             lasty = self.y
+#             lastz = self.z
             self.x, self.y, self.z = self.uniform()
 
             if self.detector.hit():
@@ -336,16 +396,17 @@ class Sphere():
                 if last_location == PortType.SAMPLE and self.baffle: # sample --> detector prohibited
                     continue
 
-                # record detected light and update weight
-                vx=self.x-lastx
-                vy=self.y-lasty
-                vz=self.z-lastz
+#                vx=self.x-lastx
+#                vy=self.y-lasty
+#                vz=self.z-lastz
 #                RR = np.sqrt(vx*vx+vy*vy+vz*vz)
 #                print("n = [%5.2f, %5.2f, %5.2f]" % (self.x/R, self.y/R, self.z/R))
 #                print("v = [%5.2f, %5.2f, %5.2f]" % (vx/RR, vy/RR, vz/RR))
 #                costheta = abs((vx * self.x) + (vy * self.y) + (vz * self.z))/R/RR
 #                print(costheta)
-                transmitted = weight * (1-self.detector.uru) 
+
+                # record detected light and update weight
+                transmitted = weight * (1-self.detector.uru)
                 detected += transmitted
                 weight -= transmitted
                 last_location = PortType.DETECTOR
@@ -358,27 +419,37 @@ class Sphere():
                 weight *= self.sample.uru
                 last_location = PortType.SAMPLE
 
-            elif self.empty.hit():
-                weight = 0
-                last_location = PortType.EMPTY
+            elif self.third.hit():
+                weight *= self.third.uru
+                last_location = PortType.THIRD
 
             else:
                 # must have hit wall
                 weight *= self.r_wall
                 last_location = PortType.WALL
 
+            if 0 < weight < 1e-4:
+                if random.random() < 0.1:
+                    weight *= 10
+                else:
+                    weight = 0
+
             bounces +=1
 
         return detected, bounces
-        
+
     def do_N_photons(self, N):
-        
+        """Do a Monte Carlos simulation with N photons."""
+
+        # Use current time as seed
+        random.seed(time.time())
+
         num_trials = 10
         total_detected = np.zeros(num_trials)
         total_bounces = np.zeros(num_trials)
-        
+
         N_per_trial = N // num_trials
-        
+
         total = 0
         for j in range(num_trials):
             for i in range(N_per_trial):
@@ -387,22 +458,25 @@ class Sphere():
                 total_detected[j] += detected
                 total_bounces[j] += bounces
                 total += 1
-        
+
         ave = np.mean(total_detected)/N_per_trial
         std = np.std(total_detected)/N_per_trial
         stderr = std / np.sqrt(num_trials)
         print("average detected   = %.3f ± %.3f" % (ave,stderr))
-        ave /= self.detector.a * (1-self.detector.uru)
-        std /= self.detector.a * (1-self.detector.uru)
+        scale = self.detector.a * (1-self.detector.uru)
+        if self.baffle:
+            scale *= (1-self.third.a) * self.r_wall + self.third.a * self.third.uru
+        ave /= scale
+        std /= scale
         stderr = std / np.sqrt(num_trials)
         print("average gain       = %.3f ± %.3f" % (ave,stderr))
         print("calculated gain    = %.3f" % self.gain())
-        
+
         ave = np.mean(total_bounces)/N_per_trial
         std = np.std(total_bounces)/N_per_trial
         stderr = std / np.sqrt(num_trials)
         print("average bounces    = %.3f ± %.3f" % (ave,stderr))
-                
+
 
 def Gain_11(RS, TS, URU, tdiffuse):
     r"""Net gain for on detector in reflection sphere for two sphere configuration.
@@ -421,7 +495,7 @@ def Gain_11(RS, TS, URU, tdiffuse):
     G = RS.gain(URU)
     GP = TS.gain(URU)
 
-    areas = RS.a_sample * TS.a_sample * (1 - RS.a_empty) * (1 - TS.a_empty)
+    areas = RS.a_sample * TS.a_sample * (1 - RS.a_third) * (1 - TS.a_third)
     G11 = G / (1 - areas * RS.r_wall * TS.r_wall * G * GP * tdiffuse**2)
     return G11
 
@@ -439,7 +513,7 @@ def Gain_22(RS, TS, URU, tdiffuse):
     G = RS.gain(URU)
     GP = TS.gain(URU)
 
-    areas = RS.a_sample * TS.a_sample * (1 - RS.a_empty) * (1 - TS.a_empty)
+    areas = RS.a_sample * TS.a_sample * (1 - RS.a_third) * (1 - TS.a_third)
     G22 = GP / (1 - areas * RS.r_wall * TS.r_wall * G * GP * tdiffuse**2)
     return G22
 
@@ -477,10 +551,10 @@ def Two_Sphere_R(RS, TS, UR1, URU, UT1, UTU, f=0):
     GP = TS.gain(URU)
     G11 = Gain_11(RS, TS, URU, UTU)
 
-    x = RS.a_detector * (1 - RS.a_empty) * RS.r_wall * G11
+    x = RS.a_detector * (1 - RS.a_third) * RS.r_wall * G11
     p1 = (1 - f) * UR1
     p2 = RS.r_wall * f
-    p3 = (1 - f) * TS.a_sample * (1 - TS.a_empty) * TS.r_wall * UT1 * UTU * GP
+    p3 = (1 - f) * TS.a_sample * (1 - TS.a_third) * TS.r_wall * UT1 * UTU * GP
     return x * (p1 + p2 + p3)
 
 
@@ -507,7 +581,7 @@ def Two_Sphere_T(RS, TS, UR1, URU, UT1, UTU, f=0):
     G = RS.gain(URU)
     G22 = Gain_11(RS, TS, URU, UTU)
 
-    x = TS.a_detector * (1 - TS.a_empty) * TS.r_wall * G22
-    x *= (1 - f) * UT1 + (1 - RS.a_empty) * RS.r_wall * \
+    x = TS.a_detector * (1 - TS.a_third) * TS.r_wall * G22
+    x *= (1 - f) * UT1 + (1 - RS.a_third) * RS.r_wall * \
         RS.a_sample * UTU * (f * RS.r_wall + (1 - f) * UR1) * G
     return x
