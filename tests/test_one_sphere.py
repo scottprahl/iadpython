@@ -24,12 +24,12 @@ class ForwardOneBigSphere(unittest.TestCase):
 
         d_sphere = 2500
         d_sample = 10
-        rsph = iad.Sphere(d_sphere, d_sample, d_empty=1, r_wall=0)
+        rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0)
         M = rsph.multiplier(UX1=ur1, URU=uru)
         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
         ur1a = M / M100
 
-        tsph = iad.Sphere(d_sphere, d_sample, d_empty=10, r_wall=0)
+        tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0)
         M = tsph.multiplier(UX1=ut1, URU=uru)
         M100 = tsph.multiplier(UX1=1, URU=0.0)
         ut1a = M / M100
@@ -43,12 +43,12 @@ class ForwardOneBigSphere(unittest.TestCase):
 
         d_sphere = 2500
         d_sample = 10
-        rsph = iad.Sphere(d_sphere, d_sample, d_empty=1, r_wall=0.9)
+        rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0.9)
         M = rsph.multiplier(UX1=ur1, URU=uru)
         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
         ur1a = M / M100
 
-        tsph = iad.Sphere(d_sphere, d_sample, d_empty=10, r_wall=0.9)
+        tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0.9)
         M = tsph.multiplier(UX1=ut1, URU=uru)
         M100 = tsph.multiplier(UX1=1, URU=0.0)
         ut1a = M / M100
@@ -62,12 +62,12 @@ class ForwardOneBigSphere(unittest.TestCase):
 
         d_sphere = 2500
         d_sample = 10
-        rsph = iad.Sphere(d_sphere, d_sample, d_empty=1, r_wall=0.98)
+        rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0.98)
         M = rsph.multiplier(UX1=ur1, URU=uru)
         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
         ur1a = M / M100
 
-        tsph = iad.Sphere(d_sphere, d_sample, d_empty=10, r_wall=0.98)
+        tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0.98)
         M = tsph.multiplier(UX1=ut1, URU=uru)
         M100 = tsph.multiplier(UX1=1, URU=0.0)
         ut1a = M / M100
@@ -81,12 +81,12 @@ class ForwardOneBigSphere(unittest.TestCase):
 
         d_sphere = 2500
         d_sample = 10
-        rsph = iad.Sphere(d_sphere, d_sample, d_empty=1, r_wall=1.0)
+        rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=1.0)
         M = rsph.multiplier(UX1=ur1, URU=uru)
         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
         ur1a = M / M100
 
-        tsph = iad.Sphere(d_sphere, d_sample, d_empty=10, r_wall=1.0)
+        tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=1.0)
         M = tsph.multiplier(UX1=ut1, URU=uru)
         M100 = tsph.multiplier(UX1=1, URU=0.0)
         ut1a = M / M100
@@ -106,12 +106,12 @@ class ForwardOneMediumSphere(unittest.TestCase):
 
         d_sphere = 200
         d_sample = 10
-        rsph = iad.Sphere(d_sphere, d_sample, d_empty=1, r_wall=0)
+        rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0)
         M = rsph.multiplier(UX1=ur1, URU=uru)
         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
         ur1a = M / M100
 
-        tsph = iad.Sphere(d_sphere, d_sample, d_empty=10, r_wall=0)
+        tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0)
         M = tsph.multiplier(UX1=ut1, URU=uru)
         M100 = tsph.multiplier(UX1=1, URU=0.0)
         ut1a = M / M100
@@ -125,12 +125,12 @@ class ForwardOneMediumSphere(unittest.TestCase):
 
         d_sphere = 200
         d_sample = 10
-        rsph = iad.Sphere(d_sphere, d_sample, d_empty=1, r_wall=0.9)
+        rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0.9)
         M = rsph.multiplier(UX1=ur1, URU=uru)
         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
         ur1a = M / M100
 
-        tsph = iad.Sphere(d_sphere, d_sample, d_empty=10, r_wall=0.9)
+        tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0.9)
         M = tsph.multiplier(UX1=ut1, URU=uru)
         M100 = tsph.multiplier(UX1=1, URU=0.0)
         ut1a = M / M100
@@ -144,12 +144,12 @@ class ForwardOneMediumSphere(unittest.TestCase):
 
         d_sphere = 200
         d_sample = 10
-        rsph = iad.Sphere(d_sphere, d_sample, d_empty=1, r_wall=0.98)
+        rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0.98)
         M = rsph.multiplier(UX1=ur1, URU=uru)
         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
         ur1a = M / M100
 
-        tsph = iad.Sphere(d_sphere, d_sample, d_empty=10, r_wall=0.98)
+        tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0.98)
         M = tsph.multiplier(UX1=ut1, URU=uru)
         M100 = tsph.multiplier(UX1=1, URU=0.0)
         ut1a = M / M100
@@ -163,12 +163,12 @@ class ForwardOneMediumSphere(unittest.TestCase):
 
         d_sphere = 200
         d_sample = 10
-        rsph = iad.Sphere(d_sphere, d_sample, d_empty=1, r_wall=1)
+        rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=1)
         M = rsph.multiplier(UX1=ur1, URU=uru)
         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
         ur1a = M / M100
 
-        tsph = iad.Sphere(d_sphere, d_sample, d_empty=10, r_wall=1)
+        tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=1)
         M = tsph.multiplier(UX1=ut1, URU=uru)
         M100 = tsph.multiplier(UX1=1, URU=0.0)
         ut1a = M / M100
@@ -189,12 +189,12 @@ class ForwardOneMediumSphere(unittest.TestCase):
 #         r_wall = 0
 #         d_sphere = 200
 #         d_sample = 10
-#         rsph = iad.Sphere(d_sphere, d_sample, d_empty=1)
+#         rsph = iad.Sphere(d_sphere, d_sample, d_third=1)
 #         M = rsph.multiplier(UX1=ur1, URU=uru)
 #         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
 #         ur1a = M / M100
 #
-#         tsph = iad.Sphere(d_sphere, d_sample, d_empty=10)
+#         tsph = iad.Sphere(d_sphere, d_sample, d_third=10)
 #         M = tsph.multiplier(UX1=ut1, URU=uru)
 #         M100 = tsph.multiplier(UX1=1, URU=0.0)
 #         ut1a = M / M100
@@ -213,12 +213,12 @@ class ForwardOneMediumSphere(unittest.TestCase):
 #         r_wall = 0.9
 #         d_sphere = 200
 #         d_sample = 10
-#         rsph = iad.Sphere(d_sphere, d_sample, d_empty=1)
+#         rsph = iad.Sphere(d_sphere, d_sample, d_third=1)
 #         M = rsph.multiplier(UX1=ur1, URU=uru)
 #         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
 #         ur1a = M / M100
 #
-#         tsph = iad.Sphere(d_sphere, d_sample, d_empty=10)
+#         tsph = iad.Sphere(d_sphere, d_sample, d_third=10)
 #         M = tsph.multiplier(UX1=ut1, URU=uru)
 #         M100 = tsph.multiplier(UX1=1, URU=0.0)
 #         ut1a = M / M100
@@ -236,12 +236,12 @@ class ForwardOneMediumSphere(unittest.TestCase):
 #         r_wall = 0.98
 #         d_sphere = 200
 #         d_sample = 10
-#         rsph = iad.Sphere(d_sphere, d_sample, d_empty=1)
+#         rsph = iad.Sphere(d_sphere, d_sample, d_third=1)
 #         M = rsph.multiplier(UX1=ur1, URU=uru)
 #         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
 #         ur1a = M / M100
 #
-#         tsph = iad.Sphere(d_sphere, d_sample, d_empty=10)
+#         tsph = iad.Sphere(d_sphere, d_sample, d_third=10)
 #         M = tsph.multiplier(UX1=ut1, URU=uru)
 #         M100 = tsph.multiplier(UX1=1, URU=0.0)
 #         ut1a = M / M100
@@ -259,12 +259,12 @@ class ForwardOneMediumSphere(unittest.TestCase):
 #         r_wall = 1.0
 #         d_sphere = 200
 #         d_sample = 10
-#         rsph = iad.Sphere(d_sphere, d_sample, d_empty=1)
+#         rsph = iad.Sphere(d_sphere, d_sample, d_third=1)
 #         M = rsph.multiplier(UX1=ur1, URU=uru)
 #         M100 = rsph.multiplier(UX1=1.0, URU=1.0)
 #         ur1a = M / M100
 #
-#         tsph = iad.Sphere(d_sphere, d_sample, d_empty=10)
+#         tsph = iad.Sphere(d_sphere, d_sample, d_third=10)
 #         M = tsph.multiplier(UX1=ut1, URU=uru)
 #         M100 = tsph.multiplier(UX1=1, URU=0.0)
 #         ut1a = M / M100
