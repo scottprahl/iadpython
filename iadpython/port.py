@@ -138,7 +138,11 @@ class Port():
         self.a = self.relative_cap_area()
         self.sagitta = self.calculate_sagitta()
         self.chord2 = self.max_center_chord()
-        self.sphere._a_wall = 1 - self.sphere.sample.a - self.sphere.empty.a - self.sphere.detector.a
+        self.sphere._a_wall = 1 - self.sphere.sample.a - self.sphere.third.a - self.sphere.detector.a
+
+    def __repr__(self):
+        """Short string for port."""
+        return "d=%5.1fmm, uru=%5.1f%%\n" % (self.d, self.uru * 100)
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -148,8 +152,8 @@ class Port():
         s += "           chord = %7.2f mm\n" % np.sqrt(self.chord2)
         s += "         sagitta = %7.2f mm\n" % self.sagitta
         s += "          center = (%6.1f, %6.1f, %6.1f) mm\n" % (self.x, self.y, self.z)
-        s += "   relative area = %7.4f\n" % self.a
-        s += "             uru = %7.4f\n" % self.uru
+        s += "   relative area = %7.2f%%\n" % (self.a * 100)
+        s += "             uru = %7.2f%%\n" % (self.uru * 100)
         return s
 
     def cap_area(self):
