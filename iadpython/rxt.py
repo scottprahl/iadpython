@@ -63,6 +63,7 @@ def fill_in_data(exp, data, column_letters_str):
     else :
         columns = len(column_letters_str)
 
+    print(column_letters_str)
     data_in_columns = data.reshape(-1, columns)
     exp.lambda0 = None
     if column_letters_str == '':
@@ -103,6 +104,9 @@ def fill_in_data(exp, data, column_letters_str):
         elif letter=='D':
             exp.sample.d_above = data_in_columns[:,col]
             exp.sample.d_below = data_in_columns[:,col]
+        elif letter=='E':
+            exp.sample.b_above = data_in_columns[:,col]
+            exp.sample.b_below = data_in_columns[:,col]
         elif letter=='e':
             exp.error = data_in_columns[:,col]
         elif letter=='g':
