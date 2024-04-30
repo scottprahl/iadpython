@@ -13,6 +13,7 @@ iadpython_package_dir = os.path.join(parent_dir, 'iadpython')
 sys.path.append(iadpython_package_dir)
 
 # Now you can import your script
+# flake8: noqa: E402
 import iadcommand
 
 class TestCommandLineArgs(unittest.TestCase):
