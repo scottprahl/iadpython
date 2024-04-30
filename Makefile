@@ -21,6 +21,8 @@ lint:
 	-pylint iadpython/sphere.py
 	-pylint iadpython/port.py
 	-pylint iadpython/start.py
+	-pylint iadpython/txt.py
+
 	-pylint tests/test_boundary.py
 	-pylint tests/test_combo.py
 	-pylint tests/test_fresnel.py
