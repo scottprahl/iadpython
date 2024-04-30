@@ -11,8 +11,9 @@ ignore = ["release.txt",
           "docs/*",
           "tests_iadc/*"]
 
-
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
 ignore = ["F403", "F841"]
-exclude =['.git', '__pycache__', 'docs']
+exclude = ['.git', '__pycache__', 'docs']
