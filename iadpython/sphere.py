@@ -52,12 +52,14 @@ from enum import Enum
 import numpy as np
 import iadpython
 
+
 class PortType(Enum):
     """Possible sphere wall locations."""
     WALL = 0
     SAMPLE = 1
     DETECTOR = 2
     THIRD = 3
+
 
 def stringify(form, x):
     """Return different strings for scalar and array x."""
@@ -72,6 +74,7 @@ def stringify(form, x):
         s += ' to '
         s += form % mx
     return s
+
 
 class Sphere():
     """Container class for a three-port integrating sphere.
@@ -110,7 +113,7 @@ class Sphere():
         self._r_wall = r_wall
         self._r_std = r_std
         self.refl = refl
-        R = d_sphere/2
+        R = d_sphere / 2
         self.sample = iadpython.Port(self, d_sample, uru=0, x=0, y=0, z=-R)
         self.detector = iadpython.Port(self, d_detector, uru=r_detector, x=R, y=0, z=0)
         self.third = iadpython.Port(self, d_third, uru=r_third, x=0, y=0, z=R)
@@ -141,7 +144,7 @@ class Sphere():
             s = "Transmittance "
         s += "Sphere\n"
         s += "        diameter = %s mm\n" % stringify("%7.2f", self.d)
-        s += "          radius = %s mm\n" % stringify("%7.2f", self.d/2)
+        s += "          radius = %s mm\n" % stringify("%7.2f", self.d / 2)
         s += "   relative area = %s\n" % stringify("%7.1f%%", self.a_wall * 100)
         s += "       uru walls = %s\n" % stringify("%7.1f%%", self.r_wall * 100)
         s += "    uru standard = %s\n" % stringify("%7.1f%%", self.r_std * 100)
@@ -176,7 +179,7 @@ class Sphere():
 
         if self.baffle:
             tmp = self.detector.a * self.detector.uru + self.sample.a * sample_uru
-            r = self.r_wall + (self.third.a / self._a_wall) * third_uru 
+            r = self.r_wall + (self.third.a / self._a_wall) * third_uru
             denom = 1 - r * (self._a_wall + (1 - self.third.a) * tmp)
             g = 1 / denom
         else:
@@ -227,7 +230,7 @@ class Sphere():
 
     def pdetector(self):
         """Print the detector power."""
-        P = (1-self.third.a) * self.r_wall
+        P = (1 - self.third.a) * self.r_wall
         N = 1000
         pd = np.zeros(N)
         pw = np.zeros(N)
@@ -237,20 +240,20 @@ class Sphere():
         ps[0] = self.sample.a * P
         pw[0] = self.a_wall * P
 
-        for j in range(N-1):
-            pd[j+1] = self.detector.a * self.r_wall * pw[j]
-            ps[j+1] = self.sample.a * self.r_wall * pw[j]
-            pw[j+1] = self.a_wall * self.r_wall * pw[j]
-            pw[j+1] += (1 - self.third.a) * self.detector.uru * pd[j]
-            pw[j+1] += (1 - self.third.a) * self.sample.uru * ps[j]
+        for j in range(N - 1):
+            pd[j + 1] = self.detector.a * self.r_wall * pw[j]
+            ps[j + 1] = self.sample.a * self.r_wall * pw[j]
+            pw[j + 1] = self.a_wall * self.r_wall * pw[j]
+            pw[j + 1] += (1 - self.third.a) * self.detector.uru * pd[j]
+            pw[j + 1] += (1 - self.third.a) * self.sample.uru * ps[j]
 
         sumw = np.cumsum(pw)
         sumw -= sumw[1]
         sumd = np.cumsum(pd)
         print(' k    P_d^k   P_w^k    sum(P_d^k)   sum(P_w^k)')
         for j in range(10):
-            print("%3d %9.5f %9.5f %9.5f %9.5f" % (j+1, pd[j], pw[j], sumd[j], sumw[j]))
-        print("%3d %9.5f %9.5f %9.5f %9.5f" % (N-1, pd[N-1], pw[N-1],  sumd[N-1], sumw[N-1]))
+            print("%3d %9.5f %9.5f %9.5f %9.5f" % (j + 1, pd[j], pw[j], sumd[j], sumw[j]))
+        print("%3d %9.5f %9.5f %9.5f %9.5f" % (N - 1, pd[N - 1], pw[N - 1], sumd[N - 1], sumw[N - 1]))
         print()
 
         pd[0] = self.detector.a * P
@@ -264,26 +267,26 @@ class Sphere():
 
         beta = 1 - self.third.a
         beta *= self.detector.a * self.detector.uru + self.sample.a * self.sample.uru
-        for j in range(1,N-1):
-            pw[j+1] = self.r_wall * (self.a_wall * pw[j] + beta * pw[j-1])
+        for j in range(1, N - 1):
+            pw[j + 1] = self.r_wall * (self.a_wall * pw[j] + beta * pw[j - 1])
 
         sumw = np.cumsum(pw)
         sumw -= sumw[1]
         sumd = np.cumsum(pd)
         print(' k    P_d^k   P_w^k    sum(P_d^k)   sum(P_w^k)')
         for j in range(10):
-            print("%3d %9.5f %9.5f %9.5f %9.5f" % (j+1, pd[j], pw[j], sumd[j], sumw[j]))
-        print("%3d %9.5f %9.5f %9.5f %9.5f" % (N-1, pd[N-1], pw[N-1],  sumd[N-1], sumw[N-1]))
+            print("%3d %9.5f %9.5f %9.5f %9.5f" % (j + 1, pd[j], pw[j], sumd[j], sumw[j]))
+        print("%3d %9.5f %9.5f %9.5f %9.5f" % (N - 1, pd[N - 1], pw[N - 1], sumd[N - 1], sumw[N - 1]))
         print()
 
         beta = 1 - self.third.a
         beta *= self.detector.a * self.detector.uru + self.sample.a * self.sample.uru
-        numer = self.a_wall**3*self.r_wall+ beta*(2*self.a_wall + self.a_wall**2*self.r_wall + beta)
-        denom = 1-self.r_wall *(self.a_wall +  beta)
-        sum3 = self.r_wall * numer/denom * P
+        numer = self.a_wall**3 * self.r_wall + beta * (2 * self.a_wall + self.a_wall**2 * self.r_wall + beta)
+        denom = 1 - self.r_wall * (self.a_wall + beta)
+        sum3 = self.r_wall * numer / denom * P
 
         pdx = self.detector.a * P
-        pdx += self.detector.a * self.r_wall * self.a_wall  * P
+        pdx += self.detector.a * self.r_wall * self.a_wall * P
         pdx += self.detector.a * self.r_wall * (self.a_wall**2 * self.r_wall + beta) * P
         pdx += self.detector.a * self.r_wall * sum3
 
@@ -291,7 +294,7 @@ class Sphere():
 
         beta = 1 - self.third.a
         beta *= self.detector.a * self.detector.uru + self.sample.a * self.sample.uru
-        pdx = self.detector.a * P/(1-self.r_wall*(self.a_wall+beta))
+        pdx = self.detector.a * P / (1 - self.r_wall * (self.a_wall + beta))
         print("%9.5f" % pdx)
 
     @property
@@ -382,18 +385,20 @@ class Sphere():
         weight = 1
         last_location = PortType.SAMPLE
 #        R = self.d/2
-        slop = 0
         while weight > 0:
 
-#             lastx = self.x
-#             lasty = self.y
-#             lastz = self.z
+            # lastx = self.x
+            # lasty = self.y
+            # lastz = self.z
             self.x, self.y, self.z = self.uniform()
 
             if self.detector.hit():
-                if last_location == PortType.DETECTOR:   # avoid hitting self
+                # avoid hitting self
+                if last_location == PortType.DETECTOR:
                     continue
-                if last_location == PortType.SAMPLE and self.baffle: # sample --> detector prohibited
+
+                # sample --> detector prohibited
+                if last_location == PortType.SAMPLE and self.baffle:
                     continue
 
 #                vx=self.x-lastx
@@ -406,16 +411,20 @@ class Sphere():
 #                print(costheta)
 
                 # record detected light and update weight
-                transmitted = weight * (1-self.detector.uru)
+                transmitted = weight * (1 - self.detector.uru)
                 detected += transmitted
                 weight -= transmitted
                 last_location = PortType.DETECTOR
 
             elif self.sample.hit():
-                if last_location == PortType.SAMPLE:    # avoid hitting self
+                # avoid hitting self
+                if last_location == PortType.SAMPLE:
                     continue
-                if last_location == PortType.DETECTOR and self.baffle: # detector --> sample prohibited
+
+                # detector --> sample prohibited
+                if last_location == PortType.DETECTOR and self.baffle:
                     continue
+
                 weight *= self.sample.uru
                 last_location = PortType.SAMPLE
 
@@ -434,7 +443,7 @@ class Sphere():
                 else:
                     weight = 0
 
-            bounces +=1
+            bounces += 1
 
         return detected, bounces
 
@@ -459,23 +468,23 @@ class Sphere():
                 total_bounces[j] += bounces
                 total += 1
 
-        ave = np.mean(total_detected)/N_per_trial
-        std = np.std(total_detected)/N_per_trial
+        ave = np.mean(total_detected) / N_per_trial
+        std = np.std(total_detected) / N_per_trial
         stderr = std / np.sqrt(num_trials)
-        print("average detected   = %.3f ± %.3f" % (ave,stderr))
-        scale = self.detector.a * (1-self.detector.uru)
+        print("average detected   = %.3f ± %.3f" % (ave, stderr))
+        scale = self.detector.a * (1 - self.detector.uru)
         if self.baffle:
-            scale *= (1-self.third.a) * self.r_wall + self.third.a * self.third.uru
+            scale *= (1 - self.third.a) * self.r_wall + self.third.a * self.third.uru
         ave /= scale
         std /= scale
         stderr = std / np.sqrt(num_trials)
-        print("average gain       = %.3f ± %.3f" % (ave,stderr))
+        print("average gain       = %.3f ± %.3f" % (ave, stderr))
         print("calculated gain    = %.3f" % self.gain())
 
-        ave = np.mean(total_bounces)/N_per_trial
-        std = np.std(total_bounces)/N_per_trial
+        ave = np.mean(total_bounces) / N_per_trial
+        std = np.std(total_bounces) / N_per_trial
         stderr = std / np.sqrt(num_trials)
-        print("average bounces    = %.3f ± %.3f" % (ave,stderr))
+        print("average bounces    = %.3f ± %.3f" % (ave, stderr))
 
 
 def Gain_11(RS, TS, URU, tdiffuse):

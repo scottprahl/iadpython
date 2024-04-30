@@ -39,6 +39,7 @@ See Also:
 import random
 import numpy as np
 
+
 def uniform_disk():
     """
     Generate a point uniformly distributed on a unit disk.
@@ -58,8 +59,9 @@ def uniform_disk():
     while s > 1:
         x = 2 * random.random() - 1
         y = 2 * random.random() - 1
-        s = x*x + y*y
+        s = x * x + y * y
     return x, y, s
+
 
 class Port():
     """
@@ -67,7 +69,7 @@ class Port():
     used to analyze light properties. The class calculates and stores various
     geometrical properties of the port, such as its diameter, position, and the
     relative area of the spherical cap it forms on the sphere's surface.
-    
+
     Attributes:
         sphere (object): Reference to the sphere the port belongs to.
         d (float): Diameter of the port in millimeters (mm).
@@ -78,10 +80,10 @@ class Port():
         a (float): Relative area of the port's spherical cap to the sphere's surface.
         chord2 (float): Square of the distance from the port center to the port edge.
         sagitta (float): The sagitta (height) of the spherical cap formed by the port.
-        
+
     Examples:
         Importing the module and creating a sphere with a port:
-        
+
         ```python
         import iadpython as iad
         s = iad.Sphere(200, 20)
@@ -126,7 +128,7 @@ class Port():
     def d(self, value):
         """
         Sets the diameter of the port and recalculates geometrical properties.
-        
+
         Args:
             value (float): The new diameter of the port.
 
@@ -148,7 +150,7 @@ class Port():
         """Return basic details as a string for printing."""
         s = ""
         s += "        diameter = %7.2f mm\n" % self.d
-        s += "          radius = %7.2f mm\n" % (self.d/2)
+        s += "          radius = %7.2f mm\n" % (self.d / 2)
         s += "           chord = %7.2f mm\n" % np.sqrt(self.chord2)
         s += "         sagitta = %7.2f mm\n" % self.sagitta
         s += "          center = (%6.1f, %6.1f, %6.1f) mm\n" % (self.x, self.y, self.z)
@@ -206,19 +208,19 @@ class Port():
     def uniform(self):
         """
         Generate a point uniformly distributed on a spherical cap.
-    
+
         This function generates points uniformly distributed over a spherical cap,
         defined by a specified sagitta (height of the cap from its base to the top)
         and sphere radius. The spherical cap can be positioned either at the top or
         bottom of the sphere. The method utilizes principles from uniform distribution
         on a disk and transforms these points to the spherical cap geometry.
-    
+
         WARNING: The cap assumed to be at the top of a sphere. Nothing is done to rotate
         the points so they align with the center of the cap!
-    
+
         The algorithm to generate a random point on a spherical cap is adapted from
         http://marc-b-reynolds.github.io/distribution/2016/11/28/Uniform.html
-    
+
         Args:
             sagitta: The height of the spherical cap from its base to the top.
             sphere_radius: The radius of the sphere with the cap.

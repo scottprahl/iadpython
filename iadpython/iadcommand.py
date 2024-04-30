@@ -20,6 +20,7 @@ import iadpython
 COUNTER = 0
 ANY_ERROR = False
 
+
 class SlidePosition(Enum):
     """All the combinations of glass and sample."""
     NO_SLIDES = 0
@@ -29,11 +30,13 @@ class SlidePosition(Enum):
     ONE_SLIDE_NEAR_SPHERE = 4
     ONE_SLIDE_NOT_NEAR_SPHERE = 5
 
+
 class LightCondition(Enum):
     """Options for interpreting illumination."""
     MR_IS_ONLY_RD = 1
     MT_IS_ONLY_TD = 2
     NO_UNSCATTERED_LIGHT = 3
+
 
 class InputError(Enum):
     """Possible input errors."""
@@ -46,6 +49,7 @@ class InputError(Enum):
     MU_TOO_BIG = 6
     MU_TOO_SMALL = 7
     TOO_MUCH_LIGHT = 8
+
 
 def print_error_legend():
     """Print error explanation and quit."""
@@ -61,6 +65,7 @@ def print_error_legend():
     print("   !  ==> M_R + M_T > 1    ")
     print("   +  ==> Did not converge\n")
     sys.exit(0)
+
 
 def what_char(err):
     """Return appropriate character for analysis of current datapoint."""
@@ -83,6 +88,7 @@ def what_char(err):
     if err == InputError.TOO_MUCH_LIGHT:
         return '!'
     return '?'
+
 
 def print_dot(start_time, err, points, final, verbosity):
     """Print a character for each datapoint during analysis."""
@@ -122,6 +128,7 @@ def validator_01(value):
         raise argparse.ArgumentTypeError(f"Commandline: {value} is not between 0 and 1")
     return fvalue
 
+
 def validator_11(value):
     """Is value between -1 and 1."""
     try:
@@ -132,6 +139,7 @@ def validator_11(value):
         raise argparse.ArgumentTypeError(f"Commandline: {value} is not between 0 and 1")
     return fvalue
 
+
 def validator_positive(value):
     """Is value non-negative."""
     try:
@@ -141,6 +149,7 @@ def validator_positive(value):
     if fvalue < 0:
         raise argparse.ArgumentTypeError(f"{value} is not positive")
     return fvalue
+
 
 # Argument specifications
 arg_specs = [
@@ -184,6 +193,7 @@ arg_specs = [
     {"flags": ["filename"], "nargs": "?", "type": str, "default": None, "help": "Input filename"}
 ]
 
+
 def print_long_version():
     """Print the version information and quit."""
     s = ''
@@ -211,6 +221,7 @@ def example_text():
     s += "  iad -o out file.rxt       Calculated values in out\n"
     s += "  iad -r 0.3                R_total=0.\n"
     return s
+
 
 def add_sample_constraints(exp, args):
     """Command-line constraints on sample."""
@@ -264,9 +275,10 @@ def add_sample_constraints(exp, args):
     if args.q is not None:
         if args.q % 4:
             raise argparse.ArgumentTypeError('Commandline: Number of quadrature points must be a multiple of 4')
-        if exp.sample.nu_0 !=1 and args.q % 12:
+        if exp.sample.nu_0 != 1 and args.q % 12:
             raise argparse.ArgumentTypeError('Commandline: Quadrature must be 12, 24, 36,... for oblique incidence')
         exp.sample.quad_pts = args.q
+
 
 def add_experiment_constraints(exp, args):
     """Command-line constraints on experiment."""
@@ -290,6 +302,7 @@ def add_experiment_constraints(exp, args):
 
     if args.u is not None:
         exp.m_u = args.u
+
 
 def add_analysis_constraints(exp, args):
     """Add command line constraints on analysis."""
@@ -323,6 +336,7 @@ def add_analysis_constraints(exp, args):
         # photons
         pass
 
+
 def forward_calculation(exp):
     """Do a forward calculation."""
     # set albedo
@@ -348,7 +362,7 @@ def forward_calculation(exp):
         elif exp.default_mus is None:
             exp.sample.b = float('inf')
         else:
-            exp.sample.b = exp.default_mus/exp.sample.a * exp.sample.d
+            exp.sample.b = exp.default_mus / exp.sample.a * exp.sample.d
     else:
         exp.sample.b = exp.default_b
 
@@ -371,6 +385,7 @@ def forward_calculation(exp):
     print("   T unscattered   = %.3f" % tu)
     sys.exit(0)
 
+
 def print_results_header(debug_lost_light=False):
     """Print the header for results to stdout."""
     print("#     \tMeasured \t   M_R   \tMeasured \t   M_T   \tEstimated\tEstimated\tEstimated", end='')
@@ -387,6 +402,7 @@ def print_results_header(debug_lost_light=False):
     if debug_lost_light:
         print("\t  [---]  \t  [---]  \t  [---]  \t  [---]  \t  [---]  \t  [---]  \t  [---]  ", end='')
     print()
+
 
 def invert_file(exp, args):
     """Process an entire .rxt file."""
@@ -441,6 +457,7 @@ def invert_file(exp, args):
         sys.stdout = original_stdout
     sys.exit(0)
 
+
 def main():
     """Main command-line interface."""
     parser = argparse.ArgumentParser(description='iad command line program',
@@ -488,6 +505,7 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

@@ -32,6 +32,7 @@ import iadpython
 
 __all__ = ('read_txt', 'IADResult')
 
+
 class IADResult():
     """Container class results in an iad output file."""
     def __init__(self):
@@ -46,6 +47,7 @@ class IADResult():
         self.success = np.array([0], dtype=bool)
         self.mus = np.array([0], dtype=float)
 
+
 def verify_magic(fp, magic):
     """
     Verify that the file's initial bytes match the string 'magic'.
@@ -53,7 +55,7 @@ def verify_magic(fp, magic):
     fp.seek(0)
     chunk = fp.read(len(magic))
     fp.seek(0)
-    return chunk==magic
+    return chunk == magic
 
 
 def get_number_from_line(fp):
@@ -70,6 +72,7 @@ def get_number_from_line(fp):
     print("finish x=%10.5f" % float(s))
     return float(s)
 
+
 def read_sphere(fp):
     """Read the information for a sphere."""
     line = fp.read_line()
@@ -84,10 +87,12 @@ def read_sphere(fp):
     sphere.r_std = get_number_from_line(fp)
     return sphere
 
+
 def read_misc(fp, exp):
     """Read info after sphere data but before data."""
     for _ in range(14):
         fp.read_line()
+
 
 def read_txt(filename):
     """Read an IAD output file in .rxt format."""
@@ -113,8 +118,8 @@ def read_txt(filename):
     exp.sample.n_above = get_number_from_line(fp)
     exp.sample.n_below = get_number_from_line(fp)
     fp.read_line()
-    exp.fraction_of_rc_in_mr = get_number_from_line(fp)/100
-    exp.fraction_of_tc_in_mt = get_number_from_line(fp)/100
+    exp.fraction_of_rc_in_mr = get_number_from_line(fp) / 100
+    exp.fraction_of_tc_in_mt = get_number_from_line(fp) / 100
     fp.read_line()
     exp.r_sphere = read_sphere(fp)
     fp.read_line()
@@ -132,7 +137,7 @@ def read_txt(filename):
     data.mua = np.atleast_1d(mua)
     data.musp = np.atleast_1d(musp)
     data.g = np.atleast_1d(g)
-    data.mus = data.musp/(1-g)
+    data.mus = data.musp / (1 - g)
 
     converters = {8: lambda s: s.lstrip(b'#').strip()}
     status = np.loadtxt(fp, usecols=[8], dtype=str, converters=converters)

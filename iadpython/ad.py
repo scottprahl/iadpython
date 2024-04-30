@@ -37,6 +37,7 @@ def stringify(form, x):
         s += form % mx
     return s
 
+
 class Sample():
     """Container class for details of a sample.
 

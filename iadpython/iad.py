@@ -32,6 +32,7 @@ import numpy as np
 import scipy.optimize
 import iadpython as iad
 
+
 def stringify(form, x):
     if x is None:
         s = 'None'
@@ -99,7 +100,7 @@ class Experiment():
         self.num_measurements = 0
         self.grid = None
         self.counter = 0
-        self.include_measurements=True
+        self.include_measurements = True
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -107,7 +108,7 @@ class Experiment():
         s += self.sample.__str__()
         s += "\n--------------- Spheres ---------------\n"
         if not np.isscalar(self.num_spheres):
-            s += "number of spheres range (%s)\n" % stringify("%d",self.num_spheres)
+            s += "number of spheres range (%s)\n" % stringify("%d", self.num_spheres)
         elif self.num_spheres == 0:
             s += "No spheres used.\n"
         elif self.num_spheres == 1:
@@ -517,7 +518,7 @@ def abfun(x, *args):
     exp.sample.b = x[1]
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
-    print("%7.4f %7.4f %7.4f %7.4f %7.4f"%(exp.sample.a, exp.sample.b, m_r, m_t, delta))
+    print("%7.4f %7.4f %7.4f %7.4f %7.4f" % (exp.sample.a, exp.sample.b, m_r, m_t, delta))
     return delta
 
 

@@ -43,7 +43,7 @@ def read_and_remove_notation(filename):
     with open(filename, encoding="utf-8") as f:
         for line in f:
             line = re.sub(r'\s*#.*', '', line)
-            line = re.sub(r',', ' ', line)
+            line = re.sub(r', ', ' ', line)
             s += line
 
     if len(re.findall('IAD1', s)) == 0:
@@ -55,12 +55,13 @@ def read_and_remove_notation(filename):
     s = s.lstrip()
     return s
 
+
 def fill_in_data(exp, data, column_letters_str):
     if column_letters_str == '':
         columns = int(exp.num_measures)
-        if data[0]>1:
-            columns+=1
-    else :
+        if data[0] > 1:
+            columns += 1
+    else:
         columns = len(column_letters_str)
 
     print(column_letters_str)
@@ -69,73 +70,74 @@ def fill_in_data(exp, data, column_letters_str):
     if column_letters_str == '':
         col = 0
         if data[0] > 1:
-            exp.lambda0 = data_in_columns[:,0]
+            exp.lambda0 = data_in_columns[:, 0]
             col = 1
-        exp.m_r = data_in_columns[:,col]
-        if exp.num_measures >=2:
-            exp.m_t = data_in_columns[:,col+1]
-        if exp.num_measures >=3:
-            exp.m_u = data_in_columns[:,col+2]
-        if exp.num_measures >=4:
-            exp.r_sphere.r_wall = data_in_columns[:,col+3]
-        if exp.num_measures >=5:
-            exp.t_sphere.r_wall = data_in_columns[:,col+4]
-        if exp.num_measures >=6:
-            exp.r_sphere.r_std = data_in_columns[:,col+5]
-        if exp.num_measures >=7:
-            exp.t_sphere.r_std = data_in_columns[:,col+6]
-        if exp.num_measures >7:
+        exp.m_r = data_in_columns[:, col]
+        if exp.num_measures >= 2:
+            exp.m_t = data_in_columns[:, col + 1]
+        if exp.num_measures >= 3:
+            exp.m_u = data_in_columns[:, col + 2]
+        if exp.num_measures >= 4:
+            exp.r_sphere.r_wall = data_in_columns[:, col + 3]
+        if exp.num_measures >= 5:
+            exp.t_sphere.r_wall = data_in_columns[:, col + 4]
+        if exp.num_measures >= 6:
+            exp.r_sphere.r_std = data_in_columns[:, col + 5]
+        if exp.num_measures >= 7:
+            exp.t_sphere.r_std = data_in_columns[:, col + 6]
+        if exp.num_measures > 7:
             raise ValueError('unimplemented')
         return
 
     for col, letter in enumerate(column_letters_str):
-        if letter=='a':
-            exp.default_a = data_in_columns[:,col]
-        elif letter=='b':
-            exp.default_b = data_in_columns[:,col]
-        elif letter=='B':
-            exp.d_beam = data_in_columns[:,col]
-        elif letter=='c':
-            exp.fraction_of_rc_in_mr = data_in_columns[:,col]
-        elif letter=='C':
-            exp.fraction_of_tc_in_mt = data_in_columns[:,col]
-        elif letter=='d':
-            exp.sample.d = data_in_columns[:,col]
-        elif letter=='D':
-            exp.sample.d_above = data_in_columns[:,col]
-            exp.sample.d_below = data_in_columns[:,col]
-        elif letter=='E':
-            exp.sample.b_above = data_in_columns[:,col]
-            exp.sample.b_below = data_in_columns[:,col]
-        elif letter=='e':
-            exp.error = data_in_columns[:,col]
-        elif letter=='g':
-            exp.default_g = data_in_columns[:,col]
-        elif letter=='t':
-            exp.m_t = data_in_columns[:,col]
-        elif letter=='L':
-            exp.lambda0 = data_in_columns[:,col]
-        elif letter=='n':
-            exp.n = data_in_columns[:,col]
-        elif letter=='N':
-            exp.n_above = data_in_columns[:,col]
-            exp.n_below = data_in_columns[:,col]
-        elif letter=='r':
-            exp.m_r = data_in_columns[:,col]
-        elif letter=='R':
-            exp.r_sphere.r_std = data_in_columns[:,col]
-        elif letter=='S':
-            exp.num_spheres = data_in_columns[:,col]
-        elif letter=='T':
-            exp.t_sphere.r_rstd = data_in_columns[:,col]
-        elif letter=='u':
-            exp.m_u = data_in_columns[:,col]
-        elif letter=='w':
-            exp.r_sphere.r_wall = data_in_columns[:,col]
-        elif letter=='W':
-            exp.t_sphere.r_wall = data_in_columns[:,col]
+        if letter == 'a':
+            exp.default_a = data_in_columns[:, col]
+        elif letter == 'b':
+            exp.default_b = data_in_columns[:, col]
+        elif letter == 'B':
+            exp.d_beam = data_in_columns[:, col]
+        elif letter == 'c':
+            exp.fraction_of_rc_in_mr = data_in_columns[:, col]
+        elif letter == 'C':
+            exp.fraction_of_tc_in_mt = data_in_columns[:, col]
+        elif letter == 'd':
+            exp.sample.d = data_in_columns[:, col]
+        elif letter == 'D':
+            exp.sample.d_above = data_in_columns[:, col]
+            exp.sample.d_below = data_in_columns[:, col]
+        elif letter == 'E':
+            exp.sample.b_above = data_in_columns[:, col]
+            exp.sample.b_below = data_in_columns[:, col]
+        elif letter == 'e':
+            exp.error = data_in_columns[:, col]
+        elif letter == 'g':
+            exp.default_g = data_in_columns[:, col]
+        elif letter == 't':
+            exp.m_t = data_in_columns[:, col]
+        elif letter == 'L':
+            exp.lambda0 = data_in_columns[:, col]
+        elif letter == 'n':
+            exp.n = data_in_columns[:, col]
+        elif letter == 'N':
+            exp.n_above = data_in_columns[:, col]
+            exp.n_below = data_in_columns[:, col]
+        elif letter == 'r':
+            exp.m_r = data_in_columns[:, col]
+        elif letter == 'R':
+            exp.r_sphere.r_std = data_in_columns[:, col]
+        elif letter == 'S':
+            exp.num_spheres = data_in_columns[:, col]
+        elif letter == 'T':
+            exp.t_sphere.r_rstd = data_in_columns[:, col]
+        elif letter == 'u':
+            exp.m_u = data_in_columns[:, col]
+        elif letter == 'w':
+            exp.r_sphere.r_wall = data_in_columns[:, col]
+        elif letter == 'W':
+            exp.t_sphere.r_wall = data_in_columns[:, col]
         else:
             raise ValueError('unimplemented column type "%s"' % letter)
+
 
 def read_rxt(filename):
     """Read an IAD input file in .rxt format.
