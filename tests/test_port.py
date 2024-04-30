@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 from iadpython import Sphere, Port
 
+
 class TestPort(unittest.TestCase):
     """Unit tests for the Port class."""
 
@@ -9,10 +10,10 @@ class TestPort(unittest.TestCase):
         """Set up test conditions for Port tests."""
         d_sample = 25    # 20 mm sample port
         d_sphere = 200   # 200 mm diameter sphere
-        R = d_sphere /2
+        R = d_sphere / 2
         d_port = 20
         uru_port = 0.5
-        self.sphere = Sphere(d_sphere, d_sample)  # 
+        self.sphere = Sphere(d_sphere, d_sample)
         self.sphere.z = R
         self.port = Port(self.sphere, d_port, uru=uru_port, z=R)  # Example port
 
@@ -50,6 +51,7 @@ class TestPort(unittest.TestCase):
         for i in range(20):
             x, y, z = self.port.uniform()
             self.assertTrue(self.port.hit(), "Hit detection is incorrect")
+
 
 if __name__ == '__main__':
     unittest.main()

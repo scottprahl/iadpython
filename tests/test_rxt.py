@@ -3,8 +3,15 @@
 
 """Tests for NIST reflectance data."""
 
+import os
 import unittest
 import iadpython
+
+# Get the directory of the current test file
+test_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Path to the data directory relative to the test file
+data_dir = os.path.join(test_dir, 'data')
 
 
 class TestRXT(unittest.TestCase):
@@ -12,7 +19,8 @@ class TestRXT(unittest.TestCase):
 
     def test_rxt_01(self):
         """Verify m_r measurements read correctly."""
-        exp = iadpython.read_rxt('./tests/data/basic-A.rxt')
+        filename = os.path.join(data_dir, 'basic-A.rxt')
+        exp = iadpython.read_rxt(filename)
         self.assertAlmostEqual(exp.m_r[0], 0.299262, delta=1e-5)
         self.assertAlmostEqual(exp.m_r[-1], 0.09662, delta=1e-5)
         self.assertIsNone(exp.m_t)
@@ -21,7 +29,8 @@ class TestRXT(unittest.TestCase):
 
     def test_rxt_02(self):
         """Verify m_r and m_t measurements read correctly."""
-        exp = iadpython.read_rxt('./tests/data/basic-B.rxt')
+        filename = os.path.join(data_dir, 'basic-B.rxt')
+        exp = iadpython.read_rxt(filename)
         self.assertAlmostEqual(exp.m_r[0], 0.51485, delta=1e-5)
         self.assertAlmostEqual(exp.m_t[0], 0.19596, delta=1e-5)
         self.assertAlmostEqual(exp.m_r[-1], 0.44875, delta=1e-5)
@@ -31,7 +40,8 @@ class TestRXT(unittest.TestCase):
 
     def test_rxt_03(self):
         """Verify m_r, m_t, and m_u measurements read correctly."""
-        exp = iadpython.read_rxt('./tests/data/basic-C.rxt')
+        filename = os.path.join(data_dir, 'basic-C.rxt')
+        exp = iadpython.read_rxt(filename)
         self.assertAlmostEqual(exp.m_r[0], 0.18744, delta=1e-5)
         self.assertAlmostEqual(exp.m_t[0], 0.57620, delta=1e-5)
         self.assertAlmostEqual(exp.m_u[0], 0.00560, delta=1e-5)
@@ -42,7 +52,8 @@ class TestRXT(unittest.TestCase):
 
     def test_rxt_04(self):
         """Verify lambda, m_r, m_t read correctly."""
-        exp = iadpython.read_rxt('./tests/data/sample-A.rxt')
+        filename = os.path.join(data_dir, 'sample-A.rxt')
+        exp = iadpython.read_rxt(filename)
         self.assertAlmostEqual(exp.lambda0[0], 800)
         self.assertAlmostEqual(exp.m_r[0], 0.16830, delta=1e-5)
         self.assertAlmostEqual(exp.m_t[0], 0.24974, delta=1e-5)
@@ -53,7 +64,8 @@ class TestRXT(unittest.TestCase):
 
     def test_rxt_05(self):
         """Verify lambda, m_r read correctly."""
-        exp = iadpython.read_rxt('./tests/data/sample-B.rxt')
+        filename = os.path.join(data_dir, 'sample-B.rxt')
+        exp = iadpython.read_rxt(filename)
         self.assertAlmostEqual(exp.lambda0[0], 800)
         self.assertAlmostEqual(exp.m_r[0], 0.16830, delta=1e-5)
         self.assertAlmostEqual(exp.lambda0[-1], 1000)
