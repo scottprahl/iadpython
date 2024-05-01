@@ -101,6 +101,7 @@ test:
 	pytest --verbose tests/test_quadrature.py
 	pytest --verbose tests/test_redistribution.py
 	pytest --verbose tests/test_rxt.py
+	pytest --verbose tests/test_txt.py
 	pytest --verbose tests/test_sphere.py
 	pytest --verbose tests/test_port.py
 	pytest --verbose tests/test_start.py
