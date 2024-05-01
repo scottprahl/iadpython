@@ -1,0 +1,47 @@
+# Inverse Adding-Doubling 3-16-2 (24 Apr 2024) 
+# iad sample-D.rxt 
+#                        Beam diameter =     5.0 mm
+#                     Sample thickness =   1.000 mm
+#                  Top slide thickness =   1.000 mm
+#               Bottom slide thickness =   1.000 mm
+#           Sample index of refraction =  1.3400 mm
+#        Top slide index of refraction =  1.5000 mm
+#     Bottom slide index of refraction =  1.5000 mm
+# 
+#  Percentage unscattered refl. in M_R =   100.0 %
+# Percentage unscattered trans. in M_T =   100.0 %
+# 
+# Reflection sphere has a baffle between sample and detector
+#                      sphere diameter =   203.2 mm
+#                 sample port diameter =    25.4 mm
+#               entrance port diameter =    12.7 mm
+#               detector port diameter =     1.0 mm
+#                 detector reflectance =     0.0 %
+#                     wall reflectance =    97.0 %
+#                 calibration standard =    96.0 %
+#
+# Transmission sphere has a baffle between sample and detector
+#                      sphere diameter =   203.2 mm
+#                 sample port diameter =    25.4 mm
+#                  third port diameter =    12.7 mm
+#               detector port diameter =     1.0 mm
+#                 detector reflectance =     0.0 %
+#                     wall reflectance =    99.1 %
+#                 calibration standard =   100.0 %
+#
+# M_R, M_T, M_U, r_w, and t_w were measured using the substitution (single-beam) method.
+# Single sphere corrections were used and light was incident at 0 degrees from the normal.
+# The inverse routine adapted to the input data.
+# 
+# 
+#                 AD quadrature points =   8
+#             AD tolerance for success =   0.00010
+#      MC tolerance for mu_a and mu_s' =   0.010 %
+#  Photons used to estimate lost light =   100000
+#
+#     	Measured 	   M_R   	Measured 	   M_T   	Estimated	Estimated	Estimated
+##wave	   M_R   	   fit   	   M_T   	   fit   	  mu_a   	  mu_s'  	    g    
+# [nm]	  [---]  	  [---]  	  [---]  	  [---]  	  1/mm   	  1/mm   	  [---]  
+ 925.0	   0.4725	   0.4725	   0.4788	   0.4788	   0.0199	   2.5971	   0.0000	 * 
+ 926.0	   0.4702	   0.4701	   0.4797	   0.4797	   0.0202	   2.5742	   0.0000	 * 
+ 927.0	   0.4689	   0.4689	   0.4794	   0.4794	   0.0207	   2.5666	   0.0000	 * 
