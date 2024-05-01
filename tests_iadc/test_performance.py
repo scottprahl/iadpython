@@ -138,5 +138,6 @@ class speed(unittest.TestCase):
         deltaP = time.perf_counter() - start_time
         print("5 %7.2f %7.2f %5.0f%%" % (deltaC, deltaP, 100 * deltaP / deltaC))
 
+
 if __name__ == '__main__':
     unittest.main()
