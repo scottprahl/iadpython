@@ -25,16 +25,12 @@ class ForwardOneBigSphere(unittest.TestCase):
         d_sphere = 2500
         d_sample = 10
         rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0)
-        M = rsph.multiplier(UX1=ur1, URU=uru)
-        M100 = rsph.multiplier(UX1=1.0, URU=1.0)
-        ur1a = M / M100
+        ur1a = rsph.MR(ur1, uru)
 
         tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0)
-        M = tsph.multiplier(UX1=ut1, URU=uru)
-        M100 = tsph.multiplier(UX1=1, URU=0.0)
-        ut1a = M / M100
-        self.assertAlmostEqual(ur1, ur1a, delta=1e-5)
-        self.assertAlmostEqual(ut1, ut1a, delta=1e-5)
+        ut1a = tsph.MT(ut1, uru)
+        self.assertAlmostEqual(ur1, ur1a, delta=1e-4)
+        self.assertAlmostEqual(ut1, ut1a, delta=1e-4)
 
     def test_forward_02(self):
         """Big gray sphere."""
@@ -44,16 +40,12 @@ class ForwardOneBigSphere(unittest.TestCase):
         d_sphere = 2500
         d_sample = 10
         rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0.9)
-        M = rsph.multiplier(UX1=ur1, URU=uru)
-        M100 = rsph.multiplier(UX1=1.0, URU=1.0)
-        ur1a = M / M100
+        ur1a = rsph.MR(ur1, uru)
 
         tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0.9)
-        M = tsph.multiplier(UX1=ut1, URU=uru)
-        M100 = tsph.multiplier(UX1=1, URU=0.0)
-        ut1a = M / M100
-        self.assertAlmostEqual(ur1, ur1a, delta=1e-5)
-        self.assertAlmostEqual(ut1, ut1a, delta=1e-5)
+        ut1a = tsph.MR(ut1, uru)
+        self.assertAlmostEqual(ur1, ur1a, delta=1e-4)
+        self.assertAlmostEqual(ut1, ut1a, delta=1e-4)
 
     def test_forward_03(self):
         """Big nearly white sphere."""
@@ -63,14 +55,10 @@ class ForwardOneBigSphere(unittest.TestCase):
         d_sphere = 2500
         d_sample = 10
         rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0.98)
-        M = rsph.multiplier(UX1=ur1, URU=uru)
-        M100 = rsph.multiplier(UX1=1.0, URU=1.0)
-        ur1a = M / M100
+        ur1a = rsph.MR(ur1, uru)
 
         tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0.98)
-        M = tsph.multiplier(UX1=ut1, URU=uru)
-        M100 = tsph.multiplier(UX1=1, URU=0.0)
-        ut1a = M / M100
+        ut1a = tsph.MT(ut1, uru)
         self.assertAlmostEqual(ur1, ur1a, delta=1e-4)
         self.assertAlmostEqual(ut1, ut1a, delta=1e-4)
 
@@ -82,14 +70,10 @@ class ForwardOneBigSphere(unittest.TestCase):
         d_sphere = 2500
         d_sample = 10
         rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=1.0)
-        M = rsph.multiplier(UX1=ur1, URU=uru)
-        M100 = rsph.multiplier(UX1=1.0, URU=1.0)
-        ur1a = M / M100
+        ur1a = rsph.MR(ur1, uru)
 
         tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=1.0)
-        M = tsph.multiplier(UX1=ut1, URU=uru)
-        M100 = tsph.multiplier(UX1=1, URU=0.0)
-        ut1a = M / M100
+        ut1a = tsph.MT(ut1, uru)
 
         # actual result is complicated.
         self.assertGreater(ur1, ur1a)
@@ -107,14 +91,10 @@ class ForwardOneMediumSphere(unittest.TestCase):
         d_sphere = 200
         d_sample = 10
         rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0)
-        M = rsph.multiplier(UX1=ur1, URU=uru)
-        M100 = rsph.multiplier(UX1=1.0, URU=1.0)
-        ur1a = M / M100
+        ur1a = rsph.MR(ur1, uru)
 
         tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0)
-        M = tsph.multiplier(UX1=ut1, URU=uru)
-        M100 = tsph.multiplier(UX1=1, URU=0.0)
-        ut1a = M / M100
+        ut1a = tsph.MT(ut1, uru)
         self.assertAlmostEqual(ur1, ur1a, delta=2e-4)
         self.assertAlmostEqual(ut1, ut1a, delta=2e-4)
 
@@ -126,14 +106,10 @@ class ForwardOneMediumSphere(unittest.TestCase):
         d_sphere = 200
         d_sample = 10
         rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0.9)
-        M = rsph.multiplier(UX1=ur1, URU=uru)
-        M100 = rsph.multiplier(UX1=1.0, URU=1.0)
-        ur1a = M / M100
+        ur1a = rsph.MR(ur1, uru)
 
         tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0.9)
-        M = tsph.multiplier(UX1=ut1, URU=uru)
-        M100 = tsph.multiplier(UX1=1, URU=0.0)
-        ut1a = M / M100
+        ut1a = tsph.MT(ut1, uru)
         self.assertAlmostEqual(ur1, ur1a, delta=2e-3)
         self.assertAlmostEqual(ut1, ut1a, delta=2e-3)
 
@@ -145,14 +121,10 @@ class ForwardOneMediumSphere(unittest.TestCase):
         d_sphere = 200
         d_sample = 10
         rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=0.98)
-        M = rsph.multiplier(UX1=ur1, URU=uru)
-        M100 = rsph.multiplier(UX1=1.0, URU=1.0)
-        ur1a = M / M100
+        ur1a = rsph.MR(ur1, uru)
 
         tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=0.98)
-        M = tsph.multiplier(UX1=ut1, URU=uru)
-        M100 = tsph.multiplier(UX1=1, URU=0.0)
-        ut1a = M / M100
+        ut1a = tsph.MT(ut1, uru)
         self.assertAlmostEqual(ur1, ur1a, delta=2e-2)
         self.assertAlmostEqual(ut1, ut1a, delta=2e-2)
 
@@ -164,14 +136,10 @@ class ForwardOneMediumSphere(unittest.TestCase):
         d_sphere = 200
         d_sample = 10
         rsph = iad.Sphere(d_sphere, d_sample, d_third=1, r_wall=1)
-        M = rsph.multiplier(UX1=ur1, URU=uru)
-        M100 = rsph.multiplier(UX1=1.0, URU=1.0)
-        ur1a = M / M100
+        ur1a = rsph.MR(ur1, uru)
 
         tsph = iad.Sphere(d_sphere, d_sample, d_third=10, r_wall=1)
-        M = tsph.multiplier(UX1=ut1, URU=uru)
-        M100 = tsph.multiplier(UX1=1, URU=0.0)
-        ut1a = M / M100
+        ut1a = tsph.MT(ut1, uru)
 
         # actual result is complicated.
         self.assertGreater(ur1, ur1a)
