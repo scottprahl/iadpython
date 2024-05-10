@@ -1,3 +1,4 @@
+"""Script to setup iadpython module."""
 import re
 import os.path
 from setuptools import setup
