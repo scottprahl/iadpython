@@ -16,7 +16,7 @@ lint:
 	-pylint iadpython/iad.py
 	-pylint iadpython/nist.py
 	-pylint --ignored-modules=scipy.special iadpython/quadrature.py
-	-pylint iadpython/redistribution.py
+	-pylint --ignored-modules=scipy.special iadpython/redistribution.py
 	-pylint iadpython/rxt.py
 	-pylint iadpython/sphere.py
 	-pylint iadpython/port.py
@@ -40,54 +40,11 @@ lint:
 lintc:
 	-pylint iadpython/iadc.py
 	-pylint tests_iadc/test_iadc.py
-	
-doccheck:
-	-pydocstyle --convention=google iadpython/ad.py
-	-pydocstyle --convention=google iadpython/combine.py
-	-pydocstyle --convention=google iadpython/constants.py
-	-pydocstyle --convention=google iadpython/iad.py
-	-pydocstyle --convention=google iadpython/fresnel.py
-	-pydocstyle --convention=google iadpython/grid.py
-	-pydocstyle --convention=google iadpython/nist.py
-	-pydocstyle --convention=google iadpython/quadrature.py
-	-pydocstyle --convention=google iadpython/redistribution.py
-	-pydocstyle --convention=google iadpython/rxt.py
-	-pydocstyle --convention=google iadpython/sphere.py
-	-pydocstyle --convention=google iadpython/port.py
-	-pydocstyle --convention=google iadpython/start.py
-	-pydocstyle tests/test_boundary.py
-	-pydocstyle tests/test_combo.py
-	-pydocstyle tests/test_fresnel.py
-	-pydocstyle tests/test_grid.py
-	-pydocstyle tests/test_iad.py
-	-pydocstyle tests/test_layer.py
-	-pydocstyle tests/test_layers.py
-	-pydocstyle tests/test_quadrature.py
-	-pydocstyle tests/test_redistribution.py
-	-pydocstyle tests/test_start.py
-	-pydocstyle tests/test_ur1_uru.py
-	-pydocstyle tests/test_nist.py
-	-pydocstyle tests/test_port.py
-	-pydocstyle tests_iadc/test_iadc.py
-	-pydocstyle tests_iadc/test_performance.py
 
-doccheckc:
-	-pydocstyle --convention=google iadpython/iadc.py
-	-pydocstyle tests/test_iadc.py
-
-notecheck:
+notetest:
 	make clean
 	pytest --notebooks tests/test_all_notebooks.py
 	rm -rf __pycache__
-
-rcheck:
-	make doccheck
-	make lint
-	make test
-	-flake8 .
-	pyroma -d .
-	check-manifest
-	make notecheck
 
 test:
 	pytest --verbose tests/test_boundary.py
@@ -107,11 +64,21 @@ test:
 	pytest --verbose tests/test_start.py
 	pytest --verbose tests/test_ur1_uru.py
 	pytest --verbose tests/test_iad.py
-	pytest --verbose tests/test_all_notebooks.py
 
 testc:
 	pytest --verbose tests_iadc/test_iadc.py
 	pytest --verbose tests_iadc/test_performance.py
+
+rcheck:
+	-ruff check
+	-flake8 .
+	make lint
+	make lintc
+	make test
+	make testc
+	pyroma -d .
+	check-manifest
+	make notetest
 
 clean:
 	rm -rf .pytest_cache
@@ -127,9 +94,8 @@ clean:
 	rm -rf docs/.ipynb_checkpoints
 	rm -rf tests/__pycache__
 	rm -rf tests/tests_iadc/__pycache__
-	rm -rf tests/data/*txt
 
 realclean:
 	make clean
 
-.PHONY: clean realclean test check pylint pydoc html
+.PHONY: clean realclean test lintpylint pydoc html
