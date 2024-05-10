@@ -1,43 +1,43 @@
+.. |pypi| image:: https://img.shields.io/pypi/v/iadpython?color=68CA66
+   :target: https://pypi.org/project/iadpython/
+   :alt: pypi
+
+.. |github| image:: https://img.shields.io/github/v/tag/scottprahl/iadpython?label=github&color=68CA66
+   :target: https://github.com/scottprahl/iadpython
+   :alt: github
+
+.. |conda| image:: https://img.shields.io/conda/vn/conda-forge/iadpython?label=conda&color=68CA66
+   :target: https://github.com/conda-forge/iadpython-feedstock
+   :alt: conda
+
+.. |doi| image:: https://zenodo.org/badge/102148844.svg
+   :target: https://zenodo.org/badge/latestdoi/102148844
+   :alt: doi
+
+.. |license| image:: https://img.shields.io/github/license/scottprahl/iadpython?color=68CA66
+   :target: https://github.com/scottprahl/iadpython/blob/main/LICENSE.txt
+   :alt: License
+
+.. |test| image:: https://github.com/scottprahl/iadpython/actions/workflows/test.yaml/badge.svg
+   :target: https://github.com/scottprahl/iadpython/actions/workflows/test.yaml
+   :alt: Testing
+
+.. |docs| image:: https://readthedocs.org/projects/iadpython/badge
+   :target: https://iadpython.readthedocs.io
+   :alt: Docs
+
+.. |downloads| image:: https://img.shields.io/pypi/dm/iadpython?color=68CA66
+   :target: https://pypi.org/project/iadpython/
+   :alt: Downloads
+
 iadpython
 =========
 
 by Scott Prahl
 
-.. image:: https://img.shields.io/pypi/v/iadpython?color=68CA66
-   :target: https://pypi.org/project/iadpython/
-   :alt: pypi
+|pypi| |github| |conda| |doi|
 
-.. image:: https://img.shields.io/github/v/tag/scottprahl/iadpython?label=github&color=68CA66
-   :target: https://github.com/scottprahl/iadpython
-   :alt: github
-
-.. image:: https://img.shields.io/conda/vn/conda-forge/iadpython?label=conda&color=68CA66
-   :target: https://github.com/conda-forge/iadpython-feedstock
-   :alt: conda
-
-.. image:: https://zenodo.org/badge/102148844.svg
-   :target: https://zenodo.org/badge/latestdoi/102148844
-   :alt: doi
-
-|
-
-.. image:: https://img.shields.io/github/license/scottprahl/iadpython?color=68CA66
-   :target: https://github.com/scottprahl/iadpython/blob/master/LICENSE.txt
-   :alt: License
-
-.. image:: https://github.com/scottprahl/iadpython/actions/workflows/test.yaml/badge.svg
-   :target: https://github.com/scottprahl/iadpython/actions/workflows/test.yaml
-   :alt: Testing
-
-.. image:: https://readthedocs.org/projects/iadpython/badge
-   :target: https://iadpython.readthedocs.io
-   :alt: Docs
-
-.. image:: https://img.shields.io/pypi/dm/iadpython?color=68CA66
-   :target: https://pypi.org/project/iadpython/
-   :alt: Downloads
-
-__________
+|license| |test| |docs| |downloads|
 
 `iadpython` will be a pure Python module to do forward and inverse multiple light
 scattering (radiative transport) in layered materials.  Calculations are done using 
@@ -110,7 +110,7 @@ or ``conda``::
 or use immediately by clicking the Google Colaboratory button below
 
 .. image:: https://colab.research.google.com/assets/colab-badge.svg
-  :target: https://colab.research.google.com/github/scottprahl/iadpython/blob/master
+  :target: https://colab.research.google.com/github/scottprahl/iadpython/blob/main
   :alt: Colab
 
 Inverse Calculations
