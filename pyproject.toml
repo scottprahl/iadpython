@@ -2,18 +2,34 @@
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
-[tool.check-manifest]
-ignore = ["release.txt",
-          "todo.txt",
-          "Makefile",
-          ".readthedocs.yaml",
-          ".testignore",
-          "docs/*",
-          "tests_iadc/*"]
-
 [tool.ruff]
-line-length = 100
+line-length = 150
+exclude =['.git', '__pycache__', 'docs']
 
 [tool.ruff.lint]
-ignore = ["F403", "F841"]
-exclude = ['.git', '__pycache__', 'docs']
+select = ["D", "E", "F", "W"]
+ignore = ["D212", "F403"]
+pydocstyle.convention = "google"
+
+[tool.check-manifest]
+ignore = [
+    ".readthedocs.yaml",
+    "docs/*",
+    "Makefile",
+    "release.txt",
+    "requirements.txt",
+    "requirements-dev.txt",
+    "todo",
+]
+
+[tool.pytest.ini_options]
+markers = ["notebooks"]
+
+[tool.pylint]
+disable = [
+    "invalid-name",
+    "line-too-long",
+    "too-many-locals",
+    "too-many-arguments",
+    "consider-using-f-string",
+  ]
