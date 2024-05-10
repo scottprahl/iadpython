@@ -6,10 +6,8 @@ docs/.ipynb_checkpoints/
 iadpython.egg-info/*
 dist/*
 docs/_build/*
-docs/ad-classes.graffle
 docs/doi.org/
-docs/sphere-T.graffle
-docs/sphere.graffle
+docs/*.graffle
 docs/api/
 iadpython/.ipynb_checkpoints/
 iadp
