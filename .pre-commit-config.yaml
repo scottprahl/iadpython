@@ -6,6 +6,10 @@ repos:
         language_version: python3.12
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0  # Use the specific version you need
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
+      - id: double-quote-string-fixer
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
