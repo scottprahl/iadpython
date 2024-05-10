@@ -7,4 +7,10 @@ include requirements-dev.txt
 
 include iadpython/data/M38597.csv
 include tests/data/*.rxt
+include tests/data/*.txt
 include tests/*.py
+include tests_iadc/test_iadc.py
+include tests_iadc/test_performance.py
+
+exclude todo.txt
+exclude .testignore
