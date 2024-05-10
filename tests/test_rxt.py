@@ -21,6 +21,7 @@ class TestRXT(unittest.TestCase):
         """Verify m_r measurements read correctly."""
         filename = os.path.join(data_dir, 'basic-A.rxt')
         exp = iadpython.read_rxt(filename)
+        print(exp.lambda0)
         self.assertAlmostEqual(exp.m_r[0], 0.299262, delta=1e-5)
         self.assertAlmostEqual(exp.m_r[-1], 0.09662, delta=1e-5)
         self.assertIsNone(exp.m_t)

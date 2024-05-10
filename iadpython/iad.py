@@ -1,11 +1,3 @@
-# pylint: disable=invalid-name
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=too-many-arguments
-# pylint: disable=consider-using-f-string
-# pylint: disable=unused-argument
-# pylint: disable=too-many-branches
-
 """Class for doing inverse adding-doubling calculations for a sample.
 
 Example::
@@ -30,21 +22,8 @@ import sys
 import copy
 import numpy as np
 import scipy.optimize
+from iadpython.ad import stringify
 import iadpython as iad
-
-
-def stringify(form, x):
-    if x is None:
-        s = 'None'
-    elif np.isscalar(x):
-        s = form % x
-    else:
-        mn = min(x)
-        mx = max(x)
-        s = form % mn
-        s += ' to '
-        s += form % mx
-    return s
 
 
 class Experiment():
@@ -71,7 +50,7 @@ class Experiment():
 
         # these will have to be eventually supported
         self.d_beam = 1
-        self.lambda0 = 633
+        self.lambda0 = None
 
         self.flip_sample = False
         self.fraction_of_rc_in_mr = 1
@@ -423,7 +402,7 @@ class Experiment():
             [float, float]: measured reflection and transmission
         """
         s = self.sample
-        ur1, ut1, uru, utu = s.rt()
+        ur1, ut1, uru, _utu = s.rt()
 
         # find the unscattered reflection and transmission
         nu_inside = iad.cos_snell(1, s.nu_0, s.n)

@@ -1,6 +1,3 @@
-# pylint: disable=invalid-name
-# pylint: disable=too-many-arguments
-
 """Module for adding layers together.
 
 Two types of starting methods are possible.
@@ -62,6 +59,17 @@ def add_layers_basic(sample, R10, T01, R12, R21, T12, T21):
 
     .. math:: C_{ij}= 2𝜈_i w_i 𝛿_{ij}
 
+    Args:
+        sample: Sample object
+        R10: reflection matrix for light moving upwards 1->0
+        T01: transmission array for light moving downwards 1->2
+        R12: reflection matrix for light moving downwards 1->2
+        R21: reflection matrix for light moving upwards 2->1
+        T12: transmission matrix for light moving downwards 1->2
+        T21: transmission matrix for light moving upwards 2->1
+
+    Returns:
+        R02, T20
     """
     C = np.diagflat(sample.twonuw)
     E = np.diagflat(1 / sample.twonuw)
@@ -151,6 +159,7 @@ def _add_boundary_config_a(sample, R12, R21, T12, T21, R10, T01):
     .. math:: R_{20}=T_{12} (E-R_{10}R_{12})^{-1} R_{10} T_{21} + R_{21}
 
     Args:
+        sample: Sample object
         R12: reflection matrix for light moving downwards 1->2
         R21: reflection matrix for light moving upwards 2->1
         T12: transmission matrix for light moving downwards 1->2
@@ -182,6 +191,7 @@ def _add_boundary_config_b(sample, R12, T21, R01, R10, T01, T10):
     .. math:: R_{02}=T_{10} (E-R_{12}R_{10})^{-1} R_{12} T_{01} + R_{01}
 
     Args:
+        sample: Sample object
         R12: reflection matrix for light moving downwards 1->2
         T21: transmission matrix for light moving upwards 2->1
         R01: reflection matrix for light moving downwards 0->1
@@ -211,6 +221,7 @@ def add_slide_above(sample, R01, R10, T01, T10, R12, R21, T12, T21):
     and 2 is the is the bottom-of-slab boundary.
 
     Args:
+        sample: Sample object
         R01: reflection arrays for slide 0->1
         R10: reflection arrays for slide 1->0
         T01: transmission arrays for slide 0->1
@@ -237,10 +248,15 @@ def add_slide_below(sample, R01, R10, T01, T10, R12, R21, T12, T21):
     and 2 is the is the bottom-of-slide/air boundary.
 
     Args:
-        R01, R10: reflection matrices for slab
-        T01, T10: transmission matrices for slab
-        R12, R21: reflection arrays for slide
-        T12, T21: transmission arrays for slide
+        sample: Sample object
+        R01: reflection arrays for slide 0->1
+        R10: reflection arrays for slide 1->0
+        T01: transmission arrays for slide 0->1
+        T10: transmission arrays for slide 1->0
+        R12: reflection matrices for slab 1->2
+        R21: reflection matrices for slab 2->1
+        T12: transmission matrices for slab 1->2
+        T21: transmission matrices for slab 2->1
 
     Returns:
         R02, R20, T02, T20: matrices for slab+slide combination
@@ -287,11 +303,13 @@ def add_same_slides(sample, R01, R10, T01, T10, R, T):
     .. math:: R_{30} = B_{XX} R_{20} T_{01} + R_{01}/(2 𝜈 w)^2
 
     Args:
-        R01: R, T for slide assuming 0=air and 1=slab
-        R10, T01, T10: R, T for slide assuming 0=air and 1=slab
-        T01, T10: R, T for slide assuming 0=air and 1=slab
-        T10: R, T for slide assuming 0=air and 1=slab
-        R, T: R12=R21, T12=T21 for homogeneous slab
+        sample: Sample object
+        R01: R for slide assuming 0=air and 1=slab
+        R10: R for slide assuming 0=air and 1=slab
+        T10: T for slide assuming 0=air and 1=slab
+        T01: T for slide assuming 0=air and 1=slab
+        R: R12=R21 for homogeneous slab
+        T: T12=T21 for homogeneous slab
 
     Returns:
         T30, T03: R, T for all 3 with top = bottom boundary

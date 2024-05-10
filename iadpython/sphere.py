@@ -1,10 +1,4 @@
-# pylint: disable=invalid-name
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
-# pylint: disable=consider-using-f-string
-# pylint: disable=line-too-long
-# pylint: disable=unused-variable
 """
 Class for managing integrating spheres.
 
@@ -109,6 +103,7 @@ class Sphere():
 
     def __init__(self, d_sphere, d_sample, d_third=0, r_third=0,
                  d_detector=0, r_detector=0, r_std=0.99, r_wall=0.99, refl=True):
+        """Initialization."""
         self._d = d_sphere
         self._r_wall = r_wall
         self._r_std = r_std
@@ -192,9 +187,7 @@ class Sphere():
         return g
 
     def MR(self, sample_ur1, sample_uru=None):
-        """
-        Determine MR due to multiple bounces in the sphere.
-        """
+        """Determine MR due to multiple bounces in the sphere."""
         if sample_uru is None:
             sample_uru = sample_ur1
 
@@ -212,9 +205,7 @@ class Sphere():
         return MR
 
     def MT(self, sample_ut1, sample_uru):
-        """
-        Determine MT due to multiple bounces in the sphere.
-        """
+        """Determine MT due to multiple bounces in the sphere."""
         # sample in sample port, third port has known standard
         gain = self.gain(sample_uru, self.r_std)
 
@@ -449,7 +440,6 @@ class Sphere():
 
     def do_N_photons(self, N):
         """Do a Monte Carlos simulation with N photons."""
-
         # Use current time as seed
         random.seed(time.time())
 
@@ -461,7 +451,7 @@ class Sphere():
 
         total = 0
         for j in range(num_trials):
-            for i in range(N_per_trial):
+            for _i in range(N_per_trial):
                 detected, bounces = self.do_one_photon()
     #            print("%d %8.3f %d" % (i,detected, bounces))
                 total_detected[j] += detected

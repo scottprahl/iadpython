@@ -1,8 +1,3 @@
-# pylint: disable=invalid-name
-# pylint: disable=too-many-locals
-# pylint: disable=consider-using-f-string
-# pylint: disable=too-many-branches
-
 """Module for reading rxt files.
 
 This reads an input rxt file and saves the parameters into an
@@ -56,39 +51,31 @@ def read_and_remove_notation(filename):
     return s
 
 
-def fill_in_data(exp, data, column_letters_str):
-    if column_letters_str == '':
-        columns = int(exp.num_measures)
-        if data[0] > 1:
-            columns += 1
-    else:
-        columns = len(column_letters_str)
+def fill_in_data_fixed(exp, data_in_columns):
+    """Read data the old way by fixed column position."""
+    col = 0
+    if data_in_columns[0, 0] > 1:
+        exp.lambda0 = data_in_columns[:, 0]
+        col = 1
+    exp.m_r = data_in_columns[:, col]
+    if exp.num_measures >= 2:
+        exp.m_t = data_in_columns[:, col + 1]
+    if exp.num_measures >= 3:
+        exp.m_u = data_in_columns[:, col + 2]
+    if exp.num_measures >= 4:
+        exp.r_sphere.r_wall = data_in_columns[:, col + 3]
+    if exp.num_measures >= 5:
+        exp.t_sphere.r_wall = data_in_columns[:, col + 4]
+    if exp.num_measures >= 6:
+        exp.r_sphere.r_std = data_in_columns[:, col + 5]
+    if exp.num_measures >= 7:
+        exp.t_sphere.r_std = data_in_columns[:, col + 6]
+    if exp.num_measures > 7:
+        raise ValueError('unimplemented')
 
-    print(column_letters_str)
-    data_in_columns = data.reshape(-1, columns)
-    exp.lambda0 = None
-    if column_letters_str == '':
-        col = 0
-        if data[0] > 1:
-            exp.lambda0 = data_in_columns[:, 0]
-            col = 1
-        exp.m_r = data_in_columns[:, col]
-        if exp.num_measures >= 2:
-            exp.m_t = data_in_columns[:, col + 1]
-        if exp.num_measures >= 3:
-            exp.m_u = data_in_columns[:, col + 2]
-        if exp.num_measures >= 4:
-            exp.r_sphere.r_wall = data_in_columns[:, col + 3]
-        if exp.num_measures >= 5:
-            exp.t_sphere.r_wall = data_in_columns[:, col + 4]
-        if exp.num_measures >= 6:
-            exp.r_sphere.r_std = data_in_columns[:, col + 5]
-        if exp.num_measures >= 7:
-            exp.t_sphere.r_std = data_in_columns[:, col + 6]
-        if exp.num_measures > 7:
-            raise ValueError('unimplemented')
-        return
 
+def fill_in_data_variable(exp, data_in_columns, column_letters_str):
+    """Read data and interpret according to column_letters_str."""
     for col, letter in enumerate(column_letters_str):
         if letter == 'a':
             exp.default_a = data_in_columns[:, col]
@@ -187,11 +174,19 @@ def read_rxt(filename):
     if exp.num_spheres > 0:
         exp.t_sphere = iadpython.Sphere(x[12], x[13], x[14], x[15], 0, x[16])
 
-    exp.num_measures = 0
+    # Read data
     if column_letters_str == '':
+        # old style data format
         exp.num_measures = x[17]
         data = x[18:]
+        columns = int(exp.num_measures)
+        if data[0] > 1:
+            columns += 1
+        data_in_columns = data.reshape(-1, columns)
+        fill_in_data_fixed(exp, data_in_columns)
     else:
+        # new style variable header format
+        exp.num_measures = 0
         if 'r' in column_letters_str:
             exp.num_measures += 1
         if 't' in column_letters_str:
@@ -199,6 +194,8 @@ def read_rxt(filename):
         if 'u' in column_letters_str:
             exp.num_measures += 1
         data = x[17:]
+        columns = len(column_letters_str)
+        data_in_columns = data.reshape(-1, columns)
+        fill_in_data_variable(exp, data_in_columns, column_letters_str)
 
-    fill_in_data(exp, data, column_letters_str)
     return exp

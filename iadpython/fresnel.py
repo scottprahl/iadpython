@@ -1,8 +1,5 @@
-# pylint: disable = invalid-name
-# pylint: disable = arguments-out-of-order
-# pylint: disable = too-many-arguments
-# pylint: disable = too-many-locals
-# pylint: disable = consider-using-in
+# pylint: disable=consider-using-in
+# pylint: disable=arguments-out-of-order
 
 """Module for generating boundary matrices.
 

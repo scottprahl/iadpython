@@ -1,5 +1,3 @@
-# pylint: disable=invalid-name
-
 """Module for generating the starting layer for adding-doubling.
 
 Two types of starting methods are possible IGI and Diamond.

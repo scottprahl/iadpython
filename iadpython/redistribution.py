@@ -1,6 +1,3 @@
-# pylint: disable=invalid-name
-# pylint: disable=no-member
-
 r"""Module for calculating the redistribution function.
 
 The single scattering phase function ..math:`p(\nu)` for a tissue determines the

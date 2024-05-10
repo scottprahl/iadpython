@@ -1,13 +1,7 @@
-# pylint: disable=invalid-name
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-locals
-# pylint: disable=too-many-branches
-# pylint: disable=bare-except
-# pylint: disable=consider-using-f-string
 """
 Module for direct and inverse adding-doubling calculations.
 
-    Example:
+Example:
         >>> import iadpython as iad
 
         >>> a = 0.9
@@ -676,7 +670,7 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
         nslide: index of refraction of the slides
         ur1: is total reflection for normally incident collimated light.
         ut1: is total transmission for normally incident collimated light.
-        tc: unscattered transmission through sample
+        t_unscattered: unscattered transmission through sample
     Returns:
         - `a` is the single scattering albedo of the slab
         - `b` is the optical thickness of the slab
@@ -936,17 +930,6 @@ class CMeasurement():
         s += "transmittance          = %8.5f\n" % self.transmittance
         s += "unscattered trans      = %8.5f\n" % self.unscattered_transmittance
         return s
-
-# void Spheres_Inverse_RT2(double*sample,
-# double*illumination,
-# double*sphere_r,
-# double*sphere_t,
-# double*analysis,
-# double*measurement,
-# double*a,
-# double*b,
-# double*g)
-
 
 libiad.Spheres_Inverse_RT2.argtypes = (
     ctypes.POINTER(ctypes.c_double),   # sample

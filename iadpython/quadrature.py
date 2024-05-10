@@ -1,5 +1,3 @@
-# pylint: disable=invalid-name
-
 """Module for obtaining quadrature points and weights.
 
 Three types of gaussian quadrature are supported: normal Gaussian,

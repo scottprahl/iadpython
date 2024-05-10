@@ -1,10 +1,7 @@
-# pylint: disable=invalid-name
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-arguments
-# pylint: disable=consider-using-f-string
-# pylint: disable=line-too-long
-
+# pylint: disable=protected-access)
 """
+Implementation of container class for an integrating sphere port.
+
 This module defines the Port class, which is integral to the analysis of light properties
 within an integrating sphere. The Port class specifically models a port on the sphere's
 surface, calculating and storing its geometrical properties and its interaction with light.
@@ -65,6 +62,8 @@ def uniform_disk():
 
 class Port():
     """
+    Container class for a port on an integrating sphere.
+
     A container class for a port in an integrating sphere, which is a structure
     used to analyze light properties. The class calculates and stores various
     geometrical properties of the port, such as its diameter, position, and the
@@ -224,6 +223,7 @@ class Port():
         Args:
             sagitta: The height of the spherical cap from its base to the top.
             sphere_radius: The radius of the sphere with the cap.
+
         Returns:
             A numpy array of a random point on the spherical cap surface.
         """

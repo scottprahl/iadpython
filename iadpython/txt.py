@@ -1,9 +1,3 @@
-# pylint: disable=invalid-name
-# pylint: disable=too-many-locals
-# pylint: disable=consider-using-f-string
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-few-public-methods
-
 """Module for reading rxt files.
 
 This reads an output txt file and saves the parameters into an
@@ -36,6 +30,7 @@ __all__ = ('read_txt', 'IADResult')
 class IADResult():
     """Container class results in an iad output file."""
     def __init__(self):
+        """Initialization."""
         self.lam = np.array([0], dtype=float)
         self.mr = np.array([0], dtype=float)
         self.cr = np.array([0], dtype=float)
@@ -49,9 +44,7 @@ class IADResult():
 
 
 def verify_magic(fp, magic):
-    """
-    Verify that the file's initial bytes match the string 'magic'.
-    """
+    """Verify that the file's initial bytes match the string 'magic'."""
     fp.seek(0)
     chunk = fp.read(len(magic))
     fp.seek(0)
@@ -88,7 +81,7 @@ def read_sphere(fp):
     return sphere
 
 
-def read_misc(fp, exp):
+def read_misc(fp, _exp):
     """Read info after sphere data but before data."""
     for _ in range(14):
         fp.readline()

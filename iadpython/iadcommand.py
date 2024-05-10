@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-
-# pylint: disable=line-too-long
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-branches
-# pylint: disable=too-many-return-statements
-# pylint: disable=global-statement
-# pylint: disable=consider-using-f-string
-# pylint: disable=consider-using-with
-
+"""Command line for support for iadpython."""
 import os
 import sys
 from enum import Enum
@@ -209,7 +201,7 @@ def print_long_version():
 
 
 def example_text():
-    """return a string with some command-line examples."""
+    """Return a string with some command-line examples."""
     s = ''
     s += "Examples:\n"
     s += "  iad file.rxt              Results will be put in file.txt\n"

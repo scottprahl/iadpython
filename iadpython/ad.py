@@ -1,9 +1,3 @@
-# pylint: disable=invalid-name
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=too-many-arguments
-# pylint: disable=consider-using-f-string
-
 """Class for doing adding-doubling calculations for a sample.
 
 Example::
@@ -25,6 +19,16 @@ import iadpython.combine
 
 
 def stringify(form, x):
+    """
+    Create a string from x.
+
+    Args:
+        form: format for conversion
+        x: scalar or array
+
+    Returns:
+        reasonable string
+    """
     if x is None:
         s = 'None'
     elif np.isscalar(x):
@@ -160,7 +164,7 @@ class Sample():
         if self.a is None or self.b is None or self.d is None:
             return None
         if np.isinf(self.b):
-            return (1 - self.a)
+            return 1 - self.a
         return (1 - self.a) * self.b / self.d
 
     def mu_s(self):
