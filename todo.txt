@@ -1,5 +1,10 @@
 functionality
-    **test support for one sphere**
+    match command line functionality of iad
+    
+    match one sphere calculations
+
+    add two sphere simulation notebook
+
     add support for two spheres
     implement ba inversion
     implement bs inversion
