@@ -9,19 +9,19 @@ Example Usage
    :caption: Adding-Doubling
    :hidden:
 
-   adding-doubling-basics
+   add-basics
 
-   adding-doubling-quadrature
+   ad-quadrature
    
-   adding-doubling-redistribution
+   ad-redistribution
    
-   adding-doubling-thin
+   ad-thin
+
+   ad-sample
 
 .. toctree::
    :caption: Measurements
    :hidden:
-
-   adding-doubling-sample
 
    nist
 
@@ -31,7 +31,9 @@ Example Usage
 
    sphere-basics
    
-   sphere-single
+   sphere-gain
+
+   sphere-gain-testing
 
    sphere-single
    
