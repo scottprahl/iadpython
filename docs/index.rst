@@ -6,16 +6,22 @@ Example Usage
    :maxdepth: 2
    
 .. toctree::
-   :caption: Introduction
+   :caption: Adding-Doubling
    :hidden:
 
-   Adding-Doubling-Basics
+   adding-doubling-basics
 
-   sample
+   adding-doubling-quadrature
    
+   adding-doubling-redistribution
+   
+   adding-doubling-thin
+
 .. toctree::
-   :caption: NIST Spectra
+   :caption: Measurements
    :hidden:
+
+   adding-doubling-sample
 
    nist
 
@@ -26,6 +32,8 @@ Example Usage
    sphere-basics
    
    sphere-single
+
+   sphere-single
    
    sphere-random
    
@@ -33,16 +41,6 @@ Example Usage
    
    impossible
 
-.. toctree::
-   :caption: Adding-Doubling Details
-   :hidden:
-
-   quadrature-examples
-   
-   redistribution
-   
-   thin-layer
-   
 .. toctree::
    :caption: API
    :hidden:
