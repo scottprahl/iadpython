@@ -53,3 +53,4 @@ from .grid import *
 from .rxt import *
 from .txt import *
 from .port import *
+from .double import *

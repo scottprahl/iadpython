@@ -367,13 +367,24 @@ class Sphere():
             if r > 0:
                 return np.array([x, y, z]) * (self.d / 2) / r
 
-    def do_one_photon(self):
-        """Bounce photon inside sphere until it leaves."""
+    def do_one_photon(self, double=False, weight=1):
+        """
+        Bounce photon inside sphere until it leaves.
+
+        The photon can leave through the third port, the detector port,
+        the sample port (transmitted/absorbed by the sample), or be absorbed
+        by the sphere walls.
+
+        This routine keeps propagating a photon until the weight drops to zero
+        unless double is True
+
+        If double is True then
+        """
         bounces = 0
         detected = 0
+        transmitted = 0
 
-        # assume photon launched from sample
-        weight = 1
+        # photon is launched from sample
         last_location = PortType.SAMPLE
 #        R = self.d/2
         while weight > 0:
@@ -402,9 +413,9 @@ class Sphere():
 #                print(costheta)
 
                 # record detected light and update weight
-                transmitted = weight * (1 - self.detector.uru)
-                detected += transmitted
-                weight -= transmitted
+                d_transmitted = weight * (1 - self.detector.uru)
+                detected += d_transmitted
+                weight -= d_transmitted
                 last_location = PortType.DETECTOR
 
             elif self.sample.hit():
@@ -416,8 +427,16 @@ class Sphere():
                 if last_location == PortType.DETECTOR and self.baffle:
                     continue
 
-                weight *= self.sample.uru
                 last_location = PortType.SAMPLE
+                if not double:
+                    weight *= self.sample.uru  # photon stays in sphere
+                elif random.random() > self.sample.uru:
+#                    print("transmitted or absorbed")
+                    transmitted = weight       # transmitted or absorbed by sample
+                    weight = 0
+#                else:
+#                    print("reflected back")
+                # for double sphere weight is unchanged is reflected
 
             elif self.third.hit():
                 weight *= self.third.uru
@@ -436,10 +455,10 @@ class Sphere():
 
             bounces += 1
 
-        return detected, bounces
+        return detected, transmitted, bounces
 
-    def do_N_photons(self, N):
-        """Do a Monte Carlos simulation with N photons."""
+    def do_N_photons(self, N, double=False):
+        """Do a Monte Carlo simulation with N photons."""
         # Use current time as seed
         random.seed(time.time())
 
@@ -452,135 +471,28 @@ class Sphere():
         total = 0
         for j in range(num_trials):
             for _i in range(N_per_trial):
-                detected, bounces = self.do_one_photon()
+                detected, _, bounces = self.do_one_photon(double=double)
     #            print("%d %8.3f %d" % (i,detected, bounces))
                 total_detected[j] += detected
                 total_bounces[j] += bounces
                 total += 1
 
-        ave = np.mean(total_detected) / N_per_trial
-        std = np.std(total_detected) / N_per_trial
-        stderr = std / np.sqrt(num_trials)
-        print("average detected   = %.3f ± %.3f" % (ave, stderr))
+        ave_d = np.mean(total_detected) / N_per_trial
+        std_d = np.std(total_detected) / N_per_trial
+        stderr_d = std_d / np.sqrt(num_trials)
+        print("average detected   = %.3f ± %.3f" % (ave_d, stderr_d))
         scale = self.detector.a * (1 - self.detector.uru)
         if self.baffle:
             scale *= (1 - self.third.a) * self.r_wall + self.third.a * self.third.uru
-        ave /= scale
-        std /= scale
-        stderr = std / np.sqrt(num_trials)
-        print("average gain       = %.3f ± %.3f" % (ave, stderr))
+        ave_g = ave_d / scale
+        std_g = std_d / scale
+        stderr_g = std_g / np.sqrt(num_trials)
+        print("average gain       = %.3f ± %.3f" % (ave_g, stderr_g))
         print("calculated gain    = %.3f" % self.gain())
 
-        ave = np.mean(total_bounces) / N_per_trial
-        std = np.std(total_bounces) / N_per_trial
-        stderr = std / np.sqrt(num_trials)
-        print("average bounces    = %.3f ± %.3f" % (ave, stderr))
+        ave_b = np.mean(total_bounces) / N_per_trial
+        std_b = np.std(total_bounces) / N_per_trial
+        stderr_b = std_b / np.sqrt(num_trials)
+        print("average bounces    = %.3f ± %.3f" % (ave_b, stderr_b))
 
-
-def Gain_11(RS, TS, URU, tdiffuse):
-    r"""Net gain for on detector in reflection sphere for two sphere configuration.
-
-    The light on the detector in the reflectance sphere is affected by interactions
-    between the two spheres.  This function calculates the net gain on a detector
-    in the reflection sphere for diffuse light starting in the reflectance sphere.
-
-    .. math:: G_{11} = \frac{(P_1/A_d)}{(P/A)}
-
-    then the full expression for the gain is
-
-    .. math:: \frac{G(r_s)}{(1-a_s a_s' r_w r_w' (1-a_e)(1-a_e') G(r_s) G'(r_s)t_s^2)}
-
-    """
-    G = RS.gain(URU)
-    GP = TS.gain(URU)
-
-    areas = RS.a_sample * TS.a_sample * (1 - RS.a_third) * (1 - TS.a_third)
-    G11 = G / (1 - areas * RS.r_wall * TS.r_wall * G * GP * tdiffuse**2)
-    return G11
-
-
-def Gain_22(RS, TS, URU, tdiffuse):
-    r"""Two sphere gain in T sphere for light starting in T sphere.
-
-    Similarly, when the light starts in the second sphere, the gain for light
-    on the detector in the second sphere :math:`G_{22}` is found by switching
-    all primed variables to unprimed.  Thus :math:`G_{21}(r_s,t_s)` is
-
-    .. math:: G_{22}(r_s,t_s) =\frac{G'(r_s)}{1-a_s a_s'r_w r_w'(1-a_e)(1-a_e')G(r_s)G'(r_s)t_s^2}
-
-    """
-    G = RS.gain(URU)
-    GP = TS.gain(URU)
-
-    areas = RS.a_sample * TS.a_sample * (1 - RS.a_third) * (1 - TS.a_third)
-    G22 = GP / (1 - areas * RS.r_wall * TS.r_wall * G * GP * tdiffuse**2)
-    return G22
-
-
-def Two_Sphere_R(RS, TS, UR1, URU, UT1, UTU, f=0):
-    """Total gain in R sphere for two sphere configuration.
-
-    The light on the detector in the reflection sphere arises from three
-    sources: the fraction of light directly reflected off the sphere wall
-
-    .. math:: f r_w^2 (1-a_e) P,
-
-    the fraction of light reflected by the sample
-
-    .. math:: (1-f) r_{direct} r_w^2 (1-a_e) P,
-
-    and the light transmitted through the sample
-
-    .. math:: (1-f) t_{direct} r_w' (1-a_e') P,
-
-    If we use the gain for each part then we add
-
-    .. math:: G_{11}  a_d (1-a_e) r_w^2 f  P
-
-    to
-
-    .. math:: G_{11} a_d (1-a_e) r_w (1-f) r_{direct}  P
-
-    and
-
-    .. math:: G_{21} a_d (1-a_e') r_w' (1-f) t_{direct}  P
-
-    which simplifies slightly to the formula used below
-    """
-    GP = TS.gain(URU)
-    G11 = Gain_11(RS, TS, URU, UTU)
-
-    x = RS.a_detector * (1 - RS.a_third) * RS.r_wall * G11
-    p1 = (1 - f) * UR1
-    p2 = RS.r_wall * f
-    p3 = (1 - f) * TS.a_sample * (1 - TS.a_third) * TS.r_wall * UT1 * UTU * GP
-    return x * (p1 + p2 + p3)
-
-
-def Two_Sphere_T(RS, TS, UR1, URU, UT1, UTU, f=0):
-    """Total gain in T sphere for two sphere configuration.
-
-    For the power on the detector in the transmission (second) sphere we
-    have the same three sources.  The only difference is that the subscripts
-    on the gain terms now indicate that the light ends up in the second
-    sphere
-
-    .. math:: G_{12}  a_d' (1-a_e) r_w^2 f P
-
-    plus
-
-    .. math:: G_{12}  a_d' (1-a_e) r_w (1-f) r_{direct} P
-
-    plus
-
-    .. math:: G_{22} a_d' (1-a_e') r_w' (1-f) t_{direct}  P
-
-    which simplifies slightly to the formula used below
-    """
-    G = RS.gain(URU)
-    G22 = Gain_11(RS, TS, URU, UTU)
-
-    x = TS.a_detector * (1 - TS.a_third) * TS.r_wall * G22
-    x *= (1 - f) * UT1 + (1 - RS.a_third) * RS.r_wall * \
-        RS.a_sample * UTU * (f * RS.r_wall + (1 - f) * UR1) * G
-    return x
+        return ave_d, stderr_d
