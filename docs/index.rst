@@ -4,7 +4,7 @@ Example Usage
 =============
 .. toctree::
    :maxdepth: 2
-   
+
 .. toctree::
    :caption: Adding-Doubling
    :hidden:
@@ -12,12 +12,26 @@ Example Usage
    add-basics
 
    ad-quadrature
-   
+
    ad-redistribution
-   
+
    ad-thin
 
    ad-sample
+
+.. toctree::
+   :caption: Integrating Spheres
+   :hidden:
+
+   sphere-basics
+
+   sphere-gain
+
+   sphere-random
+
+   sphere-gain-testing
+
+   sphere-double
 
 .. toctree::
    :caption: Measurements
@@ -25,22 +39,6 @@ Example Usage
 
    nist
 
-.. toctree::
-   :caption: Integrating Spheres
-   :hidden:
-
-   sphere-basics
-   
-   sphere-gain
-
-   sphere-gain-testing
-
-   sphere-single
-   
-   sphere-random
-   
-   sphere-double
-   
    impossible
 
 .. toctree::
