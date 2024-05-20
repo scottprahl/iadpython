@@ -3,13 +3,10 @@
 Example Usage
 =============
 .. toctree::
-   :maxdepth: 2
-
-.. toctree::
    :caption: Adding-Doubling
    :hidden:
 
-   add-basics
+   ad-basics
 
    ad-quadrature
 
@@ -36,6 +33,8 @@ Example Usage
 .. toctree::
    :caption: Measurements
    :hidden:
+
+   measurements
 
    nist
 
