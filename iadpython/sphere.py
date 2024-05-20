@@ -44,7 +44,7 @@ import random
 import time
 from enum import Enum
 import numpy as np
-import iadpython
+import iadpython as iad
 
 
 class PortType(Enum):
@@ -53,21 +53,6 @@ class PortType(Enum):
     SAMPLE = 1
     DETECTOR = 2
     THIRD = 3
-
-
-def stringify(form, x):
-    """Return different strings for scalar and array x."""
-    if x is None:
-        s = 'None'
-    elif np.isscalar(x):
-        s = form % x
-    else:
-        mn = min(x)
-        mx = max(x)
-        s = form % mn
-        s += ' to '
-        s += form % mx
-    return s
 
 
 class Sphere():
@@ -109,9 +94,9 @@ class Sphere():
         self._r_std = r_std
         self.refl = refl
         R = d_sphere / 2
-        self.sample = iadpython.Port(self, d_sample, uru=0, x=0, y=0, z=-R)
-        self.detector = iadpython.Port(self, d_detector, uru=r_detector, x=R, y=0, z=0)
-        self.third = iadpython.Port(self, d_third, uru=r_third, x=0, y=0, z=R)
+        self.sample = iad.Port(self, d_sample, uru=0, x=0, y=0, z=-R)
+        self.detector = iad.Port(self, d_detector, uru=r_detector, x=R, y=0, z=0)
+        self.third = iad.Port(self, d_third, uru=r_third, x=0, y=0, z=R)
         self._a_wall = 1 - self.sample.a - self.third.a - self.detector.a
         self.x = 0
         self.y = 0
@@ -122,9 +107,9 @@ class Sphere():
     def __repr__(self):
         """Return basic details as a string for printing."""
         s = ''
-        s += "Sphere: d=%s, " % stringify("%5.2f", self.d)
-        s += "r_wall=%s, " % stringify("%5.1f%%", self.r_wall * 100)
-        s += "r_std=%s, " % stringify("%5.1f%%", self.r_std * 100)
+        s += "Sphere: d=%s, " % iad.stringify("%5.2f", self.d)
+        s += "r_wall=%s, " % iad.stringify("%5.1f%%", self.r_wall * 100)
+        s += "r_std=%s, " % iad.stringify("%5.1f%%", self.r_std * 100)
         s += "baffle= %s\n" % self.baffle
         s += "    Sample: " + repr(self.sample)
         s += "     Third: " + repr(self.third)
@@ -138,19 +123,19 @@ class Sphere():
         else:
             s = "Transmittance "
         s += "Sphere\n"
-        s += "        diameter = %s mm\n" % stringify("%7.2f", self.d)
-        s += "          radius = %s mm\n" % stringify("%7.2f", self.d / 2)
-        s += "   relative area = %s\n" % stringify("%7.1f%%", self.a_wall * 100)
-        s += "       uru walls = %s\n" % stringify("%7.1f%%", self.r_wall * 100)
-        s += "    uru standard = %s\n" % stringify("%7.1f%%", self.r_std * 100)
+        s += "        diameter = %s mm\n" % iad.stringify("%7.2f", self.d)
+        s += "          radius = %s mm\n" % iad.stringify("%7.2f", self.d / 2)
+        s += "   relative area = %s\n" % iad.stringify("%7.1f%%", self.a_wall * 100)
+        s += "       uru walls = %s\n" % iad.stringify("%7.1f%%", self.r_wall * 100)
+        s += "    uru standard = %s\n" % iad.stringify("%7.1f%%", self.r_std * 100)
         s += "          baffle = %s\n" % self.baffle
-        s += "Sample Port\n" + str(self.sample)
-        s += "Third Port\n" + str(self.third)
-        s += "Detector Port\n" + str(self.detector)
+        s += "Sample iad.Port\n" + str(self.sample)
+        s += "Third iad.Port\n" + str(self.third)
+        s += "Detector iad.Port\n" + str(self.detector)
         s += "Gain range\n"
-        s += "         nothing = %s\n" % stringify("%7.3f", self.gain(0.0))
-        s += "        standard = %s\n" % stringify("%7.3f", self.gain(self.r_std))
-        s += "            100%% = %s\n" % stringify("%7.3f", self.gain(1.0))
+        s += "         nothing = %s\n" % iad.stringify("%7.3f", self.gain(0.0))
+        s += "        standard = %s\n" % iad.stringify("%7.3f", self.gain(self.r_std))
+        s += "            100%% = %s\n" % iad.stringify("%7.3f", self.gain(1.0))
         return s
 
     def gain(self, sample_uru=None, third_uru=None):
@@ -204,19 +189,47 @@ class Sphere():
         MR = self.r_std * P / P100
         return MR
 
-    def MT(self, sample_ut1, sample_uru):
+    def MT(self, sample_ut1, sample_uru, config=2):
         """Determine MT due to multiple bounces in the sphere."""
-        # sample in sample port, third port has known standard
-        gain = self.gain(sample_uru, self.r_std)
 
-        # sample port is empty, third port has known standard
-        gain100 = self.gain(0, self.r_std)
+        if config ==1:
+            # sample in sample port, third port is sphere wall
+            gain = self.gain(sample_uru, self.r_wall)
+            P = sample_ut1 * gain
 
-        P = sample_ut1 * gain
-        P100 = self.r_std * gain100
+            # sample port is empty, third port matches wall
+            gain100 = self.gain(0, self.r_wall)
+            P100 = self.r_wall * gain100
 
-        # this is the definition of MT
-        MT = self.r_std * P / P100
+            # this is the definition of MT because r_std=r_wall
+            MT = self.r_wall * P / P100
+
+        elif config==2:
+            # sample in sample port, third port has known standard
+            gain = self.gain(sample_uru, self.r_std)
+            P = sample_ut1 * gain
+
+            # sample port is empty, third port has known standard
+            gain100 = self.gain(0, self.r_std)
+            P100 = self.r_std * gain100
+
+            # this is the definition of MT
+            MT = self.r_std * P / P100
+
+        elif config==3:
+            # sample in sample port, third port is empty
+            gain = self.gain(sample_uru, 0)
+            P = sample_ut1 * gain
+
+            # sample port is empty, third port has known standard
+            gain100 = self.gain(0, self.r_std)
+            P100 = self.r_std * gain100
+
+            # this is the definition of MT
+            MT = self.r_std * P / P100
+        else:
+            raise ValueError("config for MT must be 1, 2, or 3.")
+
         return MT
 
     def pdetector(self):
@@ -385,7 +398,7 @@ class Sphere():
         transmitted = 0
 
         # photon is launched from sample
-        last_location = PortType.SAMPLE
+        last_location = iad.PortType.SAMPLE
 #        R = self.d/2
         while weight > 0:
 
@@ -396,11 +409,11 @@ class Sphere():
 
             if self.detector.hit():
                 # avoid hitting self
-                if last_location == PortType.DETECTOR:
+                if last_location == iad.PortType.DETECTOR:
                     continue
 
                 # sample --> detector prohibited
-                if last_location == PortType.SAMPLE and self.baffle:
+                if last_location == iad.PortType.SAMPLE and self.baffle:
                     continue
 
 #                vx=self.x-lastx
@@ -416,18 +429,18 @@ class Sphere():
                 d_transmitted = weight * (1 - self.detector.uru)
                 detected += d_transmitted
                 weight -= d_transmitted
-                last_location = PortType.DETECTOR
+                last_location = iad.PortType.DETECTOR
 
             elif self.sample.hit():
                 # avoid hitting self
-                if last_location == PortType.SAMPLE:
+                if last_location == iad.PortType.SAMPLE:
                     continue
 
                 # detector --> sample prohibited
-                if last_location == PortType.DETECTOR and self.baffle:
+                if last_location == iad.PortType.DETECTOR and self.baffle:
                     continue
 
-                last_location = PortType.SAMPLE
+                last_location = iad.PortType.SAMPLE
                 if not double:
                     weight *= self.sample.uru  # photon stays in sphere
                 elif random.random() > self.sample.uru:
@@ -440,12 +453,12 @@ class Sphere():
 
             elif self.third.hit():
                 weight *= self.third.uru
-                last_location = PortType.THIRD
+                last_location = iad.PortType.THIRD
 
             else:
                 # must have hit wall
                 weight *= self.r_wall
-                last_location = PortType.WALL
+                last_location = iad.PortType.WALL
 
             if 0 < weight < 1e-4:
                 if random.random() < 0.1:
