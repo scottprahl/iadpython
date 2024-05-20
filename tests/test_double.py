@@ -54,6 +54,17 @@ class TestDoubleSphere(unittest.TestCase):
         self.assertAlmostEqual(r_total/N, 0.5, places=1)
         self.assertAlmostEqual(t_total/N, 0.5, places=1)
 
+    def test_no_sample_N(self):
+        """Light passes unhindered between spheres."""
+        self.double.ur1 = 0
+        self.double.ut1 = 1
+        self.double.uru = self.double.ur1
+        self.double.utu = self.double.ut1
+        N = 1000
+        r, _, t, _ = self.double.do_N_photons(N)
+        self.assertAlmostEqual(r, 0.5, places=1)
+        self.assertAlmostEqual(t, 0.5, places=1)
+
     def test_mirror_sample(self):
         """Light passes unhindered between spheres."""
         self.double.ur1 = 1
@@ -64,40 +75,24 @@ class TestDoubleSphere(unittest.TestCase):
         N = 10
         r_total = 0
         t_total = 0
-#        print("mirror sample")
         for _ in range(N):
             r_detected, t_detected = self.double.do_one_photon()
-#            print(r_detected, t_detected, self.double.current==self.double.r_sphere)
             r_total += r_detected
             t_total += t_detected
-#        print(r_total, t_total)
         self.assertAlmostEqual(r_total/N, 1.0, places=5)
         self.assertAlmostEqual(t_total/N, 0.0, places=5)
 
-#     def test_do_one_photon_normal_incidence_reflected(self):
-#         # Patching random to test specific paths
-#         N = 10000
-#         r_total = 0
-#         t_total = 0
-#         for i in range(N):
-#             r_detected, t_detected = self.double.do_one_photon()
-#             r_total += r_detected
-#             t_total += t_detected
-#         self.assertGreater(r_detected, 1)
-#         self.assertEqual(t_detected, 0)
-#
-#     def test_do_one_photon_normal_incidence_transmitted(self):
-#         random.random = Mock(return_value=0.5)  # This will simulate ut1 path
-#         r_detected, t_detected = self.double.do_one_photon()
-#         self.assertEqual(r_detected, 0)
-#         self.assertGreater(t_detected, 1)
-#
-#     def test_do_one_photon_absorbed(self):
-#         random.random = Mock(return_value=0.95)  # This will simulate absorption
-#         r_detected, t_detected = self.double.do_one_photon()
-#         self.assertEqual(r_detected, 0)
-#         self.assertEqual(t_detected, 0)
-#
+    def test_mirror_sample_N(self):
+        """Light passes unhindered between spheres."""
+        self.double.ur1 = 1
+        self.double.ut1 = 0
+        self.double.uru = self.double.ur1
+        self.double.utu = self.double.ut1
+
+        N = 10
+        r, _, t, _ = self.double.do_N_photons(N)
+        self.assertAlmostEqual(r, 1.0, places=5)
+        self.assertAlmostEqual(t, 0.0, places=5)
 
 if __name__ == '__main__':
     unittest.main()

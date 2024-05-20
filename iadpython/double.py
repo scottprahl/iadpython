@@ -103,7 +103,7 @@ class DoubleSphere():
             fraction_absorbed = self.absorbed / (self.utu + self.absorbed)
 
     def do_one_photon(self):
-        """Bounce photon inside double spheres until detected or absorbed."""
+        """Bounce photon in double spheres until it is detected or lost."""
         r_detected = 0
         t_detected = 0
 
@@ -171,8 +171,9 @@ class DoubleSphere():
         std_t = np.std(total_t_detected) / N_per_trial
         stderr_t = std_t / np.sqrt(num_trials)
 
-        print("r_average detected   = %.3f ± %.3f" % (ave_r, stderr_r))
-        print("t_average detected   = %.3f ± %.3f" % (ave_t, stderr_t))
+#        print("r_average detected   = %.3f ± %.3f" % (ave_r, stderr_r))
+#        print("t_average detected   = %.3f ± %.3f" % (ave_t, stderr_t))
+        return ave_r, stderr_r, ave_t, stderr_t
 
 
     def Gain_11(self):
