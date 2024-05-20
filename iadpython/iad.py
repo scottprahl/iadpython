@@ -22,7 +22,6 @@ import sys
 import copy
 import numpy as np
 import scipy.optimize
-from iadpython.ad import stringify
 import iadpython as iad
 
 
@@ -87,7 +86,7 @@ class Experiment():
         s += self.sample.__str__()
         s += "\n--------------- Spheres ---------------\n"
         if not np.isscalar(self.num_spheres):
-            s += "number of spheres range (%s)\n" % stringify("%d", self.num_spheres)
+            s += "number of spheres range (%s)\n" % iad.stringify("%d", self.num_spheres)
         elif self.num_spheres == 0:
             s += "No spheres used.\n"
         elif self.num_spheres == 1:
@@ -104,11 +103,11 @@ class Experiment():
         if self.include_measurements:
             s += "\n------------- Measurements ------------\n"
             s += "   Reflection               = "
-            s += stringify("%.5f", self.m_r) + "\n"
+            s += iad.stringify("%.5f", self.m_r) + "\n"
             s += "   Transmission             = "
-            s += stringify("%.5f", self.m_t) + "\n"
+            s += iad.stringify("%.5f", self.m_t) + "\n"
             s += "   Unscattered Transmission = "
-            s += stringify("%.5f", self.m_u) + "\n"
+            s += iad.stringify("%.5f", self.m_u) + "\n"
         return s
 
     def check_measurements(self):
