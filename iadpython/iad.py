@@ -423,6 +423,8 @@ class Experiment():
 
         if self.num_spheres == 1:
             if self.r_sphere is not None:
+                mr = self.r_sphere.MR(ur1, uru, Ru=r_un, f_unsc=self.fraction_of_rc_in_mr)
+
                 r_gain_00 = self.r_sphere.gain(0)
                 ratio_std = self.r_sphere.gain(self.r_sphere.r_std) / r_gain_00
                 ratio_sample = self.r_sphere.gain(uru) / r_gain_00
@@ -437,12 +439,15 @@ class Experiment():
                 m_r *= self.r_sphere.r_std
                 if ratio_sample != ratio_std:
                     m_r *= ratio_std / ratio_sample
-                print("m_r=", m_r)
+
+                print("mr= %6.3f m_r=%6.3f" %(mr, m_r))
 
             if self.t_sphere is not None:
+                mt = self.t_sphere.MT(ut1, uru, Tu=t_un, f_unsc=self.fraction_of_tc_in_mt)
                 t_gain_00 = self.t_sphere.gain(0)
                 t_gain_std = self.t_sphere.gain(uru)
                 m_t = T_direct * t_gain_00 / t_gain_std
+                print("mt= %6.3f m_t=%6.3f" %(mt, m_t))
 
         return m_r, m_t
 
