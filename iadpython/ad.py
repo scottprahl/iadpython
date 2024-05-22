@@ -31,7 +31,7 @@ def stringify(form, x):
     """
     if x is None:
         s = 'None'
-    elif np.isscalar(x):
+    elif np.isscalar(x) or np.ndim(x) == 0:
         s = form % x
     else:
         mn = min(x)
