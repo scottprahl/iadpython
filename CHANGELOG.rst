@@ -3,6 +3,7 @@ Changelog for `iadpython` package
 
 0.6.0
 ------
+* fully support single integrating spheres
 * add command-line support
 * add Monte Carlo sphere simulations
 * add Port class for Sphere class
@@ -10,7 +11,10 @@ Changelog for `iadpython` package
 * improve sphere-single.ipynb
 * add sphere-random.ipynb
 * improve single sphere testing
-* add port testig
+* add port testing
+* add notebook on measurements
+* rearrange documentation
+
 
 0.5.3
 ------
