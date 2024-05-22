@@ -35,11 +35,11 @@ class SimpleSphere(unittest.TestCase):
         R = 100
         r = 10
         s = iadpython.Sphere(2 * R, 2 * r)
-        acap = s.sample.cap_area() / (4 * np.pi * R**2)
+        acap = s.sample.cap_area_exact() / (4 * np.pi * R**2)
         np.testing.assert_allclose(acap, s.sample.a, atol=1e-5)
 
         acap1 = np.pi * r**2 / (4 * np.pi * R**2)
-        a_cap1 = s.sample.approx_relative_cap_area()
+        a_cap1 = s.sample.relative_cap_area()
         np.testing.assert_allclose(acap1, a_cap1, atol=1e-5)
 
 
