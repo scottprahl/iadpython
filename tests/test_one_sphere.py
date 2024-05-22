@@ -199,7 +199,7 @@ class ForwardOneSphereMR(unittest.TestCase):
         rsph.baffle = False
         MR = rsph.MR(ur1, uru)
 
-        # iad -z -a 0.95 -b 1 -M 0 -z -H 0 -1 '100 10 10 2 0.98' -R 0.9
+        # iad -z -a 0.95 -b 1 -M 0 -z -H 0 -1 '100 10 10 2 0.98' -R 0.9 -q 12
         self.assertAlmostEqual(MR, 0.2859, delta=1e-4)
 
     def test_MR_03(self):
@@ -247,6 +247,52 @@ class ForwardOneSphereMR(unittest.TestCase):
 
         # iad -z -a 0.95 -b 1 -n 1.5 -M 0 -z -1 '100 10 10 2 0.98' -R 0.9 -q 12 -H 0
         self.assertAlmostEqual(MR, 0.2577, delta=1e-4)
+
+    def test_MR_05(self):
+        """No unscattered reflectance case that is not collected."""
+        d_sphere = 100
+        d_sample = 10
+        d_third = 10
+        d_detector = 2
+        r_wall = 0.98
+        r_std = 0.9
+
+        s = iad.Sample(a=0.95, b=1, n=1.5, quad_pts=12)
+        ur1, ut1, uru, utu = s.rt()
+        s = iad.Sample(a=0, b=1, n=1.5, quad_pts=12)
+        Ru, _, _, _ = s.rt()
+
+        rsph = iad.Sphere(d_sphere, d_sample, d_third=d_third, d_detector=d_detector,
+        r_wall=r_wall, r_std=r_std)
+        rsph.sample.uru = uru
+        rsph.baffle = True
+        MR = rsph.MR(ur1, uru, Ru=Ru, f_unscattered=0)
+
+        # iad -z -a 0.95 -b 1 -n 1.5 -M 0 -z -1 '100 10 10 2 0.98' -R 0.9 -q 12 -c 0
+        self.assertAlmostEqual(MR, 0.2117, delta=1e-4)
+
+    def test_MR_06(self):
+        """Some light hits wall first."""
+        d_sphere = 100
+        d_sample = 10
+        d_third = 10
+        d_detector = 2
+        r_wall = 0.98
+        r_std = 0.9
+
+        s = iad.Sample(a=0.95, b=1, n=1.5, quad_pts=12)
+        ur1, ut1, uru, utu = s.rt()
+        s = iad.Sample(a=0, b=1, n=1.5, quad_pts=12)
+        Ru, _, _, _ = s.rt()
+
+        rsph = iad.Sphere(d_sphere, d_sample, d_third=d_third, d_detector=d_detector,
+        r_wall=r_wall, r_std=r_std)
+        rsph.sample.uru = uru
+        rsph.baffle = True
+        MR = rsph.MR(ur1, uru, Ru=Ru, f_wall=0.5)
+
+        # iad -z -a 0.95 -b 1 -n 1.5 -M 0 -z -1 '100 10 10 2 0.98' -R 0.9 -q 12 -f 0.5
+        self.assertAlmostEqual(MR, 0.2396, delta=1e-4)
 
     def test_MT_01(self):
         """Standard present for sample and calibration. Also baffle."""

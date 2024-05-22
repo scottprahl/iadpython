@@ -173,7 +173,7 @@ class Sphere():
         denom = np.asarray(denom)
         return np.where(denom == 0, np.inf, 1 / denom)
 
-    def MR(self, sample_ur1, sample_uru=None, Ru=0, f_unsc=1, f_wall=0):
+    def MR(self, sample_ur1, sample_uru=None, Ru=0, f_unscattered=1, f_wall=0):
         """
         Determine the value of MR due to multiple bounces in the sphere.
     
@@ -186,13 +186,9 @@ class Sphere():
     
         Returns:
             float: The calibrated measured reflection
-    
-        Notes:
-            This function still needs to implement and test background illumination.
-            Also, non-default values of `f_wall` and `f_unsc` are yet to be tested.
         """
-        # default to equivalent ur1 and uru
         if sample_uru is None:
+            # best estimate of sample uru
             sample_uru = sample_ur1
 
         ur1_calc = sample_ur1 - Ru
@@ -201,6 +197,9 @@ class Sphere():
         if self.baffle:
             r_first = self.r_wall * (1 - self.third.a)
 
+        # nothing in sample port or third (entrance) port
+        gain0 = self.gain(0, 0)
+
         # sample in sample port, third (entrance) port is empty
         gain = self.gain(sample_uru, 0)
 
@@ -208,18 +207,18 @@ class Sphere():
         gain100 = self.gain(self.r_std, 0)
 
         P100 = gain100 * (self.r_std * (1-f_wall) + f_wall * self.r_wall)
-#        P_0 = G_0  * (MM.f_r * MM.rw_r)
+        P_0 = gain0  * (f_wall * self.r_wall)
 
         P_ss = r_first * (ur1_calc * (1-f_wall) + f_wall * self.r_wall)
-        P_su = self.r_wall * (1-f_wall) * f_unsc * Ru
+        P_su = self.r_wall * (1-f_wall) * f_unscattered * Ru
         P = gain * (P_ss + P_su)
 
-        # this is the definition of MR
-        MR = self.r_std * P / P100
+        MR = self.r_std * (P - P_0) / (P100 - P_0)
 
 #         print("UR1   =  %6.3f   UR1_calc = %6.3f" % (sample_ur1, ur1_calc))
 #         print("URU   =  %6.3f   Ru       = %6.3f" % (sample_uru, Ru))
 #         print("P_ss  =  %6.3f   P_su     = %6.3f" % (P_ss, P_su))
+#         print("G_0   =  %6.3f   P_0      = %6.3f" % (gain0, P_0))
 #         print("G     =  %6.3f   P        = %6.3f" % (gain, P))
 #         print("G_cal =  %6.3f   P_cal    = %6.3f" % (gain100, P100))
 #         print("MR    =  %6.3f" % (MR))
