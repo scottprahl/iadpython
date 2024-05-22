@@ -20,12 +20,12 @@ class TestPort(unittest.TestCase):
 
     def test_cap_area(self):
         """Test the cap_area method."""
-        area = self.port.cap_area()
+        area = self.port.cap_area_exact()
         self.assertTrue(np.isclose(area, 314.94861522998946), "Cap area calculation is incorrect")
 
     def test_approx_relative_cap_area(self):
         """Test the approx_relative_cap_area method."""
-        approx_area = self.port.approx_relative_cap_area()
+        approx_area = self.port.relative_cap_area()
         self.assertTrue(np.isclose(approx_area, 0.0025), "Approximate relative cap area calculation is incorrect")
 
     def test_calculate_sagitta(self):
@@ -40,7 +40,7 @@ class TestPort(unittest.TestCase):
 
     def test_relative_cap_area(self):
         """Test the relative_cap_area method."""
-        rel_area = self.port.relative_cap_area()
+        rel_area = self.port.relative_cap_area_exact()
         self.assertTrue(np.isclose(rel_area, 0.002506281446690011), "Relative cap area calculation is incorrect")
 
     def test_hit(self):
