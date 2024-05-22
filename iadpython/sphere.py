@@ -129,9 +129,12 @@ class Sphere():
         s += "       uru walls = %s\n" % iad.stringify("%7.1f%%", self.r_wall * 100)
         s += "    uru standard = %s\n" % iad.stringify("%7.1f%%", self.r_std * 100)
         s += "          baffle = %s\n" % self.baffle
-        s += "Sample iad.Port\n" + str(self.sample)
-        s += "Third iad.Port\n" + str(self.third)
-        s += "Detector iad.Port\n" + str(self.detector)
+        s += "Sample Port\n" + str(self.sample)
+        if self.refl:
+            s += "Entrance Port\n" + str(self.third)
+        else:
+            s += "Third Port\n" + str(self.third)
+        s += "Detector Port\n" + str(self.detector)
         s += "Gain range\n"
         s += "         nothing = %s\n" % iad.stringify("%7.3f", self.gain(0.0))
         s += "        standard = %s\n" % iad.stringify("%7.3f", self.gain(self.r_std))
@@ -161,20 +164,42 @@ class Sphere():
             tmp = self.detector.a * self.detector.uru + self.sample.a * sample_uru
             r = self.r_wall + (self.third.a / self._a_wall) * third_uru
             denom = 1 - r * (self._a_wall + (1 - self.third.a) * tmp)
-            g = 1 / denom
         else:
             denom = 1 - self._a_wall * self.r_wall
             denom -= self.detector.a * self.detector.uru
             denom -= self.sample.a * sample_uru
             denom -= self.third.a * third_uru
-            g = 1 / denom
 
-        return g
+        denom = np.asarray(denom)
+        return np.where(denom == 0, np.inf, 1 / denom)
 
-    def MR(self, sample_ur1, sample_uru=None):
-        """Determine MR due to multiple bounces in the sphere."""
+    def MR(self, sample_ur1, sample_uru=None, Ru=0, f_unsc=1, f_wall=0):
+        """
+        Determine the value of MR due to multiple bounces in the sphere.
+    
+        Args:
+            sample_ur1: The reflectance of the sample for normal illumination.
+            sample_uru: The reflectance of the sample for diffuse illumination.
+            Ru (optional): The unscattered reflectance from the sample.
+            f_unsc (optional): The unscattered fraction of reflected light collected.
+            f_wall (optional): The fraction of light that hits the sphere wall first.
+    
+        Returns:
+            float: The calibrated measured reflection
+    
+        Notes:
+            This function still needs to implement and test background illumination.
+            Also, non-default values of `f_wall` and `f_unsc` are yet to be tested.
+        """
+        # default to equivalent ur1 and uru
         if sample_uru is None:
             sample_uru = sample_ur1
+
+        ur1_calc = sample_ur1 - Ru
+
+        r_first = 1
+        if self.baffle:
+            r_first = self.r_wall * (1 - self.third.a)
 
         # sample in sample port, third (entrance) port is empty
         gain = self.gain(sample_uru, 0)
@@ -182,53 +207,84 @@ class Sphere():
         # sample port has known standard, third (entrance) port is empty
         gain100 = self.gain(self.r_std, 0)
 
-        P = sample_ur1 * gain
-        P100 = self.r_std * gain100
+        P100 = gain100 * (self.r_std * (1-f_wall) + f_wall * self.r_wall)
+#        P_0 = G_0  * (MM.f_r * MM.rw_r)
+
+        P_ss = r_first * (ur1_calc * (1-f_wall) + f_wall * self.r_wall)
+        P_su = self.r_wall * (1-f_wall) * f_unsc * Ru
+        P = gain * (P_ss + P_su)
 
         # this is the definition of MR
         MR = self.r_std * P / P100
+
+#         print("UR1   =  %6.3f   UR1_calc = %6.3f" % (sample_ur1, ur1_calc))
+#         print("URU   =  %6.3f   Ru       = %6.3f" % (sample_uru, Ru))
+#         print("P_ss  =  %6.3f   P_su     = %6.3f" % (P_ss, P_su))
+#         print("G     =  %6.3f   P        = %6.3f" % (gain, P))
+#         print("G_cal =  %6.3f   P_cal    = %6.3f" % (gain100, P100))
+#         print("MR    =  %6.3f" % (MR))
+
         return MR
 
-    def MT(self, sample_ut1, sample_uru, config=2):
-        """Determine MT due to multiple bounces in the sphere."""
+    def MT(self, sample_ut1, sample_uru, Tu=0, f_unscattered=1):
+        """
+        Determine the measured transmission (MT) due to multiple bounces in the sphere.
 
-        if config ==1:
-            # sample in sample port, third port is sphere wall
-            gain = self.gain(sample_uru, self.r_wall)
-            P = sample_ut1 * gain
+        The f_unscattered variable describes the fraction of unscattered transmission
+        that is collected by the sphere.  It is equivalent to the -C option for the iad
+        program and the default is that all the unscattered transmission is collected
+        (because the third port is blocked).  If the third port allows unscattered light
+        to leave the sphere then it should be set to zero.
 
-            # sample port is empty, third port matches wall
-            gain100 = self.gain(0, self.r_wall)
-            P100 = self.r_wall * gain100
+        Args:
+            sample_ut1: The transmission of the sample for normal illumination.
+            sample_uru: The reflectance of the sample for diffuse illumination.
+            Tu (optional): The unscattered transmission of the sample.
+            f_unscattered (optional): The fraction of unscattered transmission collected.
 
-            # this is the definition of MT because r_std=r_wall
-            MT = self.r_wall * P / P100
+        Returns:
+            float: The calculated measured transmission (MT) value.
+        """
+        if self.third.a == 0:
+            # sample in sample port, third port is always sphere wall
+            r_cal = self.r_wall
+            r_third = self.r_wall
 
-        elif config==2:
-            # sample in sample port, third port has known standard
-            gain = self.gain(sample_uru, self.r_std)
-            P = sample_ut1 * gain
+        elif f_unscattered == 0:
+            # sample in sample port, third port is empty except for calibration
+            r_cal = self.r_std
+            r_third = 0
 
-            # sample port is empty, third port has known standard
-            gain100 = self.gain(0, self.r_std)
-            P100 = self.r_std * gain100
-
-            # this is the definition of MT
-            MT = self.r_std * P / P100
-
-        elif config==3:
-            # sample in sample port, third port is empty
-            gain = self.gain(sample_uru, 0)
-            P = sample_ut1 * gain
-
-            # sample port is empty, third port has known standard
-            gain100 = self.gain(0, self.r_std)
-            P100 = self.r_std * gain100
-
-            # this is the definition of MT
-            MT = self.r_std * P / P100
         else:
-            raise ValueError("config for MT must be 1, 2, or 3.")
+            # sample in sample port, third port always has known standard
+            r_cal = self.r_std
+            r_third = self.r_std
+
+        r_first = 1
+        if self.baffle:
+            r_first = self.r_wall * (1 - self.third.a) + r_third * self.third.a
+
+        ut1_calc = sample_ut1 - Tu
+
+        gain = self.gain(sample_uru, r_third)
+        gain100 = self.gain(0, r_cal)
+
+        P_ss = r_first * ut1_calc
+        P_su = r_third * Tu * f_unscattered
+        P = (P_su + P_ss) * gain
+        P100 = r_cal * gain100
+
+        MT = r_cal * P / P100
+
+#         print("UT1     =  %6.3f   URU   = %6.3f" % (sample_ut1, sample_uru))
+#         print("Tu      =  %6.3f   f_uns = %5.2f" % (Tu,f_unscattered))
+#         print("P_ss    =  %6.3f   P_su  = %6.3f" % (P_ss, P_su))
+#         print("G       =  %6.3f   P     = %6.3f" % (gain, P))
+#         print("G_cal   =  %6.3f   P_cal = %6.3f" % (gain100, P100))
+#         print("r_first =  %6.3f" % (r_first))
+#         print("r_cal   =  %6.3f" % (r_cal))
+#         print("r_third =  %6.3f" % (r_third))
+#         print("MT      =  %6.3f" % (MT))
 
         return MT
 
