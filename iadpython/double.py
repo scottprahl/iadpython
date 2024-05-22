@@ -85,7 +85,7 @@ class DoubleSphere():
         self.absorbed = 1 - self._uru - self._utu
         self.fraction_absorbed = 0
         if self._utu + self.absorbed > 0:
-            fraction_absorbed = self.absorbed / (self.utu + self.absorbed)
+            self.fraction_absorbed = self.absorbed / (self.utu + self.absorbed)
 
     @property
     def utu(self):
@@ -97,10 +97,9 @@ class DoubleSphere():
         """When size is changed ratios become invalid."""
         self._utu = value
         self.absorbed = 1 - self._uru - self._utu
-        denom = self._utu + self.absorbed
         self.fraction_absorbed = 0
         if self._utu + self.absorbed > 0:
-            fraction_absorbed = self.absorbed / (self.utu + self.absorbed)
+            self.fraction_absorbed = self.absorbed / (self.utu + self.absorbed)
 
     def do_one_photon(self):
         """Bounce photon in double spheres until it is detected or lost."""
