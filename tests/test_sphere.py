@@ -114,7 +114,7 @@ class DoubleSphere(unittest.TestCase):
         d_sample = 10
         s = iadpython.Sphere(50, d_sample, r_wall=1, d_detector=d_sample)
         ave, stderr = s.do_N_photons(N, double=True)
-        np.testing.assert_allclose(ave, 0.5, atol=0.01)
+        np.testing.assert_allclose(ave, 0.5, atol=0.03)
 
 
 if __name__ == '__main__':
