@@ -16,11 +16,11 @@ Classes:
     boundaries.
 
 Functions:
-    - cap_area: Calculates the area of the spherical cap formed by the port.
-    - approx_relative_cap_area: Estimates the relative area of the spherical cap.
+    - cap_area_exact: Calculates the area of the spherical cap formed by the port.
+    - relative_cap_area: Calculates the approximate relative area of the spherical cap.
     - calculate_sagitta: Determines the sagitta (or height) of the spherical cap.
     - max_center_chord: Computes the maximum distance from the port's center to its edge.
-    - relative_cap_area: Calculates the exact relative area of the spherical cap.
+    - cap_area_exact: Calculates the exact relative area of the spherical cap.
     - hit: Checks if a point on the sphere falls within the port's boundaries.
 
 Example:
@@ -158,13 +158,17 @@ class Port():
         return s
 
     def cap_area(self):
-        """Calculate area of spherical cap."""
+        """Approximate area of spherical cap."""
+        return np.pi * self.d**2 / 4
+
+    def cap_area_exact(self):
+        """Exact area of spherical cap."""
         R = self.sphere.d / 2
         r = self.d / 2
         h = R - np.sqrt(R**2 - r**2)
         return 2 * np.pi * R * h
 
-    def approx_relative_cap_area(self):
+    def relative_cap_area(self):
         """Calculate approx relative area of spherical cap."""
         R = self.sphere.d / 2
         r = self.d / 2
@@ -182,7 +186,7 @@ class Port():
         s = self.sagitta
         return np.sqrt(r**2 + s**2)
 
-    def relative_cap_area(self):
+    def relative_cap_area_exact(self):
         """Calculate relative area of spherical cap."""
         h = (self.sphere.d - np.sqrt(self.sphere.d**2 - self.d**2)) / 2
         return h / self.sphere.d
