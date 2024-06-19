@@ -1,4 +1,3 @@
-# pylint: disable=too-many-statements
 """
 Class for managing integrating spheres.
 
@@ -143,16 +142,17 @@ class Sphere():
 
     def gain(self, sample_uru=None, third_uru=None):
         """
-        Determine gain due to multiple bounces in the sphere.
+        Determine gain on detector due to multiple bounces in the sphere.
 
-        If UX1 is the power passing through the sample UT1 or reflected by the
-        sample UR1, then power falling on the detector will be
+        If UX1 is the power passing through the sample UT1 or the power reflected by the
+        sample UR1, then power falling on the detector port will be
 
         P_detector = a_detector * gain * UX1 * P_0
 
-        and power detected will be
+        where P_0 is the incident light.  The power detected will be reduced by the
+        reflectivity of the detector
 
-        P_detected = (1-r_detector) * a_detector * gain * UX1 * P_0
+        P_detected = (1-r_detector) * P_detector
         """
         if sample_uru is None:
             sample_uru = self.sample.uru
@@ -176,14 +176,14 @@ class Sphere():
     def MR(self, sample_ur1, sample_uru=None, Ru=0, f_unscattered=1, f_wall=0):
         """
         Determine the value of MR due to multiple bounces in the sphere.
-    
+
         Args:
             sample_ur1: The reflectance of the sample for normal illumination.
             sample_uru: The reflectance of the sample for diffuse illumination.
             Ru (optional): The unscattered reflectance from the sample.
             f_unsc (optional): The unscattered fraction of reflected light collected.
             f_wall (optional): The fraction of light that hits the sphere wall first.
-    
+
         Returns:
             float: The calibrated measured reflection
         """
@@ -498,13 +498,13 @@ class Sphere():
                 last_location = iad.PortType.SAMPLE
                 if not double:
                     weight *= self.sample.uru  # photon stays in sphere
-                elif random.random() > self.sample.uru:
-#                    print("transmitted or absorbed")
-                    transmitted = weight       # transmitted or absorbed by sample
-                    weight = 0
-#                else:
-#                    print("reflected back")
-                # for double sphere weight is unchanged is reflected
+                else:
+                    # in a double sphere setup, the photon may pass into the second sphere
+                    # the photon continues with equal weight if it is reflected
+                    # otherwise the photon wil be absorbed or transmitted.
+                    if random.random() > self.sample.uru:
+                        transmitted = weight
+                        weight = 0
 
             elif self.third.hit():
                 weight *= self.third.uru
@@ -525,42 +525,43 @@ class Sphere():
 
         return detected, transmitted, bounces
 
-    def do_N_photons(self, N, double=False):
+    def do_N_photons_raw_array(self, N, num_trials=10, double=False):
         """Do a Monte Carlo simulation with N photons."""
-        # Use current time as seed
-        random.seed(time.time())
+        random.seed(time.time())  # Use current time as seed
 
-        num_trials = 10
         total_detected = np.zeros(num_trials)
         total_bounces = np.zeros(num_trials)
 
         N_per_trial = N // num_trials
 
-        total = 0
         for j in range(num_trials):
             for _i in range(N_per_trial):
                 detected, _, bounces = self.do_one_photon(double=double)
-    #            print("%d %8.3f %d" % (i,detected, bounces))
                 total_detected[j] += detected
                 total_bounces[j] += bounces
-                total += 1
 
-        ave_d = np.mean(total_detected) / N_per_trial
-        std_d = np.std(total_detected) / N_per_trial
-        stderr_d = std_d / np.sqrt(num_trials)
-        print("average detected   = %.3f ± %.3f" % (ave_d, stderr_d))
+        detected = total_detected / N_per_trial
+        bounces = total_bounces / N_per_trial
+        return detected, bounces
+
+    def do_N_photons_gain_array(self, N, num_trials=10, double=False):
+        """Do a Monte Carlo simulation with N photons."""
+        detected, bounces = self.do_N_photons_raw_array(N, num_trials, double)
+
+        # convert from detected to gain
         scale = self.detector.a * (1 - self.detector.uru)
         if self.baffle:
             scale *= (1 - self.third.a) * self.r_wall + self.third.a * self.third.uru
-        ave_g = ave_d / scale
-        std_g = std_d / scale
-        stderr_g = std_g / np.sqrt(num_trials)
-        print("average gain       = %.3f ± %.3f" % (ave_g, stderr_g))
-        print("calculated gain    = %.3f" % self.gain())
 
-        ave_b = np.mean(total_bounces) / N_per_trial
-        std_b = np.std(total_bounces) / N_per_trial
-        stderr_b = std_b / np.sqrt(num_trials)
-        print("average bounces    = %.3f ± %.3f" % (ave_b, stderr_b))
+        gains = detected / scale
+        return gains, bounces
 
-        return ave_d, stderr_d
+    def do_N_photons_gain(self, N, double=False):
+        """Do a Monte Carlo simulation with N photons."""
+        num_trials = 20
+        gains, _ = self.do_N_photons_gain_array(N, num_trials, double)
+
+        gain_ave = np.mean(gains)
+        gain_stderr = np.std(gains) / np.sqrt(len(gains))
+
+        return gain_ave, gain_stderr
