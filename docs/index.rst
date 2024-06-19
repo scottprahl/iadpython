@@ -17,18 +17,30 @@ Example Usage
    ad-sample
 
 .. toctree::
-   :caption: Integrating Spheres
+   :caption: Single Integrating Spheres
    :hidden:
 
-   sphere-basics
+   1sphere-basics.ipynb
 
-   sphere-gain
+   1sphere-gain-graphs.ipynb
 
-   sphere-random
+   1sphere-measurements.ipynb
 
-   sphere-gain-testing
+   1sphere-examples.ipynb
 
-   sphere-double
+   1sphere-gain-derivation.ipynb
+
+   1sphere-gain-testing.ipynb
+
+   1sphere-random-points.ipynb
+
+.. toctree::
+   :caption: Double Integrating Spheres
+   :hidden:
+
+   2sphere-gain-derivation.ipynb
+
+   2sphere-gain-testing.ipynb
 
 .. toctree::
    :caption: Measurements
