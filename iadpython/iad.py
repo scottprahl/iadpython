@@ -339,7 +339,7 @@ class Experiment():
     def what_is_b(self):
         """Find optical thickness using unscattered transmission."""
         s = self.sample
-        t_un = self.m_u or 0
+        t_u = self.m_u or 0
 
         r1, t1 = iad.absorbing_glass_RT(1.0, s.n_above, s.n, s.nu_0, s.b_above)
 
@@ -347,34 +347,34 @@ class Experiment():
 
         r2, t2 = iad.absorbing_glass_RT(s.n, s.n_below, 1.0, mu, s.b_below)
 
-        if t_un <= 0:
+        if t_u <= 0:
             return np.inf
 
-        if t_un >= t1 * t2 / (1 - r1 * r2):
+        if t_u >= t1 * t2 / (1 - r1 * r2):
             return 0.001
 
         tt = t1 * t2
 
         if r1 == 0 or r2 == 0:
-            ratio = tt / t_un
+            ratio = tt / t_u
         else:
-            ratio = (tt + np.sqrt(tt**2 + 4 * t_un**2 * r1 * r2)) / (2 * t_un)
+            ratio = (tt + np.sqrt(tt**2 + 4 * t_u**2 * r1 * r2)) / (2 * t_u)
 
         return s.nu_0 * np.log(ratio)
 
     def measured_rt(self):
         r"""Calculate measured reflection and transmission.
 
-        The direct incident power is :math:`(1-f)P`. The reflected power will
-        be :math:`(1-f)R_{direct} P`.  Since baffles ensure that the light cannot
+        The direct incident power is :math:`(1-f_u)P`. The reflected power will
+        be :math:`(1-f_u)R_{direct} P`.  Since baffles ensure that the light cannot
         reach the detector, we must bounce the light off the sphere walls to
         use to above gain formulas.  The contribution will then be
 
-        .. math:: (1-f)R_{direct} (1-a_e) r_w P.
+        .. math:: (1-f_u)R_{direct} (1-a_e) r_w P.
 
         The measured power will be
 
-        .. math:: P_d = a_d (1-a_e) r_w [(1-f) r_{direct} + f r_w] P ⋅ G(r_s)
+        .. math:: P_d = a_d (1-a_e) r_w [(1-f_u) r_{direct} + f_u r_w] P ⋅ G(r_s)
 
         Similarly the power falling on the detector measuring transmitted light is
 
@@ -405,35 +405,30 @@ class Experiment():
 
         # find the unscattered reflection and transmission
         nu_inside = iad.cos_snell(1, s.nu_0, s.n)
-        r_un, t_un = iad.specular_rt(s.n_above, s.n, s.n_below, s.b, nu_inside)
+        r_u, t_u = iad.specular_rt(s.n_above, s.n, s.n_below, s.b, nu_inside)
 
         # correct for lost light
-#        R_diffuse = uru - self.uru_lost
-#        T_diffuse = utu - self.utu_lost
-        R_direct = ur1 - self.ur1_lost
-        T_direct = ut1 - self.ut1_lost
+        ur1_actual = ur1 - self.ur1_lost
+        ut1_actual = ut1 - self.ut1_lost
+        uru_actual = uru - self.uru_lost
 
         # correct for fraction not collected
-        R_direct -= (1.0 - self.fraction_of_rc_in_mr) * r_un
-        T_direct -= (1.0 - self.fraction_of_tc_in_mt) * t_un
-
-        # Values when no spheres are used
-        m_r = R_direct
-        m_t = T_direct
+        m_r = ur1_actual - (1.0 - self.fraction_of_rc_in_mr) * r_u
+        m_t = ut1_actual - (1.0 - self.fraction_of_tc_in_mt) * t_u
 
         if self.num_spheres == 1:
             if self.r_sphere is not None:
-                mr = self.r_sphere.MR(ur1, uru, Ru=r_un, f_unsc=self.fraction_of_rc_in_mr)
+                f_u = self.fraction_of_rc_in_mr
+                mr = self.r_sphere.MR(ur1, uru, R_u=r_u, f_u=f_u)
 
                 r_gain_00 = self.r_sphere.gain(0)
                 ratio_std = self.r_sphere.gain(self.r_sphere.r_std) / r_gain_00
                 ratio_sample = self.r_sphere.gain(uru) / r_gain_00
                 print(r_gain_00, ratio_std, ratio_sample)
 
-                f = self.fraction_of_rc_in_mr
-                p_d = R_direct * (1 - f) + f * self.r_sphere.r_wall
-                p_std = self.r_sphere.r_std * (1 - f) + f * self.r_sphere.r_wall
-                p_0 = f * self.r_sphere.r_wall
+                p_d = ur1_actual * (1 - f_u) + f_u * self.r_sphere.r_wall
+                p_std = self.r_sphere.r_std * (1 - f_u) + f_u * self.r_sphere.r_wall
+                p_0 = f_u * self.r_sphere.r_wall
                 print("p values", p_d, p_std, p_0)
                 m_r = (p_d - ratio_sample * p_0) / (p_std - ratio_std * p_0)
                 m_r *= self.r_sphere.r_std
@@ -443,10 +438,10 @@ class Experiment():
                 print("mr= %6.3f m_r=%6.3f" %(mr, m_r))
 
             if self.t_sphere is not None:
-                mt = self.t_sphere.MT(ut1, uru, Tu=t_un, f_unsc=self.fraction_of_tc_in_mt)
+                mt = self.t_sphere.MT(ut1, uru, Tu=t_u, f_unsc=self.fraction_of_tc_in_mt)
                 t_gain_00 = self.t_sphere.gain(0)
                 t_gain_std = self.t_sphere.gain(uru)
-                m_t = T_direct * t_gain_00 / t_gain_std
+                m_t = ut1_actual * t_gain_00 / t_gain_std
                 print("mt= %6.3f m_t=%6.3f" %(mt, m_t))
 
         return m_r, m_t
