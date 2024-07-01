@@ -214,13 +214,13 @@ class ForwardOneSphereMR(unittest.TestCase):
         s = iad.Sample(a=0.95, b=1, n=1.5, quad_pts=12)
         ur1, ut1, uru, utu = s.rt()
         s = iad.Sample(a=0, b=1, n=1.5, quad_pts=12)
-        Ru, _, _, _ = s.rt()
+        R_u, _, _, _ = s.rt()
 
         rsph = iad.Sphere(d_sphere, d_sample, d_third=d_third, d_detector=d_detector,
         r_wall=r_wall, r_std=r_std)
         rsph.sample.uru = uru
         rsph.baffle = True
-        MR = rsph.MR(ur1, uru, Ru=Ru)
+        MR = rsph.MR(ur1, uru, R_u=R_u)
 
         # iad -z -a 0.95 -b 1 -n 1.5 -M 0 -z -1 '100 10 10 2 0.98' -R 0.9 -q 12
         self.assertAlmostEqual(MR, 0.2532, delta=1e-4)
@@ -237,13 +237,13 @@ class ForwardOneSphereMR(unittest.TestCase):
         s = iad.Sample(a=0.95, b=1, n=1.5, quad_pts=12)
         ur1, ut1, uru, utu = s.rt()
         s = iad.Sample(a=0, b=1, n=1.5, quad_pts=12)
-        Ru, _, _, _ = s.rt()
+        R_u, _, _, _ = s.rt()
 
         rsph = iad.Sphere(d_sphere, d_sample, d_third=d_third, d_detector=d_detector,
         r_wall=r_wall, r_std=r_std)
         rsph.sample.uru = uru
         rsph.baffle = False
-        MR = rsph.MR(ur1, uru, Ru=Ru)
+        MR = rsph.MR(ur1, uru, R_u=R_u)
 
         # iad -z -a 0.95 -b 1 -n 1.5 -M 0 -z -1 '100 10 10 2 0.98' -R 0.9 -q 12 -H 0
         self.assertAlmostEqual(MR, 0.2577, delta=1e-4)
@@ -260,13 +260,13 @@ class ForwardOneSphereMR(unittest.TestCase):
         s = iad.Sample(a=0.95, b=1, n=1.5, quad_pts=12)
         ur1, ut1, uru, utu = s.rt()
         s = iad.Sample(a=0, b=1, n=1.5, quad_pts=12)
-        Ru, _, _, _ = s.rt()
+        R_u, _, _, _ = s.rt()
 
         rsph = iad.Sphere(d_sphere, d_sample, d_third=d_third, d_detector=d_detector,
         r_wall=r_wall, r_std=r_std)
         rsph.sample.uru = uru
         rsph.baffle = True
-        MR = rsph.MR(ur1, uru, Ru=Ru, f_unscattered=0)
+        MR = rsph.MR(ur1, uru, R_u=R_u, f_u=0)
 
         # iad -z -a 0.95 -b 1 -n 1.5 -M 0 -z -1 '100 10 10 2 0.98' -R 0.9 -q 12 -c 0
         self.assertAlmostEqual(MR, 0.2117, delta=1e-4)
@@ -283,13 +283,13 @@ class ForwardOneSphereMR(unittest.TestCase):
         s = iad.Sample(a=0.95, b=1, n=1.5, quad_pts=12)
         ur1, ut1, uru, utu = s.rt()
         s = iad.Sample(a=0, b=1, n=1.5, quad_pts=12)
-        Ru, _, _, _ = s.rt()
+        R_u, _, _, _ = s.rt()
 
         rsph = iad.Sphere(d_sphere, d_sample, d_third=d_third, d_detector=d_detector,
         r_wall=r_wall, r_std=r_std)
         rsph.sample.uru = uru
         rsph.baffle = True
-        MR = rsph.MR(ur1, uru, Ru=Ru, f_wall=0.5)
+        MR = rsph.MR(ur1, uru, R_u=R_u, f_w=0.5)
 
         # iad -z -a 0.95 -b 1 -n 1.5 -M 0 -z -1 '100 10 10 2 0.98' -R 0.9 -q 12 -f 0.5
         self.assertAlmostEqual(MR, 0.2396, delta=1e-4)
@@ -306,14 +306,14 @@ class ForwardOneSphereMR(unittest.TestCase):
         s = iad.Sample(a=0.95, b=1, quad_pts=12)
         ur1, ut1, uru, utu = s.rt()
         s = iad.Sample(a=0, b=1, quad_pts=12)
-        _, Tu, _, _ = s.rt()
+        _, T_u, _, _ = s.rt()
 
         tsph = iad.Sphere(d_sphere, d_sample, d_third=d_third, d_detector=d_detector, r_wall=r_wall, r_std=r_std)
         tsph.refl = False
         tsph.sample.uru = uru
         tsph.baffle = True
         print(tsph)
-        MT = tsph.MT(ut1, uru, Tu=Tu)
+        MT = tsph.MT(ut1, uru, T_u=T_u)
 
         # iad -z -a 0.95 -b 1 -M 0 -z -S 1 -1 '100 10 10 2 0.98' -T 0.9 -V 0
         self.assertAlmostEqual(MT, 0.6065, delta=2e-4)
@@ -330,7 +330,7 @@ class ForwardOneSphereMR(unittest.TestCase):
         s = iad.Sample(a=0.95, b=1, quad_pts=12)
         ur1, ut1, uru, utu = s.rt()
         s = iad.Sample(a=0, b=1, quad_pts=12)
-        _, Tu, _, _ = s.rt()
+        _, T_u, _, _ = s.rt()
 
         tsph = iad.Sphere(d_sphere, d_sample, d_third=d_third, d_detector=d_detector, r_wall=r_wall, r_std=r_std)
         tsph.refl = False
@@ -338,7 +338,7 @@ class ForwardOneSphereMR(unittest.TestCase):
         tsph.baffle = True
         print(tsph.gain(0))
         print(tsph)
-        MT = tsph.MT(ut1, uru, Tu=Tu)
+        MT = tsph.MT(ut1, uru, T_u=T_u)
 
         # iad -z -a 0.95 -b 1 -M 0 -z -S 1 -1 '100 10 0 2 0.98' -T 0.9 -V 0
         self.assertAlmostEqual(MT, 0.6376, delta=2e-4)
@@ -355,14 +355,14 @@ class ForwardOneSphereMR(unittest.TestCase):
         s = iad.Sample(a=0.95, b=1, quad_pts=12)
         ur1, ut1, uru, utu = s.rt()
         s = iad.Sample(a=0, b=1, quad_pts=12)
-        _, Tu, _, _ = s.rt()
+        _, T_u, _, _ = s.rt()
 
         tsph = iad.Sphere(d_sphere, d_sample, d_third=d_third, d_detector=d_detector, r_wall=r_wall, r_std=r_std)
         tsph.refl = False
         tsph.sample.uru = uru
         tsph.baffle = True
         print(tsph)
-        MT = tsph.MT(ut1, uru, Tu=Tu, f_unscattered=0)
+        MT = tsph.MT(ut1, uru, T_u=T_u, f_u=0)
 
         # iad -z -a 0.95 -b 1 -M 0 -z -S 1 -1 '100 10 10 2 0.98' -T 0.9 -V 0 -C 0
         self.assertAlmostEqual(MT, 0.2357, delta=2e-4)
