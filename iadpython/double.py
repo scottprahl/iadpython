@@ -24,6 +24,7 @@ Example usage:
 import random
 import time
 import numpy as np
+import iadpython as iad
 
 
 class DoubleSphere():
@@ -48,41 +49,41 @@ class DoubleSphere():
     def __init__(self, r_sphere, t_sphere):
         """Initialization."""
         self.r_sphere = r_sphere
+        self.r_sphere.refl = True
         self.t_sphere = t_sphere
+        self.t_sphere.refl = False
         self.current = self.r_sphere
         self.ur1 = 0
         self.ut1 = 1
         self._uru = self.ur1
         self._utu = self.ut1
-        self.fraction_absorbed = 1
-        self.absorbed = 1 - self._uru - self._utu
+
+    def __repr__(self):
+        """Return basic details as a string for printing."""
+        s = 'Double sphere experiment\n'
+        s += "    ur1 = %s\n" % iad.stringify("%5.1f%%", self.ur1 * 100)
+        s += "    uru = %s\n" % iad.stringify("%5.1f%%", self.uru * 100)
+        s += "    ut1 = %s\n" % iad.stringify("%5.1f%%", self.ut1 * 100)
+        s += "    utu = %s\n" % iad.stringify("%5.1f%%", self.utu * 100)
+        s += 'R ' + self.r_sphere.__repr__() 
+        s += 'T ' + self.t_sphere.__repr__() 
+        return s
 
     def __str__(self):
         """Return full details as a string for printing."""
         s = ''
-        s += "Reflection Sphere\n"
         s += str(self.r_sphere) + '\n'
-        s += "Transmission Sphere\n"
         s += str(self.t_sphere) + '\n'
         s += "Sample Properties\n"
         s += "   ur1 = %7.3f\n" % self.ur1
         s += "   ut1 = %7.3f\n" % self.ut1
         s += "   uru = %7.3f\n" % self.uru
         s += "   utu = %7.3f\n" % self.utu
+        s += "Gain Properties\n"
+        gr, gt = self.gain()
+        s += "   r gain = %7.3f\n" % gr
+        s += "   t gain = %7.3f\n" % gt
         return s
-
-    def update_fraction_abs(self):
-        if np.isscalar(self.absorbed):
-            if self._utu + self.absorbed > 0:
-                self.fraction_absorbed = self.absorbed / (self.utu + self.absorbed)
-        else:
-            for i in range(len(self.absorbed)):
-                if np.isscalar(self._utu):
-                    if self._utu + self.absorbed[i] > 0:
-                        self.fraction_absorbed[i] = self.absorbed[i] / (self.utu + self.absorbed[i])
-                else:
-                    if self._utu[i] + self.absorbed[i] > 0:
-                        self.fraction_absorbed[i] = self.absorbed[i] / (self.utu[i] + self.absorbed[i])
 
     @property
     def uru(self):
@@ -95,9 +96,6 @@ class DoubleSphere():
         self._uru = value
         self.r_sphere.sample.uru = value
         self.t_sphere.sample.uru = value
-        self.absorbed = 1 - self._uru - self._utu
-        self.fraction_absorbed = 0 * self.absorbed
-        self.update_fraction_abs()
 
     @property
     def utu(self):
@@ -108,9 +106,6 @@ class DoubleSphere():
     def utu(self, value):
         """When size is changed ratios become invalid."""
         self._utu = value
-        self.absorbed = 1 - self._uru - self._utu
-        self.fraction_absorbed = 0 * self.absorbed
-        self.update_fraction_abs()
 
     def do_one_photon(self):
         """Bounce photon in double spheres until it is detected or lost."""
@@ -232,104 +227,118 @@ class DoubleSphere():
         return Gr, Gt
 
 
-#     def MR(self, sample_ur1, sample_uru=None):
-#         """Determine MR due to multiple bounces in the sphere."""
-#         if sample_uru is None:
-#             sample_uru = sample_ur1
-#
-#         # sample in sample port, third (entrance) port is empty
-#         gain = self.gain(sample_uru, 0)
-#
-#         # sample port has known standard, third (entrance) port is empty
-#         gain100 = self.gain(self.r_std, 0)
-#
-#         P = sample_ur1 * gain
-#         P100 = self.r_std * gain100
-#
-#         # this is the definition of MR
-#         MR = self.r_std * P / P100
-#         return MR
-#
-#     def MT(self, sample_ut1, sample_uru):
-#         """Determine MT due to multiple bounces in the sphere."""
-#         # sample in sample port, third port has known standard
-#         gain = self.gain(sample_uru, self.r_std)
-#
-#         # sample port is empty, third port has known standard
-#         gain100 = self.gain(0, self.r_std)
-#
-#         P = sample_ut1 * gain
-#         P100 = self.r_std * gain100
-#
-#         # this is the definition of MT
-#         MT = self.r_std * P / P100
-#         return MT
-#
-#     def pdetector(self):
-#         """Print the detector power."""
-#         P = (1 - self.third.a) * self.r_wall
-#         N = 1000
-#         pd = np.zeros(N)
-#         pw = np.zeros(N)
-#         ps = np.zeros(N)
-#
-#         pd[0] = self.detector.a * P
-#         ps[0] = self.sample.a * P
-#         pw[0] = self.a_wall * P
-#
-#         for j in range(N - 1):
-#             pd[j + 1] = self.detector.a * self.r_wall * pw[j]
-#             ps[j + 1] = self.sample.a * self.r_wall * pw[j]
-#             pw[j + 1] = self.a_wall * self.r_wall * pw[j]
-#             pw[j + 1] += (1 - self.third.a) * self.detector.uru * pd[j]
-#             pw[j + 1] += (1 - self.third.a) * self.sample.uru * ps[j]
-#
-#         sumw = np.cumsum(pw)
-#         sumw -= sumw[1]
-#         sumd = np.cumsum(pd)
-#         print(' k    P_d^k   P_w^k    sum(P_d^k)   sum(P_w^k)')
-#         for j in range(10):
-#             print("%3d %9.5f %9.5f %9.5f %9.5f" % (j + 1, pd[j], pw[j], sumd[j], sumw[j]))
-#         print("%3d %9.5f %9.5f %9.5f %9.5f" % (N - 1, pd[N - 1], pw[N - 1], sumd[N - 1], sumw[N - 1]))
-#         print()
-#
-#         pd[0] = self.detector.a * P
-#         ps[0] = self.sample.a * P
-#         pw[0] = self.a_wall * P
-#
-#         pw[1] = self.a_wall * self.r_wall * pw[0]
-#         pw[1] += (1 - self.third.a) * self.detector.uru * pd[0]
-#         pw[1] += (1 - self.third.a) * self.sample.uru * ps[0]
-#         pd[1] = self.detector.a * self.r_wall * pw[0]
-#
-#         beta = 1 - self.third.a
-#         beta *= self.detector.a * self.detector.uru + self.sample.a * self.sample.uru
-#         for j in range(1, N - 1):
-#             pw[j + 1] = self.r_wall * (self.a_wall * pw[j] + beta * pw[j - 1])
-#
-#         sumw = np.cumsum(pw)
-#         sumw -= sumw[1]
-#         sumd = np.cumsum(pd)
-#         print(' k    P_d^k   P_w^k    sum(P_d^k)   sum(P_w^k)')
-#         for j in range(10):
-#             print("%3d %9.5f %9.5f %9.5f %9.5f" % (j + 1, pd[j], pw[j], sumd[j], sumw[j]))
-#         print("%3d %9.5f %9.5f %9.5f %9.5f" % (N - 1, pd[N - 1], pw[N - 1], sumd[N - 1], sumw[N - 1]))
-#         print()
-#
-#         beta = 1 - self.third.a
-#         beta *= self.detector.a * self.detector.uru + self.sample.a * self.sample.uru
-#         numer = self.a_wall**3 * self.r_wall + beta * (2 * self.a_wall + self.a_wall**2 * self.r_wall + beta)
-#         denom = 1 - self.r_wall * (self.a_wall + beta)
-#         sum3 = self.r_wall * numer / denom * P
-#
-#         pdx = self.detector.a * P
-#         pdx += self.detector.a * self.r_wall * self.a_wall * P
-#         pdx += self.detector.a * self.r_wall * (self.a_wall**2 * self.r_wall + beta) * P
-#         pdx += self.detector.a * self.r_wall * sum3
-#
-#         print("%9.5f" % pdx)
-#
-#         beta = 1 - self.third.a
-#         beta *= self.detector.a * self.detector.uru + self.sample.a * self.sample.uru
-#         pdx = self.detector.a * P / (1 - self.r_wall * (self.a_wall + beta))
-#         print("%9.5f" % pdx)
+    def MR(self, sample_ur1, sample_uru=None, R_u=0, f_u=1, f_w=0):
+        """
+        Determine the value of MR due to multiple bounces in the sphere.
+
+        Args:
+            sample_ur1: The reflectance of the sample for normal illumination.
+            sample_uru: The reflectance of the sample for diffuse illumination.
+            R_u (optional): The unscattered reflectance from the sample.
+            f_u (optional): The fraction of unscattered reflected light collected.
+            f_w (optional): The fraction of light that hits the sphere wall first.
+
+        Returns:
+            float: The calibrated measured reflection
+        """
+        if sample_uru is None:
+            # use collimated total reflectance as approximate value for uru
+            sample_uru = sample_ur1
+
+        r_diffuse = sample_ur1 - R_u
+
+        r_first = 1
+        if self.baffle:
+            # light cannot hit detector and must bounce once
+            # however, some light can exit the entrance port
+            r_first = self.r_wall * (1 - self.third.a)
+
+        # nothing in sample port or third (entrance) port
+        gain_0 = self.gain(0, 0)
+
+        # sample in sample port, third (entrance) port is empty
+        gain = self.gain(sample_uru, 0)
+
+        # sample port has known standard, third (entrance) port is empty
+        gain_cal = self.gain(self.r_std, 0)
+
+        P_cal = gain_cal * (self.r_std * (1-f_w) + f_w * self.r_wall)
+        P_0 = gain_0  * (f_w * self.r_wall)
+
+        P_ss = r_first * (r_diffuse * (1-f_w) + f_w * self.r_wall)
+        P_su = self.r_wall * (1-f_w) * f_u * R_u
+        P = gain * (P_ss + P_su)
+
+        MR = self.r_std * (P - P_0) / (P_cal - P_0)
+
+#         print("UR1   =  %6.3f   r_diffuse = %6.3f" % (sample_ur1, r_diffuse))
+#         print("URU   =  %6.3f   R_u       = %6.3f" % (sample_uru, R_u))
+#         print("P_ss  =  %6.3f   P_su      = %6.3f" % (P_ss, P_su))
+#         print("G_0   =  %6.3f   P_0       = %6.3f" % (gain_0, P_0))
+#         print("G     =  %6.3f   P         = %6.3f" % (gain, P))
+#         print("G_cal =  %6.3f   P_cal     = %6.3f" % (gain_cal, P_cal))
+#         print("MR    =  %6.3f" % (MR))
+
+        return MR
+
+    def MT(self, sample_ut1, sample_uru, Tu=0, f_u=1):
+        """
+        Determine the measured transmission (MT) due to multiple bounces in the sphere.
+
+        The f_u variable describes the fraction of unscattered transmission
+        that is collected by the sphere.  It is equivalent to the -C option for the iad
+        program and the default is that all the unscattered transmission is collected
+        (because the third port is blocked).  If the third port allows unscattered light
+        to leave the sphere then it should be set to zero.
+
+        Args:
+            sample_ut1: The transmission of the sample for normal illumination.
+            sample_uru: The reflectance of the sample for diffuse illumination.
+            Tu (optional): The unscattered transmission of the sample.
+            f_u (optional): The fraction of unscattered transmission collected.
+
+        Returns:
+            float: The calculated measured transmission (MT) value.
+        """
+        if self.third.a == 0:
+            # sample in sample port, third port is always sphere wall
+            r_cal = self.r_wall
+            r_third = self.r_wall
+
+        elif f_u == 0:
+            # sample in sample port, third port is empty except for calibration
+            r_cal = self.r_std
+            r_third = 0
+
+        else:
+            # sample in sample port, third port always has known standard
+            r_cal = self.r_std
+            r_third = self.r_std
+
+        r_first = 1
+        if self.baffle:
+            r_first = self.r_wall * (1 - self.third.a) + r_third * self.third.a
+
+        ut1_calc = sample_ut1 - Tu
+
+        gain = self.gain(sample_uru, r_third)
+        gain_cal = self.gain(0, r_cal)
+
+        P_ss = r_first * ut1_calc
+        P_su = r_third * Tu * f_u
+        P = (P_su + P_ss) * gain
+        P_cal = r_cal * gain_cal
+
+        MT = r_cal * P / P_cal
+
+#         print("UT1     =  %6.3f   URU   = %6.3f" % (sample_ut1, sample_uru))
+#         print("Tu      =  %6.3f   f_uns = %5.2f" % (Tu,f_u))
+#         print("P_ss    =  %6.3f   P_su  = %6.3f" % (P_ss, P_su))
+#         print("G       =  %6.3f   P     = %6.3f" % (gain, P))
+#         print("G_cal   =  %6.3f   P_cal = %6.3f" % (gain_cal, P_cal))
+#         print("r_first =  %6.3f" % (r_first))
+#         print("r_cal   =  %6.3f" % (r_cal))
+#         print("r_third =  %6.3f" % (r_third))
+#         print("MT      =  %6.3f" % (MT))
+
+        return MT
