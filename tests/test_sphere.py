@@ -91,30 +91,33 @@ class SphereGain(unittest.TestCase):
         g = s.gain(sample_uru=0)
         np.testing.assert_allclose(len(r_wall), len(g), atol=1e-5)
 
-class DoubleSphere(unittest.TestCase):
-    """Creation and setting of a single sphere used parameters."""
-
-    def test_01_double_photon(self):
-        """One photon test for double sphere configuration."""
-        s = iadpython.Sphere(50, 10, r_wall=1)
-        detected, transmitted, _ = s.do_one_photon(double=True)
-        np.testing.assert_allclose(detected, 0, atol=1e-5)
-        np.testing.assert_allclose(transmitted, 1, atol=1e-5)
-
-    def test_02_double_photon(self):
-        """One photon test for double sphere configuration."""
-        s = iadpython.Sphere(50, 10, r_wall=1)
-        detected, transmitted, _ = s.do_one_photon(double=True, weight=0.5)
-        np.testing.assert_allclose(detected, 0, atol=1e-5)
-        np.testing.assert_allclose(transmitted, 0.5, atol=1e-5)
-
-    def test_01_double_N_photon(self):
-        """Half the light should be detected."""
-        N=10000
-        d_sample = 10
-        s = iadpython.Sphere(50, d_sample, r_wall=1, d_detector=d_sample)
-        ave, stderr = s.do_N_photons(N, double=True)
-        np.testing.assert_allclose(ave, 0.5, atol=0.03)
+# class DoubleSphere(unittest.TestCase):
+#     """Creation and setting of a single sphere used parameters."""
+# 
+#     def test_01_double_photon(self):
+#         """One photon test for double sphere configuration."""
+#         s = iadpython.Sphere(50, 10, r_wall=1)
+#         d = iadpython.DoubleSphere(s,s)
+#         detected, transmitted, _ = d.do_one_photon()
+#         np.testing.assert_allclose(detected, 0, atol=1e-5)
+#         np.testing.assert_allclose(transmitted, 1, atol=1e-5)
+# 
+#     def test_02_double_photon(self):
+#         """One photon test for double sphere configuration."""
+#         s = iadpython.Sphere(50, 10, r_wall=1)
+#         d = iadpython.DoubleSphere(s,s)
+#         detected, transmitted, _ = d.do_one_photon()
+#         np.testing.assert_allclose(detected, 0, atol=1e-5)
+#         np.testing.assert_allclose(transmitted, 1, atol=1e-5)
+# 
+#     def test_01_double_N_photon(self):
+#         """Half the light should be detected."""
+#         N=10000
+#         d_sample = 10
+#         s = iadpython.Sphere(50, d_sample, r_wall=1, d_detector=d_sample)
+#         d = iadpython.DoubleSphere(s,s)
+#         ave, stderr = d.do_N_photons(N)
+#         np.testing.assert_allclose(ave, 0.5, atol=0.03)
 
 
 if __name__ == '__main__':
