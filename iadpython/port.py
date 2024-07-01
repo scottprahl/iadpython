@@ -35,6 +35,7 @@ See Also:
 
 import random
 import numpy as np
+import iadpython as iad
 
 
 def uniform_disk():
@@ -118,6 +119,23 @@ class Port():
         self.sagitta = self.calculate_sagitta()
         self.chord2 = self.max_center_chord()**2
 
+
+    def __repr__(self):
+        """Short string for port."""
+        return "d=%5.1fmm, uru=%s\n" % (self.d, iad.stringify("%5.1f%%", self.uru * 100))
+
+    def __str__(self):
+        """Return basic details as a string for printing."""
+        s = ""
+        s += "        diameter = %7.2f mm\n" % self.d
+        s += "          radius = %7.2f mm\n" % (self.d / 2)
+        s += "           chord = %7.2f mm\n" % np.sqrt(self.chord2)
+        s += "         sagitta = %7.2f mm\n" % self.sagitta
+        s += "          center = (%6.1f, %6.1f, %6.1f) mm\n" % (self.x, self.y, self.z)
+        s += "   relative area = %7.2f%%\n" % (self.a * 100)
+        s += "             uru = %s\n" % iad.stringify("%5.1f%%", self.uru * 100)
+        return s
+
     @property
     def d(self):
         """float: Gets the diameter of the port."""
@@ -140,22 +158,6 @@ class Port():
         self.sagitta = self.calculate_sagitta()
         self.chord2 = self.max_center_chord()
         self.sphere._a_wall = 1 - self.sphere.sample.a - self.sphere.third.a - self.sphere.detector.a
-
-    def __repr__(self):
-        """Short string for port."""
-        return "d=%5.1fmm, uru=%5.1f%%\n" % (self.d, self.uru * 100)
-
-    def __str__(self):
-        """Return basic details as a string for printing."""
-        s = ""
-        s += "        diameter = %7.2f mm\n" % self.d
-        s += "          radius = %7.2f mm\n" % (self.d / 2)
-        s += "           chord = %7.2f mm\n" % np.sqrt(self.chord2)
-        s += "         sagitta = %7.2f mm\n" % self.sagitta
-        s += "          center = (%6.1f, %6.1f, %6.1f) mm\n" % (self.x, self.y, self.z)
-        s += "   relative area = %7.2f%%\n" % (self.a * 100)
-        s += "             uru = %7.2f%%\n" % (self.uru * 100)
-        return s
 
     def cap_area(self):
         """Approximate area of spherical cap."""
