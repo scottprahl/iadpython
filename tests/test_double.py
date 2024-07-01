@@ -13,10 +13,10 @@ class TestDoubleSphere(unittest.TestCase):
         r_sphere = iadpython.Sphere(100, 30, d_detector=10, r_wall=1)
         t_sphere = iadpython.Sphere(100, 30, d_detector=10, r_wall=1)
         self.double = iadpython.DoubleSphere(r_sphere, t_sphere)
-        self.ur1 = 0
-        self.uru = 0
-        self.ut1 = 1
-        self.utu = 1
+        self.double.ur1 = 0
+        self.double.uru = 0
+        self.double.ut1 = 1
+        self.double.utu = 1
 
     def test_init(self):
         """Make sure basics work."""
