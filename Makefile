@@ -94,6 +94,8 @@ clean:
 	rm -rf docs/.ipynb_checkpoints
 	rm -rf tests/__pycache__
 	rm -rf tests/tests_iadc/__pycache__
+	rm -rf docs/.jupyter/
+	rm -rf tests/.ipynb_checkpoints/
 
 realclean:
 	make clean
