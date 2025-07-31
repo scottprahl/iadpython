@@ -344,5 +344,5 @@ class sample_with_slides(unittest.TestCase):
 #     ./iad -V 0 -r 0.2 -t 0.01   -d 1 -M 0  -S 1 -1 '200 13 13 0'
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
