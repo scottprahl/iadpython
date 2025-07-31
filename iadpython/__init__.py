@@ -33,13 +33,13 @@ An example::
     >>> print('  total transmission = %.5f' % utu)
 """
 
-__version__ = "0.6.0"
 __author__ = "Scott Prahl"
 __email__ = "scott.prahl@oit.edu"
 __copyright__ = "2018-24, Scott Prahl"
 __license__ = "MIT"
 __url__ = "https://github.com/scottprahl/iadpython"
 
+from ._version import __version__
 from .constants import *
 from .fresnel import *
 from .start import *
