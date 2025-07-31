@@ -1,43 +1,102 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=77"]  # remove "wheel" if you like
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "iadpython"
+description = "Forward and inverse radiative transport using adding-doubling"
+readme = "README.rst"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE*"]
+dynamic = ["version"]
+keywords = [
+  "absorption",
+  "scattering",
+  "reflection",
+  "transmission",
+  "optical properties",
+  "radiative transport",
+  "scattering coefficient",
+  "scattering anisotropy",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Operating System :: OS Independent",
+]
+dependencies = ["numpy", "matplotlib", "scipy"]  # or move matplotlib to an extra
+authors = [{ name = "Scott Prahl", email = "scott.prahl@oit.edu" }]
+
+[project.urls]
+Homepage = "https://github.com/scottprahl/iadpython"
+"Bug Tracker" = "https://github.com/scottprahl/iadpython/issues"
+Documentation = "https://iadpython.readthedocs.org/"
+
+# Optional extras (handy if you're removing setup.cfg)
+[project.optional-dependencies]
+dev = ["ruff", "black", "pylint", "pytest", "check-manifest"]
+plot = ["matplotlib"]
+
+[tool.setuptools.dynamic]
+version = { attr = "iadpython._version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["iadpython", "iadpython.*"]
+
+[tool.setuptools.package-data]
+iadpython = ["data/*.csv"]
+
 [tool.ruff]
-line-length = 150
-exclude =['.git', '__pycache__', 'docs']
+line-length = 110
 
 [tool.ruff.lint]
-select = ["D", "E", "F", "W"]
+select = ["D", "E", "F", "W", "I", "UP"]
 ignore = ["D212", "F403"]
-pydocstyle.convention = "google"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-# Ignore `E402` Module level import not at top of file
 "tests/test_iadcommand.py" = ["E402"]
-
-[tool.check-manifest]
-ignore = [
-    ".readthedocs.yaml",
-    "docs/*",
-    "Makefile",
-    "release.txt",
-    "requirements.txt",
-    "requirements-dev.txt",
-    "todo",
-]
 
 [tool.pytest.ini_options]
 markers = ["notebooks"]
+testpaths = ["tests"]
+# addopts = "-ra"
+# norecursedirs = ["tests_iadc"]  # re-add if needed
 
 [tool.pylint]
 disable = [
-    "invalid-name",
-    "line-too-long",
-    "too-many-locals",
-    "too-many-arguments",
-    "consider-using-f-string",
-    "too-many-instance-attributes",
-    "too-many-public-methods",
-    "too-many-branches",
-    "too-few-public-methods",
-  ]
+  "invalid-name",
+  "line-too-long",
+  "too-many-locals",
+  "too-many-arguments",
+  "consider-using-f-string",
+  "too-many-instance-attributes",
+  "too-many-public-methods",
+  "too-many-branches",
+  "too-few-public-methods",
+]
+
+[tool.black]
+line-length = 110
+
+[tool.check-manifest]
+ignore = [
+  ".readthedocs.yaml",
+  "docs/*",
+  "Makefile",
+  "release.txt",
+  "requirements.txt",
+  "requirements-dev.txt",
+  "todo",
+]
