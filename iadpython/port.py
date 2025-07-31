@@ -61,7 +61,7 @@ def uniform_disk():
     return x, y, s
 
 
-class Port():
+class Port:
     """
     Container class for a port on an integrating sphere.
 
@@ -117,12 +117,14 @@ class Port():
 
         self.a = self.relative_cap_area()
         self.sagitta = self.calculate_sagitta()
-        self.chord2 = self.max_center_chord()**2
-
+        self.chord2 = self.max_center_chord() ** 2
 
     def __repr__(self):
         """Short string for port."""
-        return "d=%5.1fmm, uru=%s\n" % (self.d, iad.stringify("%5.1f%%", self.uru * 100))
+        return "d=%5.1fmm, uru=%s\n" % (
+            self.d,
+            iad.stringify("%5.1f%%", self.uru * 100),
+        )
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -157,7 +159,9 @@ class Port():
         self.a = self.relative_cap_area()
         self.sagitta = self.calculate_sagitta()
         self.chord2 = self.max_center_chord()
-        self.sphere._a_wall = 1 - self.sphere.sample.a - self.sphere.third.a - self.sphere.detector.a
+        self.sphere._a_wall = (
+            1 - self.sphere.sample.a - self.sphere.third.a - self.sphere.detector.a
+        )
 
     def cap_area(self):
         """Approximate area of spherical cap."""
@@ -195,17 +199,19 @@ class Port():
 
     def hit(self):
         """Determine if point on the sphere within the port."""
-        r2 = (self.x - self.sphere.x)**2
-        r2 += (self.y - self.sphere.y)**2
-        r2 += (self.z - self.sphere.z)**2
-#        print('cap center (%7.2f, %7.2f, %7.2f)' % (self.x,self.y,self.z))
-#        print('pt on sph  (%7.2f, %7.2f, %7.2f)' % (self.sphere.x,self.sphere.y,self.sphere.z))
-#        print("cap distance %7.2f %7.2f"% (r2, self.chord2))
+        r2 = (self.x - self.sphere.x) ** 2
+        r2 += (self.y - self.sphere.y) ** 2
+        r2 += (self.z - self.sphere.z) ** 2
+        #        print('cap center (%7.2f, %7.2f, %7.2f)' % (self.x,self.y,self.z))
+        #        print('pt on sph  (%7.2f, %7.2f, %7.2f)' % (self.sphere.x,self.sphere.y,self.sphere.z))
+        #        print("cap distance %7.2f %7.2f"% (r2, self.chord2))
         return r2 < self.chord2
 
     def set_center(self, x, y, z):
         """Centers the cap at x,y,z."""
-        assert x**2 + y**2 + z**2 - (self.sphere.d / 2)**2 < 1e-6, "center not on sphere."
+        assert (
+            x**2 + y**2 + z**2 - (self.sphere.d / 2) ** 2 < 1e-6
+        ), "center not on sphere."
         self.x = x
         self.y = y
         self.z = z

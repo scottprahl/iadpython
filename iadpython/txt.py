@@ -1,4 +1,4 @@
-"""Module for reading rxt files.
+"""Module for reading txt files.
 
 This reads an output txt file and saves the parameters into an
 Experiment object.
@@ -24,11 +24,12 @@ import re
 import numpy as np
 import iadpython
 
-__all__ = ('read_txt', 'IADResult')
+__all__ = ("read_txt", "IADResult")
 
 
-class IADResult():
+class IADResult:
     """Container class results in an iad output file."""
+
     def __init__(self):
         """Initialization."""
         self.lam = np.array([0], dtype=float)
@@ -54,15 +55,15 @@ def verify_magic(fp, magic):
 def get_number_from_line(fp):
     """Read the number on the next line after an = sign."""
     s = fp.readline()
-#    print("starting=%s" % s)
-    if s[0] != '#':
+    #    print("starting=%s" % s)
+    if s[0] != "#":
         print("line in file should start with `#`")
         return 0
 
-    s = re.sub(r'.*= *', '', s)
-    s = re.sub(r' .*', '', s)
+    s = re.sub(r".*= *", "", s)
+    s = re.sub(r" .*", "", s)
 
-#    print("finish x=%10.5f" % float(s))
+    #    print("finish x=%10.5f" % float(s))
     return float(s)
 
 
@@ -72,7 +73,7 @@ def read_sphere(fp):
     d_sphere = get_number_from_line(fp)
     d_sample = get_number_from_line(fp)
     sphere = iadpython.Sphere(d_sphere, d_sample)
-    sphere.baffle = 'a baffle' in line
+    sphere.baffle = "a baffle" in line
     sphere.third.d = get_number_from_line(fp)
     sphere.detector.d = get_number_from_line(fp)
     sphere.detector.uru = get_number_from_line(fp) / 100
@@ -94,8 +95,10 @@ def read_txt(filename):
 
     # verify that file is an output file
     with open(filename, encoding="utf-8") as fp:
-        if not verify_magic(fp, '# Inverse Adding-Doubling'):
-            raise ValueError('"%s" does not start with "# Inverse Adding-Doubling"' % filename)
+        if not verify_magic(fp, "# Inverse Adding-Doubling"):
+            raise ValueError(
+                '"%s" does not start with "# Inverse Adding-Doubling"' % filename
+            )
 
         # create experiment object
         exp = iadpython.Experiment()
@@ -122,7 +125,7 @@ def read_txt(filename):
         data = IADResult()
         position = fp.tell()
 
-        result = np.loadtxt(fp, usecols=range(8), delimiter='\t')
+        result = np.loadtxt(fp, usecols=range(8), delimiter="\t")
         lam, mr, cr, mt, ct, mua, musp, g = result.T
         data.lam = np.atleast_1d(lam)
         data.mr = np.atleast_1d(mr)
@@ -138,9 +141,9 @@ def read_txt(filename):
         exp.lambda0 = data.lam
 
         fp.seek(position)
-        converters = {8: lambda s: s.lstrip(b'#').strip()}
+        converters = {8: lambda s: s.lstrip(b"#").strip()}
         status = np.loadtxt(fp, usecols=[8], dtype=str, converters=converters)
         status = np.atleast_1d(status)
-        data.success = status == '*'
+        data.success = status == "*"
 
     return exp, data

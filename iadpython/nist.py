@@ -34,10 +34,11 @@ Reference:
 import os
 import numpy as np
 
-__all__ = ('subject_reflectances',
-           'subject_average_reflectance',
-           'all_average_reflectances',
-           )
+__all__ = (
+    "subject_reflectances",
+    "subject_average_reflectance",
+    "all_average_reflectances",
+)
 
 
 def get_subject_data(cols):
@@ -59,8 +60,10 @@ def get_subject_data(cols):
         >>> data = get_subject_data(cols_to_extract)
     """
     script_dir = os.path.dirname(__file__)  # Path to directory of this file
-    data_file_path = os.path.join(script_dir, 'data', 'M38597.csv')
-    data = np.loadtxt(data_file_path, skiprows=8, usecols=cols, delimiter=',', encoding='latin1')
+    data_file_path = os.path.join(script_dir, "data", "M38597.csv")
+    data = np.loadtxt(
+        data_file_path, skiprows=8, usecols=cols, delimiter=",", encoding="latin1"
+    )
     return data
 
 

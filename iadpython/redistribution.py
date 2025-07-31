@@ -23,9 +23,10 @@ import scipy.special
 import numpy as np
 import numpy.polynomial.legendre
 
-__all__ = ('hg_elliptic',
-           'hg_legendre',
-           )
+__all__ = (
+    "hg_elliptic",
+    "hg_legendre",
+)
 
 
 def hg_legendre(sample):
@@ -63,9 +64,9 @@ def hg_legendre(sample):
             for j in range(i + 1):
                 temp = chik * pk[i] * pk[j]
                 hp[i, j] += temp
-                hm[i, j] += (-1)**k * temp
+                hm[i, j] += (-1) ** k * temp
 
-# 	fill symmetric entries
+    # 	fill symmetric entries
     for i in range(n):
         for j in range(i + 1, n):
             hp[i, j] = hp[j, i]

@@ -13,7 +13,7 @@ Example::
 import numpy as np
 
 
-class Grid():
+class Grid:
     """Class to track pre-calculated R & T values.
 
     There is a long story associated with these routines.  I spent a lot of time
@@ -67,15 +67,15 @@ class Grid():
 
         self.search = exp.search
 
-        if self.search == 'find_ab':
+        if self.search == "find_ab":
             self.g = np.full((self.N, self.N), self.default)
             self.a, self.b = np.meshgrid(a, b)
 
-        if self.search == 'find_ag':
+        if self.search == "find_ag":
             self.b = np.full((self.N, self.N), self.default)
             self.a, self.g = np.meshgrid(a, g)
 
-        if self.search == 'find_bg':
+        if self.search == "find_bg":
             self.a = np.full((self.N, self.N), self.default)
             self.b, self.g = np.meshgrid(b, g)
 
@@ -105,7 +105,7 @@ class Grid():
         return False
 
 
-def matrix_as_string(x, label=''):
+def matrix_as_string(x, label=""):
     """Return matrix as a string."""
     if x is None:
         return ""
@@ -114,10 +114,10 @@ def matrix_as_string(x, label=''):
 
     ndashes = (80 - len(label) - 2) // 2
     s = "\n"
-    s += '-' * ndashes + ' ' + label + ' ' + '-' * ndashes
+    s += "-" * ndashes + " " + label + " " + "-" * ndashes
     s += "\n[\n"
     for i in range(n):
-        s += '['
+        s += "["
         for j in range(m):
             s += "%6.3f, " % x[i, j]
         s += "], \n"

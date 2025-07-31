@@ -27,7 +27,7 @@ import numpy as np
 import iadpython as iad
 
 
-class DoubleSphere():
+class DoubleSphere:
     """Container class for two  three-port integrating sphere.
 
     Attributes:
@@ -60,20 +60,20 @@ class DoubleSphere():
 
     def __repr__(self):
         """Return basic details as a string for printing."""
-        s = 'Double sphere experiment\n'
+        s = "Double sphere experiment\n"
         s += "    ur1 = %s\n" % iad.stringify("%5.1f%%", self.ur1 * 100)
         s += "    uru = %s\n" % iad.stringify("%5.1f%%", self.uru * 100)
         s += "    ut1 = %s\n" % iad.stringify("%5.1f%%", self.ut1 * 100)
         s += "    utu = %s\n" % iad.stringify("%5.1f%%", self.utu * 100)
-        s += 'R ' + self.r_sphere.__repr__() 
-        s += 'T ' + self.t_sphere.__repr__() 
+        s += "R " + self.r_sphere.__repr__()
+        s += "T " + self.t_sphere.__repr__()
         return s
 
     def __str__(self):
         """Return full details as a string for printing."""
-        s = ''
-        s += str(self.r_sphere) + '\n'
-        s += str(self.t_sphere) + '\n'
+        s = ""
+        s += str(self.r_sphere) + "\n"
+        s += str(self.t_sphere) + "\n"
         s += "Sample Properties\n"
         s += "   ur1 = %7.3f\n" % self.ur1
         s += "   ut1 = %7.3f\n" % self.ut1
@@ -127,7 +127,9 @@ class DoubleSphere():
             weight = 0
 
         while weight > 0:
-            detected, transmitted, _ = self.current.do_one_photon(weight=weight, double=True)
+            detected, transmitted, _ = self.current.do_one_photon(
+                weight=weight, double=True
+            )
 
             if transmitted > 0:  # hit sample
                 if random.random() < self.utu:  # passed through sample, switch spheres
@@ -137,15 +139,19 @@ class DoubleSphere():
                     else:
                         self.current = self.r_sphere
                     weight = transmitted
-                else: # absorbed by sample
+                else:  # absorbed by sample
                     weight = 0
             else:
                 weight = 0
                 if self.current == self.r_sphere:
-                    assert passes % 2 == 0, "reflection sphere should have even number of passes"
+                    assert (
+                        passes % 2 == 0
+                    ), "reflection sphere should have even number of passes"
                     r_detected += detected
                 else:
-                    assert passes % 2 == 1, "reflection sphere should have odd number of passes"
+                    assert (
+                        passes % 2 == 1
+                    ), "reflection sphere should have odd number of passes"
                     t_detected += detected
 
         return r_detected, t_detected, passes
@@ -158,7 +164,7 @@ class DoubleSphere():
         num_trials = 10
         total_r_detected = np.zeros(num_trials)
         total_t_detected = np.zeros(num_trials)
-#        total_bounces = np.zeros(num_trials)
+        #        total_bounces = np.zeros(num_trials)
 
         N_per_trial = N // num_trials
 
@@ -166,7 +172,7 @@ class DoubleSphere():
         for j in range(num_trials):
             for _i in range(N_per_trial):
                 r_detected, t_detected, _ = self.do_one_photon()
-    #            print("%d %8.3f %8.3f" % (i, r_detected, t_detected))
+                #            print("%d %8.3f %8.3f" % (i, r_detected, t_detected))
                 total_r_detected[j] += r_detected
                 total_t_detected[j] += t_detected
                 total += 1
@@ -183,7 +189,10 @@ class DoubleSphere():
         print("r_average detected   = %.3f ± %.3f" % (ave_r, stderr_r))
         scale = self.r_sphere.detector.a * (1 - self.r_sphere.detector.uru)
         if self.r_sphere.baffle:
-            scale *= (1 - self.r_sphere.third.a) * self.r_sphere.r_wall + self.r_sphere.third.a * self.r_sphere.third.uru
+            scale *= (
+                (1 - self.r_sphere.third.a) * self.r_sphere.r_wall
+                + self.r_sphere.third.a * self.r_sphere.third.uru
+            )
         ave_g = ave_r / scale
         std_g = std_r / scale
         stderr_g = std_g / np.sqrt(num_trials)
@@ -194,7 +203,10 @@ class DoubleSphere():
         print("t_average detected   = %.3f ± %.3f" % (ave_t, stderr_t))
         scale = self.t_sphere.detector.a * (1 - self.t_sphere.detector.uru)
         if self.t_sphere.baffle:
-            scale *= (1 - self.t_sphere.third.a) * self.t_sphere.r_wall + self.t_sphere.third.a * self.t_sphere.third.uru
+            scale *= (
+                (1 - self.t_sphere.third.a) * self.t_sphere.r_wall
+                + self.t_sphere.third.a * self.t_sphere.third.uru
+            )
         ave_g = ave_t / scale
         std_g = std_t / scale
         stderr_g = std_g / np.sqrt(num_trials)
@@ -202,7 +214,6 @@ class DoubleSphere():
         print("calculated gain    = %.3f" % gt)
 
         return ave_r, stderr_r, ave_t, stderr_t
-
 
     def gain(self):
         """
@@ -225,7 +236,6 @@ class DoubleSphere():
         Gr = P_0 + P_2 / (1 - alpha)
         Gt = P_1 / (1 - alpha)
         return Gr, Gt
-
 
     def MR(self, sample_ur1, sample_uru=None, R_u=0, f_u=1, f_w=0):
         """
@@ -262,22 +272,22 @@ class DoubleSphere():
         # sample port has known standard, third (entrance) port is empty
         gain_cal = self.gain(self.r_std, 0)
 
-        P_cal = gain_cal * (self.r_std * (1-f_w) + f_w * self.r_wall)
-        P_0 = gain_0  * (f_w * self.r_wall)
+        P_cal = gain_cal * (self.r_std * (1 - f_w) + f_w * self.r_wall)
+        P_0 = gain_0 * (f_w * self.r_wall)
 
-        P_ss = r_first * (r_diffuse * (1-f_w) + f_w * self.r_wall)
-        P_su = self.r_wall * (1-f_w) * f_u * R_u
+        P_ss = r_first * (r_diffuse * (1 - f_w) + f_w * self.r_wall)
+        P_su = self.r_wall * (1 - f_w) * f_u * R_u
         P = gain * (P_ss + P_su)
 
         MR = self.r_std * (P - P_0) / (P_cal - P_0)
 
-#         print("UR1   =  %6.3f   r_diffuse = %6.3f" % (sample_ur1, r_diffuse))
-#         print("URU   =  %6.3f   R_u       = %6.3f" % (sample_uru, R_u))
-#         print("P_ss  =  %6.3f   P_su      = %6.3f" % (P_ss, P_su))
-#         print("G_0   =  %6.3f   P_0       = %6.3f" % (gain_0, P_0))
-#         print("G     =  %6.3f   P         = %6.3f" % (gain, P))
-#         print("G_cal =  %6.3f   P_cal     = %6.3f" % (gain_cal, P_cal))
-#         print("MR    =  %6.3f" % (MR))
+        #         print("UR1   =  %6.3f   r_diffuse = %6.3f" % (sample_ur1, r_diffuse))
+        #         print("URU   =  %6.3f   R_u       = %6.3f" % (sample_uru, R_u))
+        #         print("P_ss  =  %6.3f   P_su      = %6.3f" % (P_ss, P_su))
+        #         print("G_0   =  %6.3f   P_0       = %6.3f" % (gain_0, P_0))
+        #         print("G     =  %6.3f   P         = %6.3f" % (gain, P))
+        #         print("G_cal =  %6.3f   P_cal     = %6.3f" % (gain_cal, P_cal))
+        #         print("MR    =  %6.3f" % (MR))
 
         return MR
 
@@ -331,14 +341,14 @@ class DoubleSphere():
 
         MT = r_cal * P / P_cal
 
-#         print("UT1     =  %6.3f   URU   = %6.3f" % (sample_ut1, sample_uru))
-#         print("Tu      =  %6.3f   f_uns = %5.2f" % (Tu,f_u))
-#         print("P_ss    =  %6.3f   P_su  = %6.3f" % (P_ss, P_su))
-#         print("G       =  %6.3f   P     = %6.3f" % (gain, P))
-#         print("G_cal   =  %6.3f   P_cal = %6.3f" % (gain_cal, P_cal))
-#         print("r_first =  %6.3f" % (r_first))
-#         print("r_cal   =  %6.3f" % (r_cal))
-#         print("r_third =  %6.3f" % (r_third))
-#         print("MT      =  %6.3f" % (MT))
+        #         print("UT1     =  %6.3f   URU   = %6.3f" % (sample_ut1, sample_uru))
+        #         print("Tu      =  %6.3f   f_uns = %5.2f" % (Tu,f_u))
+        #         print("P_ss    =  %6.3f   P_su  = %6.3f" % (P_ss, P_su))
+        #         print("G       =  %6.3f   P     = %6.3f" % (gain, P))
+        #         print("G_cal   =  %6.3f   P_cal = %6.3f" % (gain_cal, P_cal))
+        #         print("r_first =  %6.3f" % (r_first))
+        #         print("r_cal   =  %6.3f" % (r_cal))
+        #         print("r_third =  %6.3f" % (r_third))
+        #         print("MT      =  %6.3f" % (MT))
 
         return MT

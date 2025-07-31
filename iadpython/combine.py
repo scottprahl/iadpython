@@ -23,13 +23,14 @@ import numpy as np
 import iadpython.constants
 import iadpython.start
 
-__all__ = ('add_layers',
-           'add_layers_basic',
-           'simple_layer_matrices',
-           'add_slide_above',
-           'add_slide_below',
-           'add_same_slides'
-           )
+__all__ = (
+    "add_layers",
+    "add_layers_basic",
+    "simple_layer_matrices",
+    "add_slide_above",
+    "add_slide_below",
+    "add_same_slides",
+)
 
 
 def add_layers_basic(sample, R10, T01, R12, R21, T12, T21):

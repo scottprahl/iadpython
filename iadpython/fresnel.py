@@ -18,14 +18,15 @@ Example:
 import numpy as np
 import iadpython.constants
 
-__all__ = ('cos_critical',
-           'cos_snell',
-           'fresnel_reflection',
-           'absorbing_glass_RT',
-           'specular_rt',
-           'diffuse_glass_R',
-           'glass',
-           )
+__all__ = (
+    "cos_critical",
+    "cos_snell",
+    "fresnel_reflection",
+    "absorbing_glass_RT",
+    "specular_rt",
+    "diffuse_glass_R",
+    "glass",
+)
 
 
 def cos_critical(n_i, n_t):
@@ -49,7 +50,7 @@ def cos_critical(n_i, n_t):
     Returns:
         cosine of the critical angle
     """
-    temp = 1.0 - (n_t / n_i)**2
+    temp = 1.0 - (n_t / n_i) ** 2
 
     if not np.isscalar(temp):
         np.place(temp, temp < 0, 0)
@@ -91,7 +92,7 @@ def cos_snell(n_i, nu_i, n_t):
     Returns:
         cosine of transmitted angle
     """
-    temp = 1.0 - (n_i / n_t)**2 * (1.0 - nu_i**2)
+    temp = 1.0 - (n_i / n_t) ** 2 * (1.0 - nu_i**2)
 
     if not np.isscalar(temp):
         np.place(temp, temp < 0, 0)
@@ -176,7 +177,7 @@ def fresnel_reflection(n_i, nu_i, n_t):
     dif2 = (n_i * nu_i - n_t * nu_t) ** 2
 
     if np.isscalar(sum1):
-        if nu_i == 0:       # angle is greater than critical angle
+        if nu_i == 0:  # angle is greater than critical angle
             return 1
         return (dif1 / sum1 + dif2 / sum2) / 2
 

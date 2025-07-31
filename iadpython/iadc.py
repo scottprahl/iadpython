@@ -21,17 +21,18 @@ import ctypes
 import ctypes.util
 import numpy as np
 
-__all__ = ('basic_rt',
-           'basic_rt_unscattered',
-           'basic_rt_cone',
-           'basic_rt_oblique',
-           'basic_rt_inverse',
-           'rt',
-           'rt_unscattered',
-           'rt_cone',
-           'rt_oblique',
-           'rt_inverse'
-           )
+__all__ = (
+    "basic_rt",
+    "basic_rt_unscattered",
+    "basic_rt_cone",
+    "basic_rt_oblique",
+    "basic_rt_inverse",
+    "rt",
+    "rt_unscattered",
+    "rt_cone",
+    "rt_oblique",
+    "rt_inverse",
+)
 
 libiad_path = ctypes.util.find_library("libiad")
 
@@ -52,18 +53,19 @@ except OSError:
     print("Sorry")
     sys.exit()
 
-libiad.ez_RT.argtypes = (ctypes.c_int,         # n quadrature points
-                         ctypes.c_double,      # slab index of refraction
-                         ctypes.c_double,      # top slide index of refraction
-                         ctypes.c_double,      # bottom slide index of refraction
-                         ctypes.c_double,      # albedo mus/(mus+mua)
-                         ctypes.c_double,      # optical thickness d*(mua+mus)
-                         ctypes.c_double,      # scattering anisotropy g
-                         ctypes.POINTER(ctypes.c_double),   # UR1
-                         ctypes.POINTER(ctypes.c_double),   # UT1
-                         ctypes.POINTER(ctypes.c_double),   # URU
-                         ctypes.POINTER(ctypes.c_double)    # UTU
-                         )
+libiad.ez_RT.argtypes = (
+    ctypes.c_int,  # n quadrature points
+    ctypes.c_double,  # slab index of refraction
+    ctypes.c_double,  # top slide index of refraction
+    ctypes.c_double,  # bottom slide index of refraction
+    ctypes.c_double,  # albedo mus/(mus+mua)
+    ctypes.c_double,  # optical thickness d*(mua+mus)
+    ctypes.c_double,  # scattering anisotropy g
+    ctypes.POINTER(ctypes.c_double),  # UR1
+    ctypes.POINTER(ctypes.c_double),  # UT1
+    ctypes.POINTER(ctypes.c_double),  # URU
+    ctypes.POINTER(ctypes.c_double),  # UTU
+)
 
 
 def basic_rt(n, nslab, ntop, nbot, a, b, g):
@@ -103,17 +105,17 @@ def basic_rt(n, nslab, ntop, nbot, a, b, g):
 
 
 libiad.ez_RT_unscattered.argtypes = (
-    ctypes.c_int,         # n quadrature points
-    ctypes.c_double,      # slab index of refraction
-    ctypes.c_double,      # top slide index of refraction
-    ctypes.c_double,      # bottom slide index of refraction
-    ctypes.c_double,      # albedo mus/(mus+mua)
-    ctypes.c_double,      # optical thickness d*(mua+mus)
-    ctypes.c_double,      # scattering anisotropy g
-    ctypes.POINTER(ctypes.c_double),   # UR1
-    ctypes.POINTER(ctypes.c_double),   # UT1
-    ctypes.POINTER(ctypes.c_double),   # URU
-    ctypes.POINTER(ctypes.c_double)    # UTU
+    ctypes.c_int,  # n quadrature points
+    ctypes.c_double,  # slab index of refraction
+    ctypes.c_double,  # top slide index of refraction
+    ctypes.c_double,  # bottom slide index of refraction
+    ctypes.c_double,  # albedo mus/(mus+mua)
+    ctypes.c_double,  # optical thickness d*(mua+mus)
+    ctypes.c_double,  # scattering anisotropy g
+    ctypes.POINTER(ctypes.c_double),  # UR1
+    ctypes.POINTER(ctypes.c_double),  # UT1
+    ctypes.POINTER(ctypes.c_double),  # URU
+    ctypes.POINTER(ctypes.c_double),  # UTU
 )
 
 
@@ -154,18 +156,18 @@ def basic_rt_unscattered(n, nslab, ntop, nbot, a, b, g):
 
 
 libiad.ez_RT_Cone.argtypes = (
-    ctypes.c_int,         # n quadrature points
-    ctypes.c_double,      # slab index of refraction
-    ctypes.c_double,      # top slide index of refraction
-    ctypes.c_double,      # bottom slide index of refraction
-    ctypes.c_double,      # albedo mus/(mus+mua)
-    ctypes.c_double,      # optical thickness d*(mua+mus)
-    ctypes.c_double,      # scattering anisotropy g
-    ctypes.c_double,      # cosine of cone angle
-    ctypes.POINTER(ctypes.c_double),   # UR1
-    ctypes.POINTER(ctypes.c_double),   # UT1
-    ctypes.POINTER(ctypes.c_double),   # URU
-    ctypes.POINTER(ctypes.c_double)    # UTU
+    ctypes.c_int,  # n quadrature points
+    ctypes.c_double,  # slab index of refraction
+    ctypes.c_double,  # top slide index of refraction
+    ctypes.c_double,  # bottom slide index of refraction
+    ctypes.c_double,  # albedo mus/(mus+mua)
+    ctypes.c_double,  # optical thickness d*(mua+mus)
+    ctypes.c_double,  # scattering anisotropy g
+    ctypes.c_double,  # cosine of cone angle
+    ctypes.POINTER(ctypes.c_double),  # UR1
+    ctypes.POINTER(ctypes.c_double),  # UT1
+    ctypes.POINTER(ctypes.c_double),  # URU
+    ctypes.POINTER(ctypes.c_double),  # UTU
 )
 
 
@@ -206,24 +208,23 @@ def basic_rt_cone(n, nslab, ntop, nbot, a, b, g, cos_cone_angle):
     ut1 = ctypes.c_double()
     uru = ctypes.c_double()
     utu = ctypes.c_double()
-    libiad.ez_RT_Cone(n, nslab, ntop, nbot, a, b, g,
-                      cos_cone_angle, ur1, ut1, uru, utu)
+    libiad.ez_RT_Cone(n, nslab, ntop, nbot, a, b, g, cos_cone_angle, ur1, ut1, uru, utu)
     return ur1.value, ut1.value, uru.value, utu.value
 
 
 libiad.ez_RT_Oblique.argtypes = (
-    ctypes.c_int,         # n quadrature points
-    ctypes.c_double,      # slab index of refraction
-    ctypes.c_double,      # top slide index of refraction
-    ctypes.c_double,      # bottom slide index of refraction
-    ctypes.c_double,      # albedo mus/(mus+mua)
-    ctypes.c_double,      # optical thickness d*(mua+mus)
-    ctypes.c_double,      # scattering anisotropy g
-    ctypes.c_double,      # cosine of oblique angle
-    ctypes.POINTER(ctypes.c_double),   # UR1
-    ctypes.POINTER(ctypes.c_double),   # UT1
-    ctypes.POINTER(ctypes.c_double),   # URU
-    ctypes.POINTER(ctypes.c_double)    # UTU
+    ctypes.c_int,  # n quadrature points
+    ctypes.c_double,  # slab index of refraction
+    ctypes.c_double,  # top slide index of refraction
+    ctypes.c_double,  # bottom slide index of refraction
+    ctypes.c_double,  # albedo mus/(mus+mua)
+    ctypes.c_double,  # optical thickness d*(mua+mus)
+    ctypes.c_double,  # scattering anisotropy g
+    ctypes.c_double,  # cosine of oblique angle
+    ctypes.POINTER(ctypes.c_double),  # UR1
+    ctypes.POINTER(ctypes.c_double),  # UT1
+    ctypes.POINTER(ctypes.c_double),  # URU
+    ctypes.POINTER(ctypes.c_double),  # UTU
 )
 
 
@@ -264,21 +265,20 @@ def basic_rt_oblique(n, nslab, ntop, nbot, a, b, g, cos_oblique):
     ut1 = ctypes.c_double()
     uru = ctypes.c_double()
     utu = ctypes.c_double()
-    libiad.ez_RT_Oblique(n, nslab, ntop, nbot, a, b, g,
-                         cos_oblique, ur1, ut1, uru, utu)
+    libiad.ez_RT_Oblique(n, nslab, ntop, nbot, a, b, g, cos_oblique, ur1, ut1, uru, utu)
     return ur1.value, ut1.value, uru.value, utu.value
 
 
 libiad.ez_Inverse_RT.argtypes = (
-    ctypes.c_double,      # slab index of refraction
-    ctypes.c_double,      # slide index of refraction
-    ctypes.c_double,      # UR1
-    ctypes.c_double,      # UT1
-    ctypes.c_double,      # unscattered transmission
-    ctypes.POINTER(ctypes.c_double),   # a
-    ctypes.POINTER(ctypes.c_double),   # b
-    ctypes.POINTER(ctypes.c_double),   # g
-    ctypes.POINTER(ctypes.c_int)       # error
+    ctypes.c_double,  # slab index of refraction
+    ctypes.c_double,  # slide index of refraction
+    ctypes.c_double,  # UR1
+    ctypes.c_double,  # UT1
+    ctypes.c_double,  # unscattered transmission
+    ctypes.POINTER(ctypes.c_double),  # a
+    ctypes.POINTER(ctypes.c_double),  # b
+    ctypes.POINTER(ctypes.c_double),  # g
+    ctypes.POINTER(ctypes.c_int),  # error
 )
 
 
@@ -361,13 +361,13 @@ def rt(nslab, nslide, a, b, g):
         return basic_rt(N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg)
 
     if len_a and len_b and len_a != len_b:
-        raise RuntimeError('rt: a and b arrays must be same length')
+        raise RuntimeError("rt: a and b arrays must be same length")
 
     if len_a and len_g and len_a != len_g:
-        raise RuntimeError('rt: a and g arrays must be same length')
+        raise RuntimeError("rt: a and g arrays must be same length")
 
     if len_b and len_g and len_b != len_g:
-        raise RuntimeError('rt: b and g arrays must be same length')
+        raise RuntimeError("rt: b and g arrays must be same length")
 
     ur1 = np.empty(thelen)
     ut1 = np.empty(thelen)
@@ -385,7 +385,8 @@ def rt(nslab, nslide, a, b, g):
             gg = g[i]
 
         ur1[i], ut1[i], uru[i], utu[i] = basic_rt(
-            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg)
+            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg
+        )
 
     return ur1, ut1, uru, utu
 
@@ -435,16 +436,13 @@ def rt_unscattered(nslab, nslide, a, b, g):
         return basic_rt_unscattered(N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg)
 
     if len_a and len_b and len_a != len_b:
-        raise RuntimeError(
-            'rt_unscattered: a and b arrays must be same length')
+        raise RuntimeError("rt_unscattered: a and b arrays must be same length")
 
     if len_a and len_g and len_a != len_g:
-        raise RuntimeError(
-            'rt_unscattered: a and g arrays must be same length')
+        raise RuntimeError("rt_unscattered: a and g arrays must be same length")
 
     if len_b and len_g and len_b != len_g:
-        raise RuntimeError(
-            'rt_unscattered: b and g arrays must be same length')
+        raise RuntimeError("rt_unscattered: b and g arrays must be same length")
 
     ur1 = np.empty(thelen)
     ut1 = np.empty(thelen)
@@ -462,7 +460,8 @@ def rt_unscattered(nslab, nslide, a, b, g):
             gg = g[i]
 
         ur1[i], ut1[i], uru[i], utu[i] = basic_rt_unscattered(
-            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg)
+            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg
+        )
 
     return ur1, ut1, uru, utu
 
@@ -520,22 +519,22 @@ def rt_cone(nslab, nslide, a, b, g, cos_cone):
         return basic_rt_cone(N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg, mu)
 
     if len_a and len_b and len_a != len_b:
-        raise RuntimeError('rt_cone: a and b arrays must be same length')
+        raise RuntimeError("rt_cone: a and b arrays must be same length")
 
     if len_a and len_g and len_a != len_g:
-        raise RuntimeError('rt_cone: a and g arrays must be same length')
+        raise RuntimeError("rt_cone: a and g arrays must be same length")
 
     if len_a and len_mu and len_a != len_mu:
-        raise RuntimeError('rt_cone: a and mu arrays must be same length')
+        raise RuntimeError("rt_cone: a and mu arrays must be same length")
 
     if len_b and len_g and len_b != len_g:
-        raise RuntimeError('rt_cone: b and g arrays must be same length')
+        raise RuntimeError("rt_cone: b and g arrays must be same length")
 
     if len_b and len_mu and len_b != len_mu:
-        raise RuntimeError('rt_cone: b and mu arrays must be same length')
+        raise RuntimeError("rt_cone: b and mu arrays must be same length")
 
     if len_g and len_mu and len_g != len_mu:
-        raise RuntimeError('rt_cone: g and mu arrays must be same length')
+        raise RuntimeError("rt_cone: g and mu arrays must be same length")
 
     ur1 = np.empty(thelen)
     ut1 = np.empty(thelen)
@@ -556,7 +555,8 @@ def rt_cone(nslab, nslide, a, b, g, cos_cone):
             mu = cos_cone[i]
 
         ur1[i], ut1[i], uru[i], utu[i] = basic_rt_cone(
-            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg, mu)
+            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg, mu
+        )
 
     return ur1, ut1, uru, utu
 
@@ -615,22 +615,22 @@ def rt_oblique(nslab, nslide, a, b, g, cos_oblique):
         return basic_rt_oblique(N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg, mu)
 
     if len_a and len_b and len_a != len_b:
-        raise RuntimeError('rt_oblique: a and b arrays must be same length')
+        raise RuntimeError("rt_oblique: a and b arrays must be same length")
 
     if len_a and len_g and len_a != len_g:
-        raise RuntimeError('rt_oblique: a and g arrays must be same length')
+        raise RuntimeError("rt_oblique: a and g arrays must be same length")
 
     if len_a and len_mu and len_a != len_mu:
-        raise RuntimeError('rt_oblique: a and mu arrays must be same length')
+        raise RuntimeError("rt_oblique: a and mu arrays must be same length")
 
     if len_b and len_g and len_b != len_g:
-        raise RuntimeError('rt_oblique: b and g arrays must be same length')
+        raise RuntimeError("rt_oblique: b and g arrays must be same length")
 
     if len_b and len_mu and len_b != len_mu:
-        raise RuntimeError('rt_oblique: b and mu arrays must be same length')
+        raise RuntimeError("rt_oblique: b and mu arrays must be same length")
 
     if len_g and len_mu and len_g != len_mu:
-        raise RuntimeError('rt_oblique: g and mu arrays must be same length')
+        raise RuntimeError("rt_oblique: g and mu arrays must be same length")
 
     ur1 = np.empty(thelen)
     ut1 = np.empty(thelen)
@@ -651,7 +651,8 @@ def rt_oblique(nslab, nslide, a, b, g, cos_oblique):
             mu = cos_oblique[i]
 
         ur1[i], ut1[i], uru[i], utu[i] = basic_rt_oblique(
-            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg, mu)
+            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg, mu
+        )
 
     return ur1, ut1, uru, utu
 
@@ -698,14 +699,13 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
         return basic_rt_inverse(nslab, nslide, ur1, ut1, tc)
 
     if len_r1 and len_t1 and len_r1 != len_t1:
-        raise RuntimeError(
-            'inverse_rt: ur1 and ut1 arrays must be same length')
+        raise RuntimeError("inverse_rt: ur1 and ut1 arrays must be same length")
 
     if len_r1 and len_tc and len_r1 != len_tc:
-        raise RuntimeError('inverse_rt: ur1 and tc arrays must be same length')
+        raise RuntimeError("inverse_rt: ur1 and tc arrays must be same length")
 
     if len_t1 and len_tc and len_t1 != len_tc:
-        raise RuntimeError('inverse_rt: t1 and tc arrays must be same length')
+        raise RuntimeError("inverse_rt: t1 and tc arrays must be same length")
 
     a = np.empty(thelen)
     b = np.empty(thelen)
@@ -722,13 +722,12 @@ def rt_inverse(nslab, nslide, ur1, ut1, t_unscattered):
         if len_tc > 0:
             tc = t_unscattered[i]
 
-        a[i], b[i], g[i], error[i] = basic_rt_inverse(
-            nslab, nslide, r1, t1, tc)
+        a[i], b[i], g[i], error[i] = basic_rt_inverse(nslab, nslide, r1, t1, tc)
 
     return a, b, g, error
 
 
-class CSample():
+class CSample:
     """Class for samples."""
 
     def __init__(self):
@@ -736,14 +735,20 @@ class CSample():
         self.sample_index = 1.4
         self.top_slide_index = 1.5
         self.bot_slide_index = 1.5
-        self.sample_thickness = 1    # mm
-        self.top_slide_thickness = 1    # mm
-        self.bot_slide_thickness = 1    # mm
+        self.sample_thickness = 1  # mm
+        self.top_slide_thickness = 1  # mm
+        self.bot_slide_thickness = 1  # mm
 
     def as_array(self):
         """Representation class as an array."""
-        return [self.sample_index, self.top_slide_index, self.bot_slide_index,
-                self.sample_thickness, self.top_slide_thickness, self.bot_slide_thickness]
+        return [
+            self.sample_index,
+            self.top_slide_index,
+            self.bot_slide_index,
+            self.sample_thickness,
+            self.top_slide_thickness,
+            self.bot_slide_thickness,
+        ]
 
     def init_from_array(self, a):
         """Initialize with an array."""
@@ -772,7 +777,7 @@ class CSample():
         return s
 
 
-class CSphere():
+class CSphere:
     """Class for spheres."""
 
     def __init__(self):
@@ -795,8 +800,14 @@ class CSphere():
 
     def as_array(self):
         """Representation class as an array."""
-        return [self.d_sphere, self.d_sample, self.d_empty,
-                self.d_detector, self.refl_wall, self.refl_detector]
+        return [
+            self.d_sphere,
+            self.d_sample,
+            self.d_empty,
+            self.d_detector,
+            self.refl_wall,
+            self.refl_detector,
+        ]
 
     def as_c_array(self):
         """Represent class as C array."""
@@ -815,7 +826,7 @@ class CSphere():
         return s
 
 
-class CIllumination():
+class CIllumination:
     """Class for illumination."""
 
     def __init__(self):
@@ -838,9 +849,14 @@ class CIllumination():
 
     def as_array(self):
         """Representation class as an array."""
-        return [self.beam_diameter, self.specular_reflection_excluded,
-                self.direct_transmission_excluded, self.diffuse_illumination,
-                self.lambda0, self.num_spheres]
+        return [
+            self.beam_diameter,
+            self.specular_reflection_excluded,
+            self.direct_transmission_excluded,
+            self.diffuse_illumination,
+            self.lambda0,
+            self.num_spheres,
+        ]
 
     def as_c_array(self):
         """Represent class as C array."""
@@ -852,17 +868,14 @@ class CIllumination():
         s = ""
         s += "diameter of beam       = %.1f mm\n" % self.beam_diameter
         s += "wavelength             = %.1f nm\n" % self.lambda0
-        s += "exclude specular refl? = %s\n" % (
-            bool(self.specular_reflection_excluded))
-        s += "exclude direct trans?  = %s\n" % (
-            bool(self.direct_transmission_excluded))
-        s += "illumination diffuse?  = %s\n" % (
-            bool(self.diffuse_illumination))
+        s += "exclude specular refl? = %s\n" % (bool(self.specular_reflection_excluded))
+        s += "exclude direct trans?  = %s\n" % (bool(self.direct_transmission_excluded))
+        s += "illumination diffuse?  = %s\n" % (bool(self.diffuse_illumination))
         s += "number of spheres      = %.0f" % self.num_spheres
         return s
 
 
-class CAnalysis():
+class CAnalysis:
     """Class for analysis."""
 
     def __init__(self):
@@ -895,7 +908,7 @@ class CAnalysis():
         return s
 
 
-class CMeasurement():
+class CMeasurement:
     """Class for a measurement."""
 
     def __init__(self):
@@ -914,8 +927,12 @@ class CMeasurement():
 
     def as_array(self):
         """Representation class as an array."""
-        return [self.standard_reflectance, self.reflectance, self.transmittance,
-                self.unscattered_transmittance]
+        return [
+            self.standard_reflectance,
+            self.reflectance,
+            self.transmittance,
+            self.unscattered_transmittance,
+        ]
 
     def as_c_array(self):
         """Represent class as C array."""
@@ -931,24 +948,25 @@ class CMeasurement():
         s += "unscattered trans      = %8.5f\n" % self.unscattered_transmittance
         return s
 
+
 libiad.Spheres_Inverse_RT2.argtypes = (
-    ctypes.POINTER(ctypes.c_double),   # sample
-    ctypes.POINTER(ctypes.c_double),   # illumination
-    ctypes.POINTER(ctypes.c_double),   # Refl Sphere
-    ctypes.POINTER(ctypes.c_double),   # Trans Sphere
-    ctypes.POINTER(ctypes.c_double),   # analysis
-    ctypes.POINTER(ctypes.c_double),   # measurement
-    ctypes.POINTER(ctypes.c_double),   # a
-    ctypes.POINTER(ctypes.c_double),   # b
-    ctypes.POINTER(ctypes.c_double)    # g
+    ctypes.POINTER(ctypes.c_double),  # sample
+    ctypes.POINTER(ctypes.c_double),  # illumination
+    ctypes.POINTER(ctypes.c_double),  # Refl Sphere
+    ctypes.POINTER(ctypes.c_double),  # Trans Sphere
+    ctypes.POINTER(ctypes.c_double),  # analysis
+    ctypes.POINTER(ctypes.c_double),  # measurement
+    ctypes.POINTER(ctypes.c_double),  # a
+    ctypes.POINTER(ctypes.c_double),  # b
+    ctypes.POINTER(ctypes.c_double),  # g
 )
 
 
 def _indent(s):
-    return '    ' + s.replace('\n', '\n    ')
+    return "    " + s.replace("\n", "\n    ")
 
 
-class Experiment():
+class Experiment:
     """Class for experiments."""
 
     def __init__(self):

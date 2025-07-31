@@ -5,9 +5,9 @@ Example::
     >>> import iadpython as iad
     >>> n=4
     >>> sample = iad.Sample(a=0.9, b=10, g=0.9, n=1.5, quad_pts=4)
-    >>> r, t = sample.rt()
-    >>> print(r)
-    >>> print(t)
+    >>> ur1, ut1, uru, utu = sample.rt()
+    >>> print(ur1)
+    >>> print(ut1)
 """
 
 import copy
@@ -30,19 +30,19 @@ def stringify(form, x):
         reasonable string
     """
     if x is None:
-        s = 'None'
+        s = "None"
     elif np.isscalar(x) or np.ndim(x) == 0:
         s = form % x
     else:
         mn = min(x)
         mx = max(x)
         s = form % mn
-        s += ' to '
+        s += " to "
         s += form % mx
     return s
 
 
-class Sample():
+class Sample:
     """Container class for details of a sample.
 
     Most things can be changed after creation by assigning to an element.
@@ -189,12 +189,12 @@ class Sample():
 
     def a_delta_M(self):
         """Reduced albedo in delta-M approximation."""
-        af = self.a * (self.g ** self.quad_pts)
+        af = self.a * (self.g**self.quad_pts)
         return (self.a - af) / (1 - af)
 
     def b_delta_M(self):
         """Reduced thickness in delta-M approximation."""
-        af = self.a * (self.g ** self.quad_pts)
+        af = self.a * (self.g**self.quad_pts)
         return (1 - af) * self.b
 
     def as_array(self):
@@ -243,23 +243,23 @@ class Sample():
         # header line
         if title is not None:
             print(title)
-        print("cos_theta |", end='')
+        print("cos_theta |", end="")
         for i in range(n):
-            print("%9.5f" % self.nu[i], end='')
+            print("%9.5f" % self.nu[i], end="")
         print(" |     flux")
-        print("----------+", end='')
+        print("----------+", end="")
         for i in range(n):
-            print("---------", end='')
+            print("---------", end="")
         print("-+---------")
 
         # contents + row fluxes
         for i in range(n):
-            print("%9.5f |" % self.nu[i], end='')
+            print("%9.5f |" % self.nu[i], end="")
             for j in range(n):
                 if a[i, j] < -100 or a[i, j] > 100:
-                    print("    *****", end='')
+                    print("    *****", end="")
                 else:
-                    print("%9.5f" % a[i, j], end='')
+                    print("%9.5f" % a[i, j], end="")
             flux = 0.0
             for j in range(n):
                 flux += a[i, j] * self.twonuw[j]
@@ -272,16 +272,16 @@ class Sample():
         tflux = np.dot(self.twonuw[k:], UXx) * self.n**2
 
         # column fluxes
-        print("----------+", end='')
+        print("----------+", end="")
         for i in range(n):
-            print("---------", end='')
+            print("---------", end="")
         print("-+---------")
-        print("%9s |" % "flux   ", end='')
+        print("%9s |" % "flux   ", end="")
         for i in range(n):
             flux = 0.0
             for j in range(n):
                 flux += a[j, i] * self.twonuw[j]
-            print("%9.5f" % flux, end='')
+            print("%9.5f" % flux, end="")
         print(" |%9.5f\n" % tflux)
 
     def wrarray(self, a, title=None):
@@ -296,21 +296,21 @@ class Sample():
         n = self.quad_pts
 
         # first row
-        print("[[", end='')
+        print("[[", end="")
         for j in range(n - 1):
-            print("%9.5f," % a[0, j], end='')
+            print("%9.5f," % a[0, j], end="")
         print("%9.5f]," % a[0, -1])
 
         for i in range(1, n - 1):
-            print(" [", end='')
+            print(" [", end="")
             for j in range(n - 1):
-                print("%9.5f," % a[i, j], end='')
+                print("%9.5f," % a[i, j], end="")
             print("%9.5f]," % a[i, -1])
 
         # last row
-        print(" [", end='')
+        print(" [", end="")
         for j in range(n - 1):
-            print("%9.5f," % a[-1, j], end='')
+            print("%9.5f," % a[-1, j], end="")
         print("%9.5f]]" % a[-1, -1])
 
     def update_quadrature(self):
@@ -403,8 +403,13 @@ class Sample():
         R12, T12 = iadpython.simple_layer_matrices(self)
 
         # all done if boundaries are not an issue
-        if self.n == 1 and self.n_above == 1 and self.n_below == 1 and \
-                self.b_above == 0 and self.b_below == 0:
+        if (
+            self.n == 1
+            and self.n_above == 1
+            and self.n_below == 1
+            and self.b_above == 0
+            and self.b_below == 0
+        ):
             return R12, R12, T12, T12
 
         # reflection/transmission arrays for top boundary
@@ -420,9 +425,11 @@ class Sample():
 
         # different boundaries on top and bottom
         R02, R20, T02, T20 = iadpython.add_slide_above(
-            self, R01, R10, T01, T10, R12, R12, T12, T12)
+            self, R01, R10, T01, T10, R12, R12, T12, T12
+        )
         R03, R30, T03, T30 = iadpython.add_slide_below(
-            self, R02, R20, T02, T20, R23, R32, T23, T32)
+            self, R02, R20, T02, T20, R23, R32, T23, T32
+        )
 
         return R03, R30, T03, T30
 
@@ -469,13 +476,13 @@ class Sample():
             return self.UX1_and_UXU(R, T)
 
         if len_a and len_b and len_a != len_b:
-            raise RuntimeError('rt: a and b arrays must be same length')
+            raise RuntimeError("rt: a and b arrays must be same length")
 
         if len_a and len_g and len_a != len_g:
-            raise RuntimeError('rt: a and g arrays must be same length')
+            raise RuntimeError("rt: a and g arrays must be same length")
 
         if len_b and len_g and len_b != len_g:
-            raise RuntimeError('rt: b and g arrays must be same length')
+            raise RuntimeError("rt: b and g arrays must be same length")
 
         ur1 = np.empty(thelen)
         ut1 = np.empty(thelen)

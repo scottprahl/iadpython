@@ -25,27 +25,27 @@ import re
 import numpy as np
 import iadpython
 
-__all__ = ('read_rxt', 'read_and_remove_notation')
+__all__ = ("read_rxt", "read_and_remove_notation")
 
 
 def read_and_remove_notation(filename):
     """Read file and remove all whitespace and comments."""
-    s = ''
+    s = ""
 
     if not os.path.exists(filename):
         raise ValueError('input file "%s" must end in ".rxt"' % filename)
 
     with open(filename, encoding="utf-8") as f:
         for line in f:
-            line = re.sub(r'\s*#.*', '', line)
-            line = re.sub(r', ', ' ', line)
+            line = re.sub(r"\s*#.*", "", line)
+            line = re.sub(r", ", " ", line)
             s += line
 
-    if len(re.findall('IAD1', s)) == 0:
+    if len(re.findall("IAD1", s)) == 0:
         raise ValueError("Not an .rxt file. (Does not start with IAD1)")
 
-    s = re.sub(r'IAD1', '', s)
-    s = re.sub(r'\s+', ' ', s)
+    s = re.sub(r"IAD1", "", s)
+    s = re.sub(r"\s+", " ", s)
     s = s.rstrip()
     s = s.lstrip()
     return s
@@ -71,56 +71,56 @@ def fill_in_data_fixed(exp, data_in_columns):
     if exp.num_measures >= 7:
         exp.t_sphere.r_std = data_in_columns[:, col + 6]
     if exp.num_measures > 7:
-        raise ValueError('unimplemented')
+        raise ValueError("unimplemented")
 
 
 def fill_in_data_variable(exp, data_in_columns, column_letters_str):
     """Read data and interpret according to column_letters_str."""
     for col, letter in enumerate(column_letters_str):
-        if letter == 'a':
+        if letter == "a":
             exp.default_a = data_in_columns[:, col]
-        elif letter == 'b':
+        elif letter == "b":
             exp.default_b = data_in_columns[:, col]
-        elif letter == 'B':
+        elif letter == "B":
             exp.d_beam = data_in_columns[:, col]
-        elif letter == 'c':
+        elif letter == "c":
             exp.fraction_of_rc_in_mr = data_in_columns[:, col]
-        elif letter == 'C':
+        elif letter == "C":
             exp.fraction_of_tc_in_mt = data_in_columns[:, col]
-        elif letter == 'd':
+        elif letter == "d":
             exp.sample.d = data_in_columns[:, col]
-        elif letter == 'D':
+        elif letter == "D":
             exp.sample.d_above = data_in_columns[:, col]
             exp.sample.d_below = data_in_columns[:, col]
-        elif letter == 'E':
+        elif letter == "E":
             exp.sample.b_above = data_in_columns[:, col]
             exp.sample.b_below = data_in_columns[:, col]
-        elif letter == 'e':
+        elif letter == "e":
             exp.error = data_in_columns[:, col]
-        elif letter == 'g':
+        elif letter == "g":
             exp.default_g = data_in_columns[:, col]
-        elif letter == 't':
+        elif letter == "t":
             exp.m_t = data_in_columns[:, col]
-        elif letter == 'L':
+        elif letter == "L":
             exp.lambda0 = data_in_columns[:, col]
-        elif letter == 'n':
+        elif letter == "n":
             exp.n = data_in_columns[:, col]
-        elif letter == 'N':
+        elif letter == "N":
             exp.n_above = data_in_columns[:, col]
             exp.n_below = data_in_columns[:, col]
-        elif letter == 'r':
+        elif letter == "r":
             exp.m_r = data_in_columns[:, col]
-        elif letter == 'R':
+        elif letter == "R":
             exp.r_sphere.r_std = data_in_columns[:, col]
-        elif letter == 'S':
+        elif letter == "S":
             exp.num_spheres = data_in_columns[:, col]
-        elif letter == 'T':
+        elif letter == "T":
             exp.t_sphere.r_rstd = data_in_columns[:, col]
-        elif letter == 'u':
+        elif letter == "u":
             exp.m_u = data_in_columns[:, col]
-        elif letter == 'w':
+        elif letter == "w":
             exp.r_sphere.r_wall = data_in_columns[:, col]
-        elif letter == 'W':
+        elif letter == "W":
             exp.t_sphere.r_wall = data_in_columns[:, col]
         else:
             raise ValueError('unimplemented column type "%s"' % letter)
@@ -136,12 +136,12 @@ def read_rxt(filename):
         Experiment object
     """
     s = read_and_remove_notation(filename)
-    x = s.split(' ')
+    x = s.split(" ")
 
     # Remove single-letter entries and save them
     column_letters = [item for item in x if len(item) == 1 and item.isalpha()]
     x = [item for item in x if not (len(item) == 1 and item.isalpha())]
-    column_letters_str = ''.join(column_letters)
+    column_letters_str = "".join(column_letters)
 
     x = np.array([float(item) for item in x])
 
@@ -166,7 +166,7 @@ def read_rxt(filename):
     exp.d_beam = x[4]
     exp.rstd_r = x[5]
     exp.num_spheres = x[6]
-    exp.method = 'substitution'
+    exp.method = "substitution"
 
     if exp.num_spheres > 0:
         exp.r_sphere = iadpython.Sphere(x[7], x[8], x[9], x[10], 0, x[11])
@@ -175,7 +175,7 @@ def read_rxt(filename):
         exp.t_sphere = iadpython.Sphere(x[12], x[13], x[14], x[15], 0, x[16])
 
     # Read data
-    if column_letters_str == '':
+    if column_letters_str == "":
         # old style data format
         exp.num_measures = x[17]
         data = x[18:]
@@ -187,11 +187,11 @@ def read_rxt(filename):
     else:
         # new style variable header format
         exp.num_measures = 0
-        if 'r' in column_letters_str:
+        if "r" in column_letters_str:
             exp.num_measures += 1
-        if 't' in column_letters_str:
+        if "t" in column_letters_str:
             exp.num_measures += 1
-        if 'u' in column_letters_str:
+        if "u" in column_letters_str:
             exp.num_measures += 1
         data = x[17:]
         columns = len(column_letters_str)
