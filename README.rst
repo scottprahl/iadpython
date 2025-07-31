@@ -81,7 +81,7 @@ The following will do a forward calculation::
     d = 1      # thickness mm
 
     a = mu_s/(mu_a+mu_s)
-    b = mu_s/(mu_a+mu_s) * d
+    b = (mu_a+mu_s) * d
 
     # air / glass / sample / glass / air
     s = iadpython.Sample(a=a, b=b, g=g, n=1.4, n_above=1.5, n_below=1.5)
