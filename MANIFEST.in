@@ -5,12 +5,13 @@ include README.rst
 include requirements.txt
 include requirements-dev.txt
 
-include iadpython/data/M38597.csv
-include tests/data/*.rxt
-include tests/data/*.txt
-include tests/*.py
-include tests_iadc/test_iadc.py
-include tests_iadc/test_performance.py
+# Include any package data that lives under your package
+recursive-include iadpython/data *.csv
+
+# EXCLUDE tests from the sdist
+prune tests
+#prune tests_iadc
 
 exclude todo.txt
+exclude .pre-commit-config.yaml
 exclude .testignore
