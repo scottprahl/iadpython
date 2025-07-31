@@ -1,20 +1,22 @@
 """Configuration for pytest."""
+
 import pytest
 
 
 def pytest_addoption(parser):
     """Add options to pytest."""
     parser.addoption(
-        "--runbinary", action="store_true", default=False,
-        help="run iad lib tests"
+        "--runbinary", action="store_true", default=False, help="run iad lib tests"
     )
     parser.addoption(
-        "--notebooks", action="store_true", default=False, dest="notebooks",
-        help="test notebooks by running them"
+        "--notebooks",
+        action="store_true",
+        default=False,
+        dest="notebooks",
+        help="test notebooks by running them",
     )
     parser.addoption(
-        "--skip", action="store_true", default=False,
-        help="run tests marked by @skip"
+        "--skip", action="store_true", default=False, help="run tests marked by @skip"
     )
 
 

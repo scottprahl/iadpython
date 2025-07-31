@@ -520,19 +520,20 @@ class InversionRTUNoSphere(unittest.TestCase):
         exp.m_r, exp.m_t = exp.measured_rt()
         exp.sample.a = 0
         _, exp.m_u = exp.measured_rt()
-#        print("M_R = %.4f" % exp.m_r)
-#        print("M_T = %.4f" % exp.m_t)
-#        print("M_U = %.4f %.4f" % (exp.m_u, np.exp(-2) ))
+        #        print("M_R = %.4f" % exp.m_r)
+        #        print("M_T = %.4f" % exp.m_t)
+        #        print("M_U = %.4f %.4f" % (exp.m_u, np.exp(-2) ))
 
         a, b, g = exp.invert_rt()
 
-#        print("a = %.4f" % a)
-#        print("b = %.4f" % b)
-#        print("g = %.4f" % g)
+        #        print("a = %.4f" % a)
+        #        print("b = %.4f" % b)
+        #        print("g = %.4f" % g)
 
         self.assertAlmostEqual(a, 0.95, delta=1e-3)
         self.assertAlmostEqual(b, 2, delta=1e-3)
         self.assertAlmostEqual(g, 0.9, delta=1e-3)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

@@ -47,7 +47,7 @@ class GaussTest(unittest.TestCase):
 
         # integral of x^6 from 0 to 2 should be (x^7)/7
         quad_int = np.sum(x**6 * w)
-        anal_int = (b)**7 / 7 - (a)**7 / 7
+        anal_int = (b) ** 7 / 7 - (a) ** 7 / 7
         np.testing.assert_approx_equal(quad_int, anal_int)
 
     def test_03_gaussian(self):
@@ -107,7 +107,7 @@ class RadauTest(unittest.TestCase):
 
         # integral of x^6 from 0 to 2 should be (x^7)/7
         quad_int = np.sum(x**6 * w)
-        anal_int = (b)**7 / 7 - (a)**7 / 7
+        anal_int = (b) ** 7 / 7 - (a) ** 7 / 7
         np.testing.assert_approx_equal(quad_int, anal_int)
 
     def test_03_radau(self):
@@ -167,7 +167,7 @@ class LobattoTest(unittest.TestCase):
 
         # integral of x^6 from 0 to 2 should be (x^7)/7
         quad_int = np.sum(x**6 * w)
-        anal_int = (b)**7 / 7 - (a)**7 / 7
+        anal_int = (b) ** 7 / 7 - (a) ** 7 / 7
         np.testing.assert_approx_equal(quad_int, anal_int)
 
     def test_03_lobatto(self):
@@ -188,5 +188,5 @@ class LobattoTest(unittest.TestCase):
         np.testing.assert_equal(x[0], a)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

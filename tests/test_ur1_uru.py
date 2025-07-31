@@ -76,5 +76,5 @@ class TestFinite(unittest.TestCase):
         np.testing.assert_allclose(utu, utu_true, atol=1e-5)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
