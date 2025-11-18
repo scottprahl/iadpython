@@ -1,17 +1,9 @@
-include CHANGELOG.rst
-include CITATION.cff
+# Core package files
 include LICENSE.txt
 include README.rst
-include requirements.txt
-include requirements-dev.txt
+include CHANGELOG.rst
+include CITATION.cff
 
-# Include any package data that lives under your package
-recursive-include iadpython/data *.csv
-
-# EXCLUDE tests from the sdist
-prune tests
-#prune tests_iadc
-
-exclude todo.txt
-exclude .pre-commit-config.yaml
-exclude .testignore
+include tests/*.py
+include tests/data/*rxt
+include tests_iadc/*.py
