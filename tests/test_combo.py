@@ -82,9 +82,7 @@ class NothingSandwichTestA(unittest.TestCase):
 
     def test_05_zero_thickness(self):
         """Empty layer calculation with matching slides."""
-        s = iadpython.Sample(
-            a=0.5, b=0, g=0.0, n=1.5, quad_pts=4, n_above=1.5, n_below=1.5
-        )
+        s = iadpython.Sample(a=0.5, b=0, g=0.0, n=1.5, quad_pts=4, n_above=1.5, n_below=1.5)
         rr, _, tt, _ = s.rt_matrices()
 
         R = np.array(
@@ -110,9 +108,7 @@ class NothingSandwichTestA(unittest.TestCase):
 
     def test_06_zero_thickness(self):
         """Empty layer calculation with top slide only."""
-        s = iadpython.Sample(
-            a=0.5, b=0, g=0.0, n=1.5, quad_pts=4, n_above=1.5, n_below=1.0
-        )
+        s = iadpython.Sample(a=0.5, b=0, g=0.0, n=1.5, quad_pts=4, n_above=1.5, n_below=1.0)
         rr, _, tt, _ = s.rt_matrices()
 
         R = np.array(
@@ -138,9 +134,7 @@ class NothingSandwichTestA(unittest.TestCase):
 
     def test_07_zero_thickness(self):
         """Empty layer calculation with bottom slide only."""
-        s = iadpython.Sample(
-            a=0.5, b=0, g=0.0, n=1.5, quad_pts=4, n_above=1.0, n_below=1.5
-        )
+        s = iadpython.Sample(a=0.5, b=0, g=0.0, n=1.5, quad_pts=4, n_above=1.0, n_below=1.5)
         rr, _, tt, _ = s.rt_matrices()
 
         R = np.array(
@@ -166,9 +160,7 @@ class NothingSandwichTestA(unittest.TestCase):
 
     def test_08_zero_thickness(self):
         """Empty layer calculation with mismatched slides ."""
-        s = iadpython.Sample(
-            a=0.5, b=0, g=0.0, n=1.4, quad_pts=4, n_above=1.5, n_below=1.5
-        )
+        s = iadpython.Sample(a=0.5, b=0, g=0.0, n=1.4, quad_pts=4, n_above=1.5, n_below=1.5)
         rr, _, tt, _ = s.rt_matrices()
 
         R = np.array(
@@ -396,12 +388,8 @@ class NothingSandwichTestB(unittest.TestCase):
         R01, R10, T01, T10 = iadpython.boundary_matrices(s, top=True)
         R23, R32, T23, T32 = iadpython.boundary_matrices(s, top=False)
         R12, T12 = iadpython.simple_layer_matrices(s)
-        R02, R20, T02, T20 = iadpython.add_layers(
-            s, R01, R10, T01, T10, R12, R12, T12, T12
-        )
-        rr03, rr30, tt03, tt30 = iadpython.add_layers(
-            s, R02, R20, T02, T20, R23, R32, T23, T32
-        )
+        R02, R20, T02, T20 = iadpython.add_layers(s, R01, R10, T01, T10, R12, R12, T12, T12)
+        rr03, rr30, tt03, tt30 = iadpython.add_layers(s, R02, R20, T02, T20, R23, R32, T23, T32)
 
         R03 = np.array(
             [
@@ -477,9 +465,7 @@ class ThickSamplesTest(unittest.TestCase):
 
     def test_04_non_scattering(self):
         """Thick non-scattering with index but no slide."""
-        s = iadpython.Sample(
-            a=0.0, b=100000.0, g=0.0, n=1.4, n_above=1.0, n_below=1.0, quad_pts=16
-        )
+        s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, n=1.4, n_above=1.0, n_below=1.0, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.02778, delta=0.0001)
         self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)
@@ -488,9 +474,7 @@ class ThickSamplesTest(unittest.TestCase):
 
     def test_05_non_scattering(self):
         """Thick non-scattering with slide."""
-        s = iadpython.Sample(
-            a=0.0, b=100000.0, g=0.0, n=1.4, n_above=1.5, n_below=1.5, quad_pts=16
-        )
+        s = iadpython.Sample(a=0.0, b=100000.0, g=0.0, n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.04110, delta=0.0001)
         self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)
@@ -499,9 +483,7 @@ class ThickSamplesTest(unittest.TestCase):
 
     def test_06_scattering(self):
         """Thick non-scattering with index but no slide."""
-        s = iadpython.Sample(
-            a=0.8, b=100000.0, g=0.0, n=1.4, n_above=1.0, n_below=1.0, quad_pts=16
-        )
+        s = iadpython.Sample(a=0.8, b=100000.0, g=0.0, n=1.4, n_above=1.0, n_below=1.0, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.18095, delta=0.0001)
         self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)
@@ -510,9 +492,7 @@ class ThickSamplesTest(unittest.TestCase):
 
     def test_07_scattering(self):
         """Thick isotropic scattering with slide."""
-        s = iadpython.Sample(
-            a=0.8, b=100000.0, g=0.0, n=1.4, n_above=1.5, n_below=1.5, quad_pts=16
-        )
+        s = iadpython.Sample(a=0.8, b=100000.0, g=0.0, n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.18994, delta=0.0001)
         self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)
@@ -521,9 +501,7 @@ class ThickSamplesTest(unittest.TestCase):
 
     def test_08_scattering(self):
         """Thick aniotropic scattering with slide."""
-        s = iadpython.Sample(
-            a=0.8, b=100000.0, g=0.9, n=1.4, n_above=1.5, n_below=1.5, quad_pts=16
-        )
+        s = iadpython.Sample(a=0.8, b=100000.0, g=0.9, n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
         ur1, ut1, uru, utu = s.rt()
         self.assertAlmostEqual(ur1, 0.05184, delta=0.0001)
         self.assertAlmostEqual(ut1, 0.00000, delta=0.0001)

@@ -22,9 +22,7 @@ class TestPort(unittest.TestCase):
     def test_cap_area(self):
         """Test the cap_area method."""
         area = self.port.cap_area_exact()
-        self.assertTrue(
-            np.isclose(area, 314.94861522998946), "Cap area calculation is incorrect"
-        )
+        self.assertTrue(np.isclose(area, 314.94861522998946), "Cap area calculation is incorrect")
 
     def test_approx_relative_cap_area(self):
         """Test the approx_relative_cap_area method."""
@@ -37,9 +35,7 @@ class TestPort(unittest.TestCase):
     def test_calculate_sagitta(self):
         """Test the calculate_sagitta method."""
         sagitta = self.port.calculate_sagitta()
-        self.assertTrue(
-            np.isclose(sagitta, 0.5012562893380021), "Sagitta calculation is incorrect"
-        )
+        self.assertTrue(np.isclose(sagitta, 0.5012562893380021), "Sagitta calculation is incorrect")
 
     def test_max_center_chord(self):
         """Test the max_center_chord method."""

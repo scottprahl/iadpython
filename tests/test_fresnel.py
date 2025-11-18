@@ -407,9 +407,7 @@ class AbsorbingGlass(unittest.TestCase):
         r2 = iad.fresnel_reflection(n_g, nu_g, n_t)
         t1 = 1 - r1
         t2 = 1 - r2
-        rr = r1 + r2 * t1**2 * np.exp(-2 * b / nu_g) / (
-            1 - r1 * r2 * np.exp(-2 * b / nu_g)
-        )
+        rr = r1 + r2 * t1**2 * np.exp(-2 * b / nu_g) / (1 - r1 * r2 * np.exp(-2 * b / nu_g))
         tt = t1 * t2 * np.exp(-b / nu_g) / (1 - r1 * r2 * np.exp(-2 * b / nu_g))
         r, t = iad.absorbing_glass_RT(n_i, n_g, n_t, nu_in, b)
         np.testing.assert_allclose(r, rr, atol=1e-5)

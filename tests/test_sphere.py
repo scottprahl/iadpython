@@ -87,9 +87,7 @@ class SphereGain(unittest.TestCase):
         r_wall = np.linspace(0, 1, 4)
         d_sphere = 200
         d_sample = 25
-        s = iadpython.Sphere(
-            d_sphere, d_sample, d_third=5, d_detector=10, r_wall=r_wall
-        )
+        s = iadpython.Sphere(d_sphere, d_sample, d_third=5, d_detector=10, r_wall=r_wall)
         g = s.gain(sample_uru=0)
         np.testing.assert_allclose(len(r_wall), len(g), atol=1e-5)
 

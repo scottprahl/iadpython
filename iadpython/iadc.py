@@ -384,9 +384,7 @@ def rt(nslab, nslide, a, b, g):
         if len_g > 0:
             gg = g[i]
 
-        ur1[i], ut1[i], uru[i], utu[i] = basic_rt(
-            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg
-        )
+        ur1[i], ut1[i], uru[i], utu[i] = basic_rt(N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg)
 
     return ur1, ut1, uru, utu
 
@@ -459,9 +457,7 @@ def rt_unscattered(nslab, nslide, a, b, g):
         if len_g > 0:
             gg = g[i]
 
-        ur1[i], ut1[i], uru[i], utu[i] = basic_rt_unscattered(
-            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg
-        )
+        ur1[i], ut1[i], uru[i], utu[i] = basic_rt_unscattered(N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg)
 
     return ur1, ut1, uru, utu
 
@@ -554,9 +550,7 @@ def rt_cone(nslab, nslide, a, b, g, cos_cone):
         if len_mu > 0:
             mu = cos_cone[i]
 
-        ur1[i], ut1[i], uru[i], utu[i] = basic_rt_cone(
-            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg, mu
-        )
+        ur1[i], ut1[i], uru[i], utu[i] = basic_rt_cone(N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg, mu)
 
     return ur1, ut1, uru, utu
 
@@ -650,9 +644,7 @@ def rt_oblique(nslab, nslide, a, b, g, cos_oblique):
         if len_mu > 0:
             mu = cos_oblique[i]
 
-        ur1[i], ut1[i], uru[i], utu[i] = basic_rt_oblique(
-            N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg, mu
-        )
+        ur1[i], ut1[i], uru[i], utu[i] = basic_rt_oblique(N_QUADRATURE, nslab, nslide, nslide, aa, bb, gg, mu)
 
     return ur1, ut1, uru, utu
 

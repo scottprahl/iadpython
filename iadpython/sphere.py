@@ -146,17 +146,11 @@ class Sphere:
             s += "Third Port\n" + str(self.third)
         s += "Detector Port\n" + str(self.detector)
         s += "Gain range\n"
-        s += "    (sample uru =   0%%)  gain = %s\n" % iad.stringify(
-            "%7.3f", self.gain(0.0)
-        )
+        s += "    (sample uru =   0%%)  gain = %s\n" % iad.stringify("%7.3f", self.gain(0.0))
         ss = iad.stringify("%7.3f", self.gain(self.sample.uru))
         s += "    (sample uru = %3.0f%%)  gain = %s\n" % (self.sample.uru * 100, ss)
-        s += "    (sample uru =  std)  gain = %s\n" % iad.stringify(
-            "%7.3f", self.gain(self.r_std)
-        )
-        s += "    (sample uru = 100%%)  gain = %s\n" % iad.stringify(
-            "%7.3f", self.gain(1.0)
-        )
+        s += "    (sample uru =  std)  gain = %s\n" % iad.stringify("%7.3f", self.gain(self.r_std))
+        s += "    (sample uru = 100%%)  gain = %s\n" % iad.stringify("%7.3f", self.gain(1.0))
         return s
 
     def gain(self, sample_uru=None, third_uru=None):
@@ -332,13 +326,8 @@ class Sphere:
         sumd = np.cumsum(pd)
         print(" k    P_d^k   P_w^k    sum(P_d^k)   sum(P_w^k)")
         for j in range(10):
-            print(
-                "%3d %9.5f %9.5f %9.5f %9.5f" % (j + 1, pd[j], pw[j], sumd[j], sumw[j])
-            )
-        print(
-            "%3d %9.5f %9.5f %9.5f %9.5f"
-            % (N - 1, pd[N - 1], pw[N - 1], sumd[N - 1], sumw[N - 1])
-        )
+            print("%3d %9.5f %9.5f %9.5f %9.5f" % (j + 1, pd[j], pw[j], sumd[j], sumw[j]))
+        print("%3d %9.5f %9.5f %9.5f %9.5f" % (N - 1, pd[N - 1], pw[N - 1], sumd[N - 1], sumw[N - 1]))
         print()
 
         pd[0] = self.detector.a * P
@@ -360,20 +349,13 @@ class Sphere:
         sumd = np.cumsum(pd)
         print(" k    P_d^k   P_w^k    sum(P_d^k)   sum(P_w^k)")
         for j in range(10):
-            print(
-                "%3d %9.5f %9.5f %9.5f %9.5f" % (j + 1, pd[j], pw[j], sumd[j], sumw[j])
-            )
-        print(
-            "%3d %9.5f %9.5f %9.5f %9.5f"
-            % (N - 1, pd[N - 1], pw[N - 1], sumd[N - 1], sumw[N - 1])
-        )
+            print("%3d %9.5f %9.5f %9.5f %9.5f" % (j + 1, pd[j], pw[j], sumd[j], sumw[j]))
+        print("%3d %9.5f %9.5f %9.5f %9.5f" % (N - 1, pd[N - 1], pw[N - 1], sumd[N - 1], sumw[N - 1]))
         print()
 
         beta = 1 - self.third.a
         beta *= self.detector.a * self.detector.uru + self.sample.a * self.sample.uru
-        numer = self.a_wall**3 * self.r_wall + beta * (
-            2 * self.a_wall + self.a_wall**2 * self.r_wall + beta
-        )
+        numer = self.a_wall**3 * self.r_wall + beta * (2 * self.a_wall + self.a_wall**2 * self.r_wall + beta)
         denom = 1 - self.r_wall * (self.a_wall + beta)
         sum3 = self.r_wall * numer / denom * P
 
@@ -430,9 +412,7 @@ class Sphere:
         if np.isscalar(value):
             assert 0 <= value <= 1, "Reflectivity of standard must be between 0 and 1"
         else:
-            assert (
-                0 <= value.all() <= 1
-            ), "Reflectivity of standard must be between 0 and 1"
+            assert 0 <= value.all() <= 1, "Reflectivity of standard must be between 0 and 1"
         self._r_std = value
         self.gain_cal = self.gain(self.r_std)
 
@@ -447,9 +427,7 @@ class Sphere:
         if np.isscalar(value):
             assert 0 <= value <= 1, "Reflectivity of standard must be between 0 and 1"
         else:
-            assert (
-                0 <= value.all() <= 1
-            ), "Reflectivity of standard must be between 0 and 1"
+            assert 0 <= value.all() <= 1, "Reflectivity of standard must be between 0 and 1"
         self._r_wall = value
 
     def uniform(self):

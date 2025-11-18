@@ -96,9 +96,7 @@ def read_txt(filename):
     # verify that file is an output file
     with open(filename, encoding="utf-8") as fp:
         if not verify_magic(fp, "# Inverse Adding-Doubling"):
-            raise ValueError(
-                '"%s" does not start with "# Inverse Adding-Doubling"' % filename
-            )
+            raise ValueError('"%s" does not start with "# Inverse Adding-Doubling"' % filename)
 
         # create experiment object
         exp = iadpython.Experiment()

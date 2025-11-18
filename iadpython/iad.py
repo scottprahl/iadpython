@@ -95,9 +95,7 @@ class Experiment:
         s += self.sample.__str__()
         s += "\n--------------- Spheres ---------------\n"
         if not np.isscalar(self.num_spheres):
-            s += "number of spheres range (%s)\n" % iad.stringify(
-                "%d", self.num_spheres
-            )
+            s += "number of spheres range (%s)\n" % iad.stringify("%d", self.num_spheres)
         elif self.num_spheres == 0:
             s += "No spheres used.\n"
         elif self.num_spheres == 1:
@@ -141,9 +139,7 @@ class Experiment:
 
         if self.m_u is not None:
             if self.m_u < 0 or self.m_u > 1:
-                raise ValueError(
-                    "Invalid unscattered trans. %.4f." % self.m_u + between
-                )
+                raise ValueError("Invalid unscattered trans. %.4f." % self.m_u + between)
 
     def useful_measurements(self):
         """Count the number of useful measurements."""
@@ -251,17 +247,13 @@ class Experiment:
         #        print('     g = ', self.sample.g)
 
         if self.search == "find_a":
-            _ = scipy.optimize.minimize_scalar(
-                afun, args=(self), bounds=(0, 1), method="bounded"
-            )
+            _ = scipy.optimize.minimize_scalar(afun, args=(self), bounds=(0, 1), method="bounded")
 
         if self.search == "find_b":
             _ = scipy.optimize.minimize_scalar(bfun, args=(self), method="brent")
 
         if self.search == "find_g":
-            _ = scipy.optimize.minimize_scalar(
-                gfun, args=(self), bounds=(-1, 1), method="bounded"
-            )
+            _ = scipy.optimize.minimize_scalar(gfun, args=(self), bounds=(-1, 1), method="bounded")
 
         if self.search in ["find_ab", "find_ag", "find_bg"]:
 
@@ -288,21 +280,15 @@ class Experiment:
 
         if self.search == "find_ab":
             x = scipy.optimize.Bounds(np.array([0, 0]), np.array([1, np.inf]))
-            _ = scipy.optimize.minimize(
-                abfun, [a, b], args=(self), bounds=x, method="Nelder-Mead"
-            )
+            _ = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=x, method="Nelder-Mead")
 
         if self.search == "find_ag":
             x = scipy.optimize.Bounds(np.array([0, -1]), np.array([1, 1]))
-            _ = scipy.optimize.minimize(
-                agfun, [a, g], args=(self), bounds=x, method="Nelder-Mead"
-            )
+            _ = scipy.optimize.minimize(agfun, [a, g], args=(self), bounds=x, method="Nelder-Mead")
 
         if self.search == "find_bg":
             x = scipy.optimize.Bounds(np.array([0, -1]), np.array([np.inf, 1]))
-            _ = scipy.optimize.minimize(
-                bgfun, [b, g], args=(self), bounds=x, method="Nelder-Mead"
-            )
+            _ = scipy.optimize.minimize(bgfun, [b, g], args=(self), bounds=x, method="Nelder-Mead")
 
         return self.sample.a, self.sample.b, self.sample.g
 
@@ -463,9 +449,7 @@ class Experiment:
                 print("mr= %6.3f m_r=%6.3f" % (mr, m_r))
 
             if self.t_sphere is not None:
-                mt = self.t_sphere.MT(
-                    ut1, uru, Tu=t_u, f_unsc=self.fraction_of_tc_in_mt
-                )
+                mt = self.t_sphere.MT(ut1, uru, Tu=t_u, f_unsc=self.fraction_of_tc_in_mt)
                 t_gain_00 = self.t_sphere.gain(0)
                 t_gain_std = self.t_sphere.gain(uru)
                 m_t = ut1_actual * t_gain_00 / t_gain_std
@@ -523,9 +507,7 @@ def abfun(x, *args):
     exp.sample.b = x[1]
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
-    print(
-        "%7.4f %7.4f %7.4f %7.4f %7.4f" % (exp.sample.a, exp.sample.b, m_r, m_t, delta)
-    )
+    print("%7.4f %7.4f %7.4f %7.4f %7.4f" % (exp.sample.a, exp.sample.b, m_r, m_t, delta))
     return delta
 
 

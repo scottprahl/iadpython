@@ -1,6 +1,3 @@
-# pylint: disable=invalid-name
-# pylint: disable=bad-whitespace
-
 """Tests for NIST reflectance data."""
 
 import os

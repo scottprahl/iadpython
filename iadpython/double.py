@@ -127,9 +127,7 @@ class DoubleSphere:
             weight = 0
 
         while weight > 0:
-            detected, transmitted, _ = self.current.do_one_photon(
-                weight=weight, double=True
-            )
+            detected, transmitted, _ = self.current.do_one_photon(weight=weight, double=True)
 
             if transmitted > 0:  # hit sample
                 if random.random() < self.utu:  # passed through sample, switch spheres
@@ -144,14 +142,10 @@ class DoubleSphere:
             else:
                 weight = 0
                 if self.current == self.r_sphere:
-                    assert (
-                        passes % 2 == 0
-                    ), "reflection sphere should have even number of passes"
+                    assert passes % 2 == 0, "reflection sphere should have even number of passes"
                     r_detected += detected
                 else:
-                    assert (
-                        passes % 2 == 1
-                    ), "reflection sphere should have odd number of passes"
+                    assert passes % 2 == 1, "reflection sphere should have odd number of passes"
                     t_detected += detected
 
         return r_detected, t_detected, passes
@@ -190,9 +184,8 @@ class DoubleSphere:
         scale = self.r_sphere.detector.a * (1 - self.r_sphere.detector.uru)
         if self.r_sphere.baffle:
             scale *= (
-                (1 - self.r_sphere.third.a) * self.r_sphere.r_wall
-                + self.r_sphere.third.a * self.r_sphere.third.uru
-            )
+                1 - self.r_sphere.third.a
+            ) * self.r_sphere.r_wall + self.r_sphere.third.a * self.r_sphere.third.uru
         ave_g = ave_r / scale
         std_g = std_r / scale
         stderr_g = std_g / np.sqrt(num_trials)
@@ -204,9 +197,8 @@ class DoubleSphere:
         scale = self.t_sphere.detector.a * (1 - self.t_sphere.detector.uru)
         if self.t_sphere.baffle:
             scale *= (
-                (1 - self.t_sphere.third.a) * self.t_sphere.r_wall
-                + self.t_sphere.third.a * self.t_sphere.third.uru
-            )
+                1 - self.t_sphere.third.a
+            ) * self.t_sphere.r_wall + self.t_sphere.third.a * self.t_sphere.third.uru
         ave_g = ave_t / scale
         std_g = std_t / scale
         stderr_g = std_g / np.sqrt(num_trials)

@@ -57,9 +57,7 @@ class Cache:
         """Insert or overwrite the record for (a,b,g)."""
         self._data[Key(a, b, g)] = (ur1, ut1, uru, utu)
 
-    def get(
-        self, a: float, b: float, g: float
-    ) -> Optional[Tuple[float, float, float, float]]:
+    def get(self, a: float, b: float, g: float) -> Optional[Tuple[float, float, float, float]]:
         """Return the tuple (ur1, ut1, uru, utu) or None if absent."""
         return self._data.get(Key(a, b, g))
 

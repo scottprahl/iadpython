@@ -118,9 +118,7 @@ def validator_01(value):
     try:
         fvalue = float(value)
     except ValueError as exc:
-        raise argparse.ArgumentTypeError(
-            f"Commandline: {value} is not a valid number"
-        ) from exc
+        raise argparse.ArgumentTypeError(f"Commandline: {value} is not a valid number") from exc
     if not 0 <= fvalue <= 1:
         raise argparse.ArgumentTypeError(f"Commandline: {value} is not between 0 and 1")
     return fvalue
@@ -142,9 +140,7 @@ def validator_positive(value):
     try:
         fvalue = float(value)
     except ValueError as exc:
-        raise argparse.ArgumentTypeError(
-            f"Commandline: {value} is not a valid number"
-        ) from exc
+        raise argparse.ArgumentTypeError(f"Commandline: {value} is not a valid number") from exc
     if fvalue < 0:
         raise argparse.ArgumentTypeError(f"{value} is not positive")
     return fvalue
@@ -370,9 +366,7 @@ def add_sample_constraints(exp, args):
 
     if args.G is not None:
         if args.nslide is None:
-            raise argparse.ArgumentTypeError(
-                "Commandline: Cannot use -G without also specifing slide index with -N"
-            )
+            raise argparse.ArgumentTypeError("Commandline: Cannot use -G without also specifing slide index with -N")
         if args.G == 0:
             exp.sample.n_above = 1
             exp.sample.n_below = 1
@@ -396,20 +390,14 @@ def add_sample_constraints(exp, args):
 
     if args.i is not None:
         if abs(args.i) > 90:
-            raise argparse.ArgumentTypeError(
-                "Commandline: Bad argument to -i, value must be between -90 and 90"
-            )
+            raise argparse.ArgumentTypeError("Commandline: Bad argument to -i, value must be between -90 and 90")
         exp.sample.nu_0 = np.cos(np.radians(args.i))
 
     if args.q is not None:
         if args.q % 4:
-            raise argparse.ArgumentTypeError(
-                "Commandline: Number of quadrature points must be a multiple of 4"
-            )
+            raise argparse.ArgumentTypeError("Commandline: Number of quadrature points must be a multiple of 4")
         if exp.sample.nu_0 != 1 and args.q % 12:
-            raise argparse.ArgumentTypeError(
-                "Commandline: Quadrature must be 12, 24, 36,... for oblique incidence"
-            )
+            raise argparse.ArgumentTypeError("Commandline: Quadrature must be 12, 24, 36,... for oblique incidence")
         exp.sample.quad_pts = args.q
 
 
@@ -646,9 +634,7 @@ def main():
 
         print(exp)
         if (exp.m_r is None) and (exp.m_t is None) and (exp.m_u is None):
-            raise argparse.ArgumentTypeError(
-                "Commandline: One measurement needed or use '-z' for forward calc."
-            )
+            raise argparse.ArgumentTypeError("Commandline: One measurement needed or use '-z' for forward calc.")
 
         # invert parameters specified on the commandline
         a, b, g = exp.invert_rt()

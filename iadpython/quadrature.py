@@ -47,9 +47,7 @@ def _gauss_func(n, x):
 
 def _radau_func(n, x):
     """Zeros of this function are the Radau quadrature points."""
-    return (
-        scipy.special.eval_legendre(n - 1, x) + scipy.special.eval_legendre(n, x)
-    ) / (1 + x)
+    return (scipy.special.eval_legendre(n - 1, x) + scipy.special.eval_legendre(n, x)) / (1 + x)
 
 
 def _lobatto_func(n, x):

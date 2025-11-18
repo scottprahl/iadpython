@@ -403,13 +403,7 @@ class Sample:
         R12, T12 = iadpython.simple_layer_matrices(self)
 
         # all done if boundaries are not an issue
-        if (
-            self.n == 1
-            and self.n_above == 1
-            and self.n_below == 1
-            and self.b_above == 0
-            and self.b_below == 0
-        ):
+        if self.n == 1 and self.n_above == 1 and self.n_below == 1 and self.b_above == 0 and self.b_below == 0:
             return R12, R12, T12, T12
 
         # reflection/transmission arrays for top boundary
@@ -424,12 +418,8 @@ class Sample:
         R23, R32, T23, T32 = iadpython.start.boundary_layer(self, top=False)
 
         # different boundaries on top and bottom
-        R02, R20, T02, T20 = iadpython.add_slide_above(
-            self, R01, R10, T01, T10, R12, R12, T12, T12
-        )
-        R03, R30, T03, T30 = iadpython.add_slide_below(
-            self, R02, R20, T02, T20, R23, R32, T23, T32
-        )
+        R02, R20, T02, T20 = iadpython.add_slide_above(self, R01, R10, T01, T10, R12, R12, T12, T12)
+        R03, R30, T03, T30 = iadpython.add_slide_below(self, R02, R20, T02, T20, R23, R32, T23, T32)
 
         return R03, R30, T03, T30
 

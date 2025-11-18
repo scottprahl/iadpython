@@ -159,9 +159,7 @@ class Port:
         self.a = self.relative_cap_area()
         self.sagitta = self.calculate_sagitta()
         self.chord2 = self.max_center_chord()
-        self.sphere._a_wall = (
-            1 - self.sphere.sample.a - self.sphere.third.a - self.sphere.detector.a
-        )
+        self.sphere._a_wall = 1 - self.sphere.sample.a - self.sphere.third.a - self.sphere.detector.a
 
     def cap_area(self):
         """Approximate area of spherical cap."""
@@ -209,9 +207,7 @@ class Port:
 
     def set_center(self, x, y, z):
         """Centers the cap at x,y,z."""
-        assert (
-            x**2 + y**2 + z**2 - (self.sphere.d / 2) ** 2 < 1e-6
-        ), "center not on sphere."
+        assert x**2 + y**2 + z**2 - (self.sphere.d / 2) ** 2 < 1e-6, "center not on sphere."
         self.x = x
         self.y = y
         self.z = z

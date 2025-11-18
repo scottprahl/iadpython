@@ -110,9 +110,7 @@ class AGrid:
                 (x0, xm, ym, y1),
                 (xm, x1, ym, y1),
             ]:
-                self._subdivide(
-                    nx0, nx1, ny0, ny1, fixed_axis, fixed_val, depth + 1, collect
-                )
+                self._subdivide(nx0, nx1, ny0, ny1, fixed_axis, fixed_val, depth + 1, collect)
         else:
             # accept the four corners
             collect.update(
@@ -157,9 +155,7 @@ class AGrid:
 
         # collect the (u,v) corner points that meet the tolerance
         uv_points: set[tuple[float, float]] = set()
-        self._subdivide(
-            u0, u1, v0, v1, self.fixed_axis, fixed_val, depth=0, collect=uv_points
-        )
+        self._subdivide(u0, u1, v0, v1, self.fixed_axis, fixed_val, depth=0, collect=uv_points)
 
         for u, v in uv_points:
             a, b, g = self._make_args(u, v, self.fixed_axis, fixed_val)

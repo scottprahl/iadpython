@@ -275,12 +275,8 @@ def unscattered_rt(s):
     r01, t01 = iad.zero_layer(s)
     r10, t10 = iad.zero_layer(s)
 
-    r01, t01 = iad.specular_rt(
-        s.n_above, s.n, s.n_below, s.b, s.nu, s.b_above, s.b_below
-    )
-    r10, t10 = iad.specular_rt(
-        s.n_below, s.n, s.n_above, s.b, s.nu, s.b_below, s.b_above
-    )
+    r01, t01 = iad.specular_rt(s.n_above, s.n, s.n_below, s.b, s.nu, s.b_above, s.b_below)
+    r10, t10 = iad.specular_rt(s.n_below, s.n, s.n_above, s.b, s.nu, s.b_below, s.b_above)
 
     rr01 = np.diagflat(r01) / s.twonuw
     rr10 = np.diagflat(r10) / s.twonuw
@@ -325,15 +321,11 @@ def unscattered(s):
     for i in range(n):
         nu_outside = iad.cos_snell(s.n, s.nu[i], 1.0)
         if nu_outside == 0:
-            r, t = iad.specular_rt(
-                s.n_above, s.n, s.n_below, s.b_above, s.b, s.b_below, nu_outside
-            )
+            r, t = iad.specular_rt(s.n_above, s.n, s.n_below, s.b_above, s.b, s.b_below, nu_outside)
             uru += s.twonuw[i] * r[i, i]
             utu += s.twonuw[i] * t[i, i]
 
-    ur1, ut1 = iad.specular_rt(
-        s.n_above, s.n, s.n_below, s.b_above, s.b, s.b_below, s.nu_0
-    )
+    ur1, ut1 = iad.specular_rt(s.n_above, s.n, s.n_below, s.b_above, s.b, s.b_below, s.nu_0)
 
     uru *= s.n**2
     utu *= s.n**2
