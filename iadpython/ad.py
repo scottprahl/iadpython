@@ -17,6 +17,8 @@ import iadpython.quadrature
 import iadpython.start
 import iadpython.combine
 
+G_MINUS_ONE_SUBSTITUTE = -0.9999
+
 
 def stringify(form, x):
     """
@@ -40,6 +42,20 @@ def stringify(form, x):
         s += " to "
         s += form % mx
     return s
+
+
+def sanitize_anisotropy(g):
+    """Map singular anisotropy endpoint g=-1 to a nearby finite value."""
+    if g is None:
+        return None
+
+    if np.isscalar(g):
+        if np.isclose(g, -1.0):
+            return G_MINUS_ONE_SUBSTITUTE
+        return g
+
+    arr = np.asarray(g)
+    return np.where(np.isclose(arr, -1.0), G_MINUS_ONE_SUBSTITUTE, arr)
 
 
 class Sample:
@@ -82,7 +98,7 @@ class Sample:
         """
         self.a = a
         self.b = b
-        self._g = g
+        self._g = sanitize_anisotropy(g)
         self.d = d  # thickness of sample in mm
         self._n = n
         self.n_above = n_above
@@ -137,6 +153,7 @@ class Sample:
     @g.setter
     def g(self, value):
         """When anisotropy is changed phi is invalid."""
+        value = sanitize_anisotropy(value)
         if np.isscalar(value) and np.isscalar(self._g) and value == self._g:
             return
 
@@ -190,7 +207,13 @@ class Sample:
     def a_delta_M(self):
         """Reduced albedo in delta-M approximation."""
         af = self.a * (self.g**self.quad_pts)
-        return (self.a - af) / (1 - af)
+        num = np.asarray(self.a - af, dtype=float)
+        den = np.asarray(1 - af, dtype=float)
+        out = np.zeros_like(num, dtype=float)
+        np.divide(num, den, out=out, where=~np.isclose(den, 0.0))
+        if out.ndim == 0:
+            return float(out)
+        return out
 
     def b_delta_M(self):
         """Reduced thickness in delta-M approximation."""

@@ -24,6 +24,8 @@ import numpy as np
 import scipy.optimize
 import iadpython as iad
 
+G_BOUND_EPS = 1e-6
+
 
 class Experiment:
     """Container class for details of an experiment."""
@@ -261,7 +263,12 @@ class Experiment:
             _ = scipy.optimize.minimize_scalar(bfun, args=(self), method="brent")
 
         if self.search == "find_g":
-            _ = scipy.optimize.minimize_scalar(gfun, args=(self), bounds=(-1, 1), method="bounded")
+            _ = scipy.optimize.minimize_scalar(
+                gfun,
+                args=(self),
+                bounds=(-1 + G_BOUND_EPS, 1 - G_BOUND_EPS),
+                method="bounded",
+            )
 
         if self.search in ["find_ab", "find_ag", "find_bg"]:
 
@@ -304,11 +311,17 @@ class Experiment:
             _ = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=x, method="Nelder-Mead")
 
         if self.search == "find_ag":
-            x = scipy.optimize.Bounds(np.array([0, -1]), np.array([1, 1]))
+            x = scipy.optimize.Bounds(
+                np.array([0, -1 + G_BOUND_EPS]),
+                np.array([1, 1 - G_BOUND_EPS]),
+            )
             _ = scipy.optimize.minimize(agfun, [a, g], args=(self), bounds=x, method="Nelder-Mead")
 
         if self.search == "find_bg":
-            x = scipy.optimize.Bounds(np.array([0, -1]), np.array([np.inf, 1]))
+            x = scipy.optimize.Bounds(
+                np.array([0, -1 + G_BOUND_EPS]),
+                np.array([np.inf, 1 - G_BOUND_EPS]),
+            )
             _ = scipy.optimize.minimize(bgfun, [b, g], args=(self), bounds=x, method="Nelder-Mead")
 
         return self.sample.a, self.sample.b, self.sample.g

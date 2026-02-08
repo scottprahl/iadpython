@@ -50,7 +50,14 @@ def hg_legendre(sample):
     n = sample.quad_pts
     g = sample.g
 
-    if g == 0:
+    # g=0 is isotropic scattering.
+    if np.isclose(g, 0):
+        h = np.ones([n, n])
+        return h, h
+
+    # At g=1 the HG + delta-M expression has a removable singularity and
+    # scattering weight goes to zero. Return a finite placeholder matrix.
+    if np.isclose(g, 1):
         h = np.ones([n, n])
         return h, h
 
