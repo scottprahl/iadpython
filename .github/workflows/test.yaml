@@ -1,49 +1,60 @@
+# yamllint disable rule:truthy
 ---
-name: test
+name: CI
 
-on:    # yamllint disable-line rule:truthy
+on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
-  workflow_dispatch:  # allow manual triggering
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    name: Build and test
+  tests:
+    name: Python ${{ matrix.python-version }} - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.7', '3.12']
+        os: [ubuntu-latest]
+        python-version: ["3.9", "3.12"]
 
     steps:
-      - name: Checkout code
+      - name: Checkout sources
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
 
-      - name: Install package and dependencies
+      - name: Install package (+tests)
         run: |
-          pip install -r requirements.txt
-          pip install -e .  # current package in editable mode
+          python -m pip install --upgrade pip setuptools
+          python -m pip install -e .
+          python -m pip install pytest
 
-      - name: Tests
+      - name: Run pytest
         run: |
-          pytest tests/test_boundary.py
-          pytest tests/test_combo.py
-          pytest tests/test_fresnel.py
-          pytest tests/test_grid.py
-          pytest tests/test_iad.py
-          pytest tests/test_layer.py
-          pytest tests/test_layers.py
-          pytest tests/test_nist.py
-          pytest tests/test_quadrature.py
-          pytest tests/test_redistribution.py
-          pytest tests/test_rxt.py
-          pytest tests/test_sphere.py
-          pytest tests/test_start.py
-          pytest tests/test_ur1_uru.py
+          python -m pytest tests/test_boundary.py
+          python -m pytest tests/test_combo.py
+          python -m pytest tests/test_fresnel.py
+          python -m pytest tests/test_grid.py
+          python -m pytest tests/test_iad.py
+          python -m pytest tests/test_layer.py
+          python -m pytest tests/test_layers.py
+          python -m pytest tests/test_nist.py
+          python -m pytest tests/test_quadrature.py
+          python -m pytest tests/test_redistribution.py
+          python -m pytest tests/test_rxt.py
+          python -m pytest tests/test_sphere.py
+          python -m pytest tests/test_start.py
+          python -m pytest tests/test_ur1_uru.py

@@ -1,36 +1,37 @@
+# yamllint disable rule:truthy
 ---
-name: pypi
+name: Publish to PyPI
 
-on:    # yamllint disable-line rule:truthy
+on:
   release:
     types: [published]
   workflow_dispatch:
 
 jobs:
-  publish:
+  build-and-publish:
     runs-on: ubuntu-latest
-
-    environment:
-      name: pypi repository
-      url: https://pypi.org/p/iadpython
-
+    environment: pypi-repository
     permissions:
+      contents: read
       id-token: write
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
 
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: "3.12"
 
-      - name: Build
+      - name: Build package
         run: |
-          pip install setuptools wheel twine build
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          python -m pip install build
           python -m build
 
-      - name: Publish package to PyPI
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           verbose: true
+          attestations: true
