@@ -86,6 +86,9 @@ class Experiment:
         self.error = 1
         self.num_measurements = 0
         self.grid = None
+        self.use_adaptive_grid = True
+        self.adaptive_grid_tol = 0.03
+        self.adaptive_grid_max_depth = 6
         self.counter = 0
         self.include_measurements = True
 
@@ -258,6 +261,14 @@ class Experiment:
         if self.search in ["find_ab", "find_ag", "find_bg"]:
 
             if self.grid is None:
+                if self.use_adaptive_grid:
+                    self.grid = iad.AGrid(tol=self.adaptive_grid_tol, max_depth=self.adaptive_grid_max_depth)
+                else:
+                    self.grid = iad.Grid()
+
+            if self.use_adaptive_grid and not isinstance(self.grid, iad.AGrid):
+                self.grid = iad.AGrid(tol=self.adaptive_grid_tol, max_depth=self.adaptive_grid_max_depth)
+            if not self.use_adaptive_grid and isinstance(self.grid, iad.AGrid):
                 self.grid = iad.Grid()
 
             # the grids are two-dimensional, one value is held constant
@@ -269,8 +280,13 @@ class Experiment:
             if self.search == "find_ab":
                 grid_constant = self.sample.g
 
-            if self.grid.is_stale(grid_constant):
-                self.grid.calc(self, grid_constant)
+            if isinstance(self.grid, iad.AGrid):
+                if self.grid.is_stale(grid_constant, search=self.search):
+                    self.grid.calc(self, default=grid_constant, search=self.search)
+            else:
+                if self.grid.is_stale(grid_constant):
+                    self.grid.calc(self, grid_constant)
+
             a, b, g = self.grid.min_abg(self.m_r, self.m_t)
             print("grid constant %8.5f" % grid_constant)
 
