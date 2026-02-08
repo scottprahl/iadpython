@@ -10,7 +10,7 @@ include-package-data = false
 iadpython = ["data/*.csv"]
 
 [tool.setuptools.dynamic]
-version = { attr = "iadpython._version.__version__" }
+version = { attr = "iadpython.__version__" }
 
 [project]
 name = "iadpython"
