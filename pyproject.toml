@@ -122,7 +122,7 @@ ignore = [
   ".jupyterlite-ignore",
   ".testignore",
   "Makefile",
-  "jupyter_lite_config.json",
+  "iadpython/jupyter_lite_config.json",
   "docs/**",
   "release.txt",
   "tests/data/*.txt",

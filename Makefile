@@ -16,7 +16,7 @@ OUT_ROOT        := $(ROOT)/_site
 OUT_DIR         := $(OUT_ROOT)/$(PACKAGE)
 STAGE_DIR       := $(ROOT)/.lite_src
 DOIT_DB         := $(ROOT)/.jupyterlite.doit.db
-LITE_CONFIG     := $(ROOT)/jupyter_lite_config.json
+LITE_CONFIG     := $(ROOT)/$(PACKAGE)/jupyter_lite_config.json
 
 # --- GitHub Pages deploy config ---
 PAGES_BRANCH    := gh-pages
