@@ -63,6 +63,7 @@ class Experiment:
         self.flip_sample = False
         self.fraction_of_rc_in_mr = 1
         self.fraction_of_tc_in_mt = 1
+        self.f_r = 0.0
 
         self.ur1_lost = 0
         self.uru_lost = 0
@@ -79,13 +80,20 @@ class Experiment:
 
         self.search = "unknown"
         self.metric = 1
-        self.tolerance = 1
-        self.MC_tolerance = 1
+        self.tolerance = 0.0001
+        self.MC_tolerance = 0.01
         self.final_distance = 1
         self.iterations = 1
         self.error = 1
         self.num_measurements = 0
         self.grid = None
+        self.method = "unknown"
+        self.debug_level = 0
+        self.max_mc_iterations = 19
+        self.n_photons = 100000
+        self.use_adaptive_grid = True
+        self.adaptive_grid_tol = 0.03
+        self.adaptive_grid_max_depth = 6
         self.counter = 0
         self.include_measurements = True
 
@@ -258,6 +266,14 @@ class Experiment:
         if self.search in ["find_ab", "find_ag", "find_bg"]:
 
             if self.grid is None:
+                if self.use_adaptive_grid:
+                    self.grid = iad.AGrid(tol=self.adaptive_grid_tol, max_depth=self.adaptive_grid_max_depth)
+                else:
+                    self.grid = iad.Grid()
+
+            if self.use_adaptive_grid and not isinstance(self.grid, iad.AGrid):
+                self.grid = iad.AGrid(tol=self.adaptive_grid_tol, max_depth=self.adaptive_grid_max_depth)
+            if not self.use_adaptive_grid and isinstance(self.grid, iad.AGrid):
                 self.grid = iad.Grid()
 
             # the grids are two-dimensional, one value is held constant
@@ -269,14 +285,19 @@ class Experiment:
             if self.search == "find_ab":
                 grid_constant = self.sample.g
 
-            if self.grid.is_stale(grid_constant):
-                self.grid.calc(self, grid_constant)
-            a, b, g = self.grid.min_abg(self.m_r, self.m_t)
-            print("grid constant %8.5f" % grid_constant)
+            if isinstance(self.grid, iad.AGrid):
+                if self.grid.is_stale(grid_constant, search=self.search):
+                    self.grid.calc(self, default=grid_constant, search=self.search)
+            else:
+                if self.grid.is_stale(grid_constant):
+                    self.grid.calc(self, grid_constant)
 
-            print("grid start a=%8.5f" % a)
-            print("grid start b=%8.5f" % b)
-            print("grid start g=%8.5f" % g)
+            a, b, g = self.grid.min_abg(self.m_r, self.m_t)
+            if self.debug_level & 2:
+                print("grid constant %8.5f" % grid_constant)
+                print("grid start a=%8.5f" % a)
+                print("grid start b=%8.5f" % b)
+                print("grid start g=%8.5f" % g)
 
         if self.search == "find_ab":
             x = scipy.optimize.Bounds(np.array([0, 0]), np.array([1, np.inf]))
@@ -421,39 +442,22 @@ class Experiment:
         # correct for lost light
         ur1_actual = ur1 - self.ur1_lost
         ut1_actual = ut1 - self.ut1_lost
-        uru_actual = uru - self.uru_lost
+        uru - self.uru_lost
 
         # correct for fraction not collected
         m_r = ur1_actual - (1.0 - self.fraction_of_rc_in_mr) * r_u
         m_t = ut1_actual - (1.0 - self.fraction_of_tc_in_mt) * t_u
 
         if self.num_spheres == 1:
+            if self.method in ("comparison", 1):
+                return m_r, m_t
+
             if self.r_sphere is not None:
                 f_u = self.fraction_of_rc_in_mr
-                mr = self.r_sphere.MR(ur1, uru, R_u=r_u, f_u=f_u)
-
-                r_gain_00 = self.r_sphere.gain(0)
-                ratio_std = self.r_sphere.gain(self.r_sphere.r_std) / r_gain_00
-                ratio_sample = self.r_sphere.gain(uru) / r_gain_00
-                print(r_gain_00, ratio_std, ratio_sample)
-
-                p_d = ur1_actual * (1 - f_u) + f_u * self.r_sphere.r_wall
-                p_std = self.r_sphere.r_std * (1 - f_u) + f_u * self.r_sphere.r_wall
-                p_0 = f_u * self.r_sphere.r_wall
-                print("p values", p_d, p_std, p_0)
-                m_r = (p_d - ratio_sample * p_0) / (p_std - ratio_std * p_0)
-                m_r *= self.r_sphere.r_std
-                if ratio_sample != ratio_std:
-                    m_r *= ratio_std / ratio_sample
-
-                print("mr= %6.3f m_r=%6.3f" % (mr, m_r))
+                m_r = self.r_sphere.MR(ur1, uru, R_u=r_u, f_u=f_u, f_w=self.f_r)
 
             if self.t_sphere is not None:
-                mt = self.t_sphere.MT(ut1, uru, Tu=t_u, f_unsc=self.fraction_of_tc_in_mt)
-                t_gain_00 = self.t_sphere.gain(0)
-                t_gain_std = self.t_sphere.gain(uru)
-                m_t = ut1_actual * t_gain_00 / t_gain_std
-                print("mt= %6.3f m_t=%6.3f" % (mt, m_t))
+                m_t = self.t_sphere.MT(ut1, uru, T_u=t_u, f_u=self.fraction_of_tc_in_mt)
 
         return m_r, m_t
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Command line for support for iadpython."""
+
 import os
 import sys
 from enum import Enum
@@ -131,7 +132,7 @@ def validator_11(value):
     except ValueError as exc:
         raise argparse.ArgumentTypeError(f"{value} is not a valid number") from exc
     if not -1 <= fvalue <= 1:
-        raise argparse.ArgumentTypeError(f"Commandline: {value} is not between 0 and 1")
+        raise argparse.ArgumentTypeError(f"Commandline: {value} is not between -1 and 1")
     return fvalue
 
 
@@ -144,6 +145,17 @@ def validator_positive(value):
     if fvalue < 0:
         raise argparse.ArgumentTypeError(f"{value} is not positive")
     return fvalue
+
+
+def validator_mc_iterations(value):
+    """Is number of Monte Carlo iterations between 0 and 50."""
+    try:
+        ivalue = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"Commandline: {value} is not a valid integer") from exc
+    if not 0 <= ivalue <= 50:
+        raise argparse.ArgumentTypeError(f"Commandline: {value} must be between 0 and 50")
+    return ivalue
 
 
 # Argument specifications
@@ -215,8 +227,7 @@ arg_specs = [
     {
         "flags": ["-e"],
         "dest": "error",
-        "type": float,
-        "default": 0.0001,
+        "type": validator_positive,
         "help": "Error tolerance (default 0.0001)",
     },
     {
@@ -245,7 +256,7 @@ arg_specs = [
         "help": "Type of boundary ",
     },
     {"flags": ["-i"], "type": float, "help": "Light incident at this angle in degrees"},
-    {"flags": ["-M"], "type": int, "help": "Number of Monte Carlo iterations"},
+    {"flags": ["-M"], "type": validator_mc_iterations, "help": "Number of Monte Carlo iterations"},
     {
         "flags": ["-n", "--nslab"],
         "dest": "nslab",
@@ -367,7 +378,7 @@ def add_sample_constraints(exp, args):
     if args.G is not None:
         if args.nslide is None:
             raise argparse.ArgumentTypeError("Commandline: Cannot use -G without also specifing slide index with -N")
-        if args.G == 0:
+        if args.G == "0":
             exp.sample.n_above = 1
             exp.sample.n_below = 1
         elif args.G == "t":
@@ -376,7 +387,7 @@ def add_sample_constraints(exp, args):
         elif args.G == "b":
             exp.sample.n_above = 1
             exp.sample.n_below = args.nslide
-        elif args.G == 2:
+        elif args.G == "2":
             exp.sample.n_above = args.nslide
             exp.sample.n_below = args.nslide
         elif args.G == "n":
@@ -403,14 +414,26 @@ def add_sample_constraints(exp, args):
 
 def add_experiment_constraints(exp, args):
     """Command-line constraints on experiment."""
+    def cli_sphere_to_object(values, refl):
+        """Convert `-1`/`-2` CLI sphere values to a Sphere object."""
+        sphere_d, sample_d, entrance_d, detector_d, wall_r = values
+        return iadpython.Sphere(
+            sphere_d,
+            sample_d,
+            d_third=entrance_d,
+            d_detector=detector_d,
+            r_wall=wall_r,
+            refl=refl,
+        )
+
     if args.S is not None:
         exp.num_spheres = args.S
 
     if args.r_sphere is not None:
-        exp.r_sphere = args.r_sphere
+        exp.r_sphere = cli_sphere_to_object(args.r_sphere, refl=True)
 
     if args.t_sphere is not None:
-        exp.r_sphere = args.t_sphere
+        exp.t_sphere = cli_sphere_to_object(args.t_sphere, refl=False)
 
     if args.diameter is not None:
         exp.d_beam = args.diameter
@@ -423,6 +446,20 @@ def add_experiment_constraints(exp, args):
 
     if args.u is not None:
         exp.m_u = args.u
+
+    rstd_r = getattr(args, "R", None)
+    rstd_t = getattr(args, "T", None)
+    if rstd_r is not None:
+        if exp.r_sphere is not None:
+            exp.r_sphere.r_std = rstd_r
+        if exp.t_sphere is not None and rstd_t is None:
+            exp.t_sphere.r_std = rstd_r
+
+    if rstd_t is not None:
+        if exp.t_sphere is not None:
+            exp.t_sphere.r_std = rstd_t
+        if exp.r_sphere is not None and rstd_r is None:
+            exp.r_sphere.r_std = rstd_t
 
 
 def add_analysis_constraints(exp, args):
@@ -449,13 +486,24 @@ def add_analysis_constraints(exp, args):
     if args.f_t is not None:
         exp.fraction_of_tc_in_mt = args.f_t
 
+    if getattr(args, "f_wall", None) is not None:
+        exp.f_r = args.f_wall
+
+    if getattr(args, "error", None) is not None:
+        exp.tolerance = args.error
+        exp.MC_tolerance = args.error
+
     if args.M is not None:
-        # MC iterations
-        pass
+        exp.max_mc_iterations = args.M
 
     if args.p is not None:
-        # photons
-        pass
+        exp.n_photons = args.p
+
+    if getattr(args, "x", None) is not None:
+        exp.debug_level = args.x
+
+    if getattr(args, "X", False):
+        exp.method = "comparison"
 
 
 def forward_calculation(exp):
@@ -502,7 +550,7 @@ def forward_calculation(exp):
     print("   R scattered     = %.3f" % (ur1 - ru))
     print("   R unscattered   = %.3f" % ru)
     print("   T total         = %.3f" % ut1)
-    print("   R scattered     = %.3f" % (ut1 - tu))
+    print("   T scattered     = %.3f" % (ut1 - tu))
     print("   T unscattered   = %.3f" % tu)
     sys.exit(0)
 
@@ -554,8 +602,10 @@ def invert_file(exp, args):
             args.out_fname = args.filename + ".txt"
 
     original_stdout = sys.stdout
+    output_stream = None
     try:
-        sys.stdout = open(args.out_fname, "w", encoding="utf-8")
+        output_stream = open(args.out_fname, "w", encoding="utf-8")
+        sys.stdout = output_stream
 
         a, b, g = exp.invert_rt()
 
@@ -567,8 +617,12 @@ def invert_file(exp, args):
 
             mr, mt = exp.measured_rt()
 
-            if exp.lambda0:
-                print("%6.1f" % exp.lambda0[i], end="\t")
+            wavelength = None
+            if exp.lambda0 is not None:
+                wavelength = exp.lambda0 if np.isscalar(exp.lambda0) else exp.lambda0[i]
+
+            if wavelength not in (None, 0):
+                print("%6.1f" % wavelength, end="\t")
             else:
                 print("%6d" % i, end="\t")
 
@@ -592,8 +646,9 @@ def invert_file(exp, args):
             print("% 9.4f" % exp.sample.g, end="\t")
             print()
     finally:
-        sys.stdout.close()
         sys.stdout = original_stdout
+        if output_stream is not None:
+            output_stream.close()
     sys.exit(0)
 
 
@@ -625,6 +680,20 @@ def main():
         add_sample_constraints(exp, args)
         add_experiment_constraints(exp, args)
         add_analysis_constraints(exp, args)
+
+        # follow iad behavior: sphere measurements default to substitution mode
+        if np.isscalar(exp.num_spheres) and exp.num_spheres > 0 and getattr(exp, "method", "unknown") == "unknown":
+            exp.method = "substitution"
+
+        if getattr(exp, "method", "unknown") in ("comparison", 1):
+            if np.isscalar(exp.num_spheres) and exp.num_spheres == 2:
+                raise argparse.ArgumentTypeError(
+                    "Commandline: Dual beam (-X) cannot be used with double integrating spheres."
+                )
+            if getattr(exp, "f_r", 0.0) != 0:
+                raise argparse.ArgumentTypeError(
+                    "Commandline: Dual beam (-X) cannot be used when -f is non-zero."
+                )
 
         if args.z:
             forward_calculation(exp)

@@ -38,8 +38,8 @@ __email__ = "scott.prahl@oit.edu"
 __copyright__ = "2018-25, Scott Prahl"
 __license__ = "MIT"
 __url__ = "https://github.com/scottprahl/iadpython"
+__version__ = "0.6.0"
 
-from ._version import __version__
 from .constants import *
 from .fresnel import *
 from .start import *

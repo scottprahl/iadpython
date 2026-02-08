@@ -1,15 +1,23 @@
 [build-system]
-requires = ["setuptools>=77"]  # remove "wheel" if you like
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["iadpython"]
+include-package-data = false
+
+[tool.setuptools.package-data]
+iadpython = ["data/*.csv"]
+
+[tool.setuptools.dynamic]
+version = { attr = "iadpython.__version__" }
 
 [project]
 name = "iadpython"
-description = "Forward and inverse radiative transport using adding-doubling"
-readme = "README.rst"
-requires-python = ">=3.9"
-license = "MIT"
-license-files = ["LICENSE*"]
 dynamic = ["version"]
+authors = [{ name = "Scott Prahl", email = "scott.prahl@oit.edu" }]
+description = "Forward and inverse radiative transport using adding-doubling"
+requires-python = ">=3.9"
 keywords = [
   "absorption",
   "scattering",
@@ -20,83 +28,109 @@ keywords = [
   "scattering coefficient",
   "scattering anisotropy",
 ]
+readme = "README.rst"
+license = "MIT"
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Science/Research",
-  "Programming Language :: Python",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.13",
-  "Topic :: Scientific/Engineering :: Physics",
-  "Operating System :: OS Independent",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13"
 ]
-dependencies = ["numpy", "matplotlib", "scipy"]  # or move matplotlib to an extra
-authors = [{ name = "Scott Prahl", email = "scott.prahl@oit.edu" }]
+dependencies = [
+    "scipy",
+    "numpy",
+    "matplotlib",
+]
+
+[project.scripts]
+iadp = "iadpython.iadcommand:main"
+
+[project.optional-dependencies]
+docs = [
+  "Sphinx==8.1.3",
+  "nbsphinx==0.9.7",
+  "sphinx_automodapi",
+  "sphinx_rtd_theme",
+]
+
+dev = [
+  "pytest",
+  "imageio",
+  "requests",
+  "ruff",
+  "yamllint",
+  "rstcheck",
+  "pylint",
+  "pyroma",
+  "black[jupyter]",
+  "build",
+  "check-manifest",
+  "libarchive-c",
+  "pyyaml",
+  "setuptools",
+  "jupyterlab",
+  "nbconvert",
+  "nbformat",
+]
+
+lite = [
+  "jupyterlite-core==0.6.4",
+  "jupyterlite-pyodide-kernel==0.6.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/scottprahl/iadpython"
-"Bug Tracker" = "https://github.com/scottprahl/iadpython/issues"
-Documentation = "https://iadpython.readthedocs.org/"
+Documentation = "https://iadpython.readthedocs.io"
+Source = "https://github.com/scottprahl/iadpython"
+Tracker = "https://github.com/scottprahl/iadpython/issues"
+Changelog = "https://github.com/scottprahl/iadpython/blob/main/docs/CHANGELOG.rst"
 
-# Optional extras (handy if you're removing setup.cfg)
-[project.optional-dependencies]
-dev = ["ruff", "black", "pylint", "pytest", "check-manifest"]
-plot = ["matplotlib"]
+[tool.black]
+line-length = 120
+target-version = ["py39", "py310", "py311", "py312", "py313"]
 
-[tool.setuptools.dynamic]
-version = { attr = "iadpython._version.__version__" }
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--ignore=tests/test_all_notebooks.py",
+]
 
-[tool.setuptools.packages.find]
-include = ["iadpython", "iadpython.*"]
-
-[tool.setuptools.package-data]
-iadpython = ["data/*.csv"]
+[tool.pylint]
+disable = [
+    "C0103", "C0209", "C0302",
+    "R0902", "R0904", "R0912", "R0913", "R0914", "R0915", "R0917", "R1702",
+    "W0511"
+]
+max-line-length = 120
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 
 [tool.ruff.lint]
-select = ["D", "E", "F", "W", "I", "UP"]
-ignore = ["D212", "F403"]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
+select = ["D", "E", "F", "W"]
+ignore = ["D200", "D212", "F403"]
+pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/test_iadcommand.py" = ["E402"]
 
-[tool.pytest.ini_options]
-markers = ["notebooks"]
-testpaths = ["tests"]
-# addopts = "-ra"
-# norecursedirs = ["tests_iadc"]  # re-add if needed
-
-[tool.pylint]
-disable = [
-  "invalid-name",
-  "line-too-long",
-  "too-many-locals",
-  "too-many-arguments",
-  "consider-using-f-string",
-  "too-many-instance-attributes",
-  "too-many-public-methods",
-  "too-many-branches",
-  "too-few-public-methods",
-]
-
-[tool.black]
-line-length = 110
-
 [tool.check-manifest]
 ignore = [
+  "_site/**",
+  ".gh-pages/**",
+  ".lite_src/**",
   ".readthedocs.yaml",
-  "docs/*",
+  ".jupyterlite-ignore",
+  ".testignore",
   "Makefile",
+  "iadpython/jupyter_lite_config.json",
+  "docs/**",
   "release.txt",
-  "requirements.txt",
-  "requirements-dev.txt",
-  "todo",
+  "tests/data/*.txt",
 ]
