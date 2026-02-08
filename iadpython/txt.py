@@ -139,7 +139,7 @@ def read_txt(filename):
         exp.lambda0 = data.lam
 
         fp.seek(position)
-        converters = {8: lambda s: s.lstrip(b"#").strip()}
+        converters = {8: lambda s: s.lstrip("#").strip()}
         status = np.loadtxt(fp, usecols=[8], dtype=str, converters=converters)
         status = np.atleast_1d(status)
         data.success = status == "*"
