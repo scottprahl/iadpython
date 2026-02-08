@@ -17,7 +17,7 @@ name = "iadpython"
 dynamic = ["version"]
 authors = [{ name = "Scott Prahl", email = "scott.prahl@oit.edu" }]
 description = "Forward and inverse radiative transport using adding-doubling"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = [
   "absorption",
   "scattering",
@@ -36,7 +36,6 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -93,7 +92,7 @@ Changelog = "https://github.com/scottprahl/iadpython/blob/main/docs/CHANGELOG.rs
 
 [tool.black]
 line-length = 120
-target-version = ["py39", "py310", "py311", "py312", "py313"]
+target-version = ["py310", "py311", "py312", "py313"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
