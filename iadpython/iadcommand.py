@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Command line for support for iadpython."""
+
 import os
 import sys
 from enum import Enum

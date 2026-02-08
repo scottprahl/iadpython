@@ -12,8 +12,6 @@ Example::
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.tri as mtri
-from scipy.interpolate import griddata
 
 from cache import Cache
 
@@ -44,6 +42,7 @@ class AGrid:
     }
 
     def __init__(self, exp, search: str, tol: float = 0.1, max_depth: int = 6):
+        """Initialize grid."""
         self.cache = Cache()
         self.exp = exp
         self.search = search
@@ -134,19 +133,18 @@ class AGrid:
 
     def build(self) -> None:
         """
-        Build an adaptive quadtree over the two free axes determined by `search`,
+        Build an adaptive quadtree.
+
+        The quadtree is created over the two free axes determined by `search`,
         subdividing until |Δ(ur1+ut1)| ≤ tol or max_depth is reached.
         """
         fixed_val = 0
         if self.search == "find_ab":
             fixed_val = self.exp.default_g
-            fixed_axis = "g"
         if self.search == "find_ag":
             fixed_val = self.exp.default_b
-            fixed_axis = "b"
         if self.search == "find_bg":
             fixed_val = self.exp.default_a
-            fixed_axis = "a"
 
         axis0, axis1 = self.vary_axes
 
@@ -163,7 +161,6 @@ class AGrid:
 
     def min_abg(self, mr, mt):
         """Find closest a, b, g closest to mr and mt."""
-
         minimum = float("inf")
         a_min = 0
         b_min = 0
@@ -184,7 +181,7 @@ class AGrid:
         return False
 
     def square_grid(self, N=21):
-
+        """Return a square grid."""
         aa = np.linspace(self._ranges["a"][0], self._ranges["a"][1], N)
         bb = np.linspace(self._ranges["b"][0], self._ranges["b"][1], N)
         gg = np.linspace(self._ranges["g"][0], self._ranges["g"][1], N)
@@ -213,6 +210,7 @@ class AGrid:
         return aaa, bbb, ggg, ur1, ut1
 
     def plot(self):
+        """Plot the grid."""
         # turn the cache into a (N×7) array
         data = np.array(list(self.cache))
         if data.size == 0:

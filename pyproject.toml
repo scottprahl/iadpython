@@ -30,10 +30,6 @@ keywords = [
 ]
 readme = "README.rst"
 license = "MIT"
-dependencies = [
-    "scipy",
-    "numpy",
-]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
@@ -45,6 +41,11 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13"
+]
+dependencies = [
+    "scipy",
+    "numpy",
+    "matplotlib",
 ]
 
 [project.optional-dependencies]
@@ -112,6 +113,9 @@ line-length = 120
 select = ["D", "E", "F", "W"]
 ignore = ["D200", "D212", "F403"]
 pydocstyle.convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/test_iadcommand.py" = ["E402"]
 
 [tool.check-manifest]
 ignore = [

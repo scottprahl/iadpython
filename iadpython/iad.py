@@ -421,7 +421,7 @@ class Experiment:
         # correct for lost light
         ur1_actual = ur1 - self.ur1_lost
         ut1_actual = ut1 - self.ut1_lost
-        uru_actual = uru - self.uru_lost
+        uru - self.uru_lost
 
         # correct for fraction not collected
         m_r = ur1_actual - (1.0 - self.fraction_of_rc_in_mr) * r_u

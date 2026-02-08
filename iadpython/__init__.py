@@ -39,7 +39,7 @@ __copyright__ = "2018-25, Scott Prahl"
 __license__ = "MIT"
 __url__ = "https://github.com/scottprahl/iadpython"
 
-from ._version import __version__
+from ._version import __version__ as __version__
 from .constants import *
 from .fresnel import *
 from .start import *
