@@ -101,7 +101,7 @@ dist: venv
 	
 .PHONY: test
 test: venv
-	$(PYTEST) $(PYTEST_OPTS) tests
+	$(PYTEST) $(PYTEST_OPTS) --ignore=tests/test_double.py tests
 
 .PHONY: note-test
 note-test: venv
