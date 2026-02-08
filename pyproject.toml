@@ -48,6 +48,9 @@ dependencies = [
     "matplotlib",
 ]
 
+[project.scripts]
+iadp = "iadpython.iadcommand:main"
+
 [project.optional-dependencies]
 docs = [
   "Sphinx==8.1.3",
