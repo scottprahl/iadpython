@@ -455,12 +455,27 @@ class Experiment:
         # correct for lost light
         ur1_actual = ur1 - self.ur1_lost
         ut1_actual = ut1 - self.ut1_lost
-        _uru_actual = uru - self.uru_lost
-        _utu_actual = utu - self.utu_lost
+        uru_actual = uru - self.uru_lost
+        utu_actual = utu - self.utu_lost
 
         # correct for fraction not collected
         m_r = ur1_actual - (1.0 - self.fraction_of_rc_in_mr) * r_u
         m_t = ut1_actual - (1.0 - self.fraction_of_tc_in_mt) * t_u
+
+        if self.num_spheres == 2:
+            if self.r_sphere is None or self.t_sphere is None:
+                raise ValueError("Double sphere mode requires both reflection and transmission spheres.")
+
+            # Match CWEB/C correction path in iad_calc.c before two-sphere formulas
+            uru_calc = max(uru_actual, 0.0)
+            utu_calc = max(utu_actual, 0.0)
+            ur1_calc = max(ur1 - (1.0 - self.fraction_of_rc_in_mr) * r_u - self.ur1_lost, 0.0)
+            ut1_calc = max(ut1 - (1.0 - self.fraction_of_tc_in_mt) * t_u - self.ut1_lost, 0.0)
+
+            d_spheres = iad.DoubleSphere(self.r_sphere, self.t_sphere)
+            d_spheres.f_r = self.f_r
+            m_r, m_t = d_spheres.measured_rt(ur1_calc, uru_calc, ut1_calc, utu_calc)
+            return m_r, m_t
 
         if self.num_spheres == 1:
             if self.method in ("comparison", 1):

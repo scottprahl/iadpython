@@ -46,6 +46,9 @@ class DoubleSphere:
         >>> print(s)
     """
 
+    REFLECTION_SPHERE = 1
+    TRANSMISSION_SPHERE = 2
+
     def __init__(self, r_sphere, t_sphere):
         """Initialization."""
         self.r_sphere = r_sphere
@@ -57,6 +60,7 @@ class DoubleSphere:
         self.ut1 = 1
         self._uru = self.ur1
         self._utu = self.ut1
+        self.f_r = 0.0
 
     def __repr__(self):
         """Return basic details as a string for printing."""
@@ -72,7 +76,9 @@ class DoubleSphere:
     def __str__(self):
         """Return full details as a string for printing."""
         s = ""
+        s += "Reflection Sphere\n"
         s += str(self.r_sphere) + "\n"
+        s += "Transmission Sphere\n"
         s += str(self.t_sphere) + "\n"
         s += "Sample Properties\n"
         s += "   ur1 = %7.3f\n" % self.ur1
@@ -107,8 +113,15 @@ class DoubleSphere:
         """When size is changed ratios become invalid."""
         self._utu = value
 
-    def do_one_photon(self):
-        """Bounce photon in double spheres until it is detected or lost."""
+    def do_one_photon(self, return_passes=False):
+        """Bounce photon in double spheres until it is detected or lost.
+
+        Args:
+            return_passes: When True, include sample pass count in return value.
+
+        Returns:
+            (r_detected, t_detected) or (r_detected, t_detected, passes)
+        """
         weight = 1
         passes = 0
         r_detected = 0
@@ -148,7 +161,9 @@ class DoubleSphere:
                     assert passes % 2 == 1, "reflection sphere should have odd number of passes"
                     t_detected += detected
 
-        return r_detected, t_detected, passes
+        if return_passes:
+            return r_detected, t_detected, passes
+        return r_detected, t_detected
 
     def do_N_photons(self, N):
         """Do a Monte Carlo simulation with N photons."""
@@ -165,7 +180,7 @@ class DoubleSphere:
         total = 0
         for j in range(num_trials):
             for _i in range(N_per_trial):
-                r_detected, t_detected, _ = self.do_one_photon()
+                r_detected, t_detected = self.do_one_photon()
                 #            print("%d %8.3f %8.3f" % (i, r_detected, t_detected))
                 total_r_detected[j] += r_detected
                 total_t_detected[j] += t_detected
@@ -207,140 +222,159 @@ class DoubleSphere:
 
         return ave_r, stderr_r, ave_t, stderr_t
 
-    def gain(self):
-        """
-        Wall power gain relative to two black spheres.
+    @staticmethod
+    def _safe_inverse(x):
+        """Return 1/x with infinities for zero denominators."""
+        x = np.asarray(x, dtype=float)
+        result = np.where(x == 0, np.inf, 1.0 / x)
+        if np.ndim(result) == 0:
+            return float(result)
+        return result
 
-        The light on the detector in the both spheres is affected by interactions
-        between the two spheres.  This function calculates the gain in power on
-        the detectors due to the exchange of light between spheres as well as the
-        usual integrating sphere effects.
-        """
-        Gr = self.r_sphere.gain(sample_uru=self.uru)
-        Gt = self.t_sphere.gain(sample_uru=self.uru)
-        a_s = self.r_sphere.sample.a
-        alpha = a_s**2 * Gr * Gt * self.utu**2
-
-        P_0 = Gr * self.ur1
-        P_1 = Gt * self.ut1 + Gr * self.utu * a_s * P_0
-        P_2 = Gr * self.utu * a_s * P_1
-
-        Gr = P_0 + P_2 / (1 - alpha)
-        Gt = P_1 / (1 - alpha)
-        return Gr, Gt
-
-    def MR(self, sample_ur1, sample_uru=None, R_u=0, f_u=1, f_w=0):
-        """
-        Determine the value of MR due to multiple bounces in the sphere.
-
-        Args:
-            sample_ur1: The reflectance of the sample for normal illumination.
-            sample_uru: The reflectance of the sample for diffuse illumination.
-            R_u (optional): The unscattered reflectance from the sample.
-            f_u (optional): The fraction of unscattered reflected light collected.
-            f_w (optional): The fraction of light that hits the sphere wall first.
-
-        Returns:
-            float: The calibrated measured reflection
-        """
-        if sample_uru is None:
-            # use collimated total reflectance as approximate value for uru
-            sample_uru = sample_ur1
-
-        r_diffuse = sample_ur1 - R_u
-
-        r_first = 1
-        if self.baffle:
-            # light cannot hit detector and must bounce once
-            # however, some light can exit the entrance port
-            r_first = self.r_wall * (1 - self.third.a)
-
-        # nothing in sample port or third (entrance) port
-        gain_0 = self.gain(0, 0)
-
-        # sample in sample port, third (entrance) port is empty
-        gain = self.gain(sample_uru, 0)
-
-        # sample port has known standard, third (entrance) port is empty
-        gain_cal = self.gain(self.r_std, 0)
-
-        P_cal = gain_cal * (self.r_std * (1 - f_w) + f_w * self.r_wall)
-        P_0 = gain_0 * (f_w * self.r_wall)
-
-        P_ss = r_first * (r_diffuse * (1 - f_w) + f_w * self.r_wall)
-        P_su = self.r_wall * (1 - f_w) * f_u * R_u
-        P = gain * (P_ss + P_su)
-
-        MR = self.r_std * (P - P_0) / (P_cal - P_0)
-
-        #         print("UR1   =  %6.3f   r_diffuse = %6.3f" % (sample_ur1, r_diffuse))
-        #         print("URU   =  %6.3f   R_u       = %6.3f" % (sample_uru, R_u))
-        #         print("P_ss  =  %6.3f   P_su      = %6.3f" % (P_ss, P_su))
-        #         print("G_0   =  %6.3f   P_0       = %6.3f" % (gain_0, P_0))
-        #         print("G     =  %6.3f   P         = %6.3f" % (gain, P))
-        #         print("G_cal =  %6.3f   P_cal     = %6.3f" % (gain_cal, P_cal))
-        #         print("MR    =  %6.3f" % (MR))
-
-        return MR
-
-    def MT(self, sample_ut1, sample_uru, Tu=0, f_u=1):
-        """
-        Determine the measured transmission (MT) due to multiple bounces in the sphere.
-
-        The f_u variable describes the fraction of unscattered transmission
-        that is collected by the sphere.  It is equivalent to the -C option for the iad
-        program and the default is that all the unscattered transmission is collected
-        (because the third port is blocked).  If the third port allows unscattered light
-        to leave the sphere then it should be set to zero.
-
-        Args:
-            sample_ut1: The transmission of the sample for normal illumination.
-            sample_uru: The reflectance of the sample for diffuse illumination.
-            Tu (optional): The unscattered transmission of the sample.
-            f_u (optional): The fraction of unscattered transmission collected.
-
-        Returns:
-            float: The calculated measured transmission (MT) value.
-        """
-        if self.third.a == 0:
-            # sample in sample port, third port is always sphere wall
-            r_cal = self.r_wall
-            r_third = self.r_wall
-
-        elif f_u == 0:
-            # sample in sample port, third port is empty except for calibration
-            r_cal = self.r_std
-            r_third = 0
-
+    def _sphere_terms(self, sphere):
+        """Return CWEB gain terms for reflection or transmission sphere."""
+        if sphere == self.REFLECTION_SPHERE:
+            s = self.r_sphere
+        elif sphere == self.TRANSMISSION_SPHERE:
+            s = self.t_sphere
         else:
-            # sample in sample port, third port always has known standard
-            r_cal = self.r_std
-            r_third = self.r_std
+            raise ValueError(f"Unknown sphere selector: {sphere}")
 
-        r_first = 1
-        if self.baffle:
-            r_first = self.r_wall * (1 - self.third.a) + r_third * self.third.a
+        return (
+            s.sample.a,
+            s.detector.a,
+            s.third.a,
+            s.a_wall,
+            s.detector.uru,
+            s.r_wall,
+            s.baffle,
+        )
 
-        ut1_calc = sample_ut1 - Tu
+    def gain_single(self, sphere, uru_sample, uru_third):
+        """
+        Single-sphere gain from CWEB `Gain()`.
 
-        gain = self.gain(sample_uru, r_third)
-        gain_cal = self.gain(0, r_cal)
+        This is the exact algebra used in `iad/src/iad_calc.c`.
+        """
+        as_x, ad_x, at_x, aw_x, rd_x, rw_x, baffle_x = self._sphere_terms(sphere)
 
-        P_ss = r_first * ut1_calc
-        P_su = r_third * Tu * f_u
-        P = (P_su + P_ss) * gain
-        P_cal = r_cal * gain_cal
+        if baffle_x:
+            inv_gain = rw_x + (at_x / aw_x) * uru_third
+            inv_gain *= aw_x + (1 - at_x) * (ad_x * rd_x + as_x * uru_sample)
+            inv_gain = 1.0 - inv_gain
+        else:
+            inv_gain = 1.0 - aw_x * rw_x - ad_x * rd_x - as_x * uru_sample - at_x * uru_third
 
-        MT = r_cal * P / P_cal
+        return self._safe_inverse(inv_gain)
 
-        #         print("UT1     =  %6.3f   URU   = %6.3f" % (sample_ut1, sample_uru))
-        #         print("Tu      =  %6.3f   f_uns = %5.2f" % (Tu,f_u))
-        #         print("P_ss    =  %6.3f   P_su  = %6.3f" % (P_ss, P_su))
-        #         print("G       =  %6.3f   P     = %6.3f" % (gain, P))
-        #         print("G_cal   =  %6.3f   P_cal = %6.3f" % (gain_cal, P_cal))
-        #         print("r_first =  %6.3f" % (r_first))
-        #         print("r_cal   =  %6.3f" % (r_cal))
-        #         print("r_third =  %6.3f" % (r_third))
-        #         print("MT      =  %6.3f" % (MT))
+    def gain_11(self, uru, tdiffuse):
+        """Gain for light starting/ending in the reflection sphere (`Gain_11`)."""
+        g = self.gain_single(self.REFLECTION_SPHERE, uru, 0.0)
+        gp = self.gain_single(self.TRANSMISSION_SPHERE, uru, 0.0)
 
-        return MT
+        coupling = (
+            self.r_sphere.sample.a
+            * self.t_sphere.sample.a
+            * self.r_sphere.a_wall
+            * self.t_sphere.a_wall
+            * (1 - self.r_sphere.third.a)
+            * (1 - self.t_sphere.third.a)
+            * g
+            * gp
+            * tdiffuse
+            * tdiffuse
+        )
+        return g * self._safe_inverse(1.0 - coupling)
+
+    def gain_22(self, uru, tdiffuse):
+        """Gain for light starting/ending in the transmission sphere (`Gain_22`)."""
+        g = self.gain_single(self.REFLECTION_SPHERE, uru, 0.0)
+        gp = self.gain_single(self.TRANSMISSION_SPHERE, uru, 0.0)
+
+        coupling = (
+            self.r_sphere.sample.a
+            * self.t_sphere.sample.a
+            * self.r_sphere.a_wall
+            * self.t_sphere.a_wall
+            * (1 - self.r_sphere.third.a)
+            * (1 - self.t_sphere.third.a)
+            * g
+            * gp
+            * tdiffuse
+            * tdiffuse
+        )
+        return gp * self._safe_inverse(1.0 - coupling)
+
+    def gain(self, uru=None, utu=None):
+        """
+        Return `(Gain_11, Gain_22)` for the current sample diffuse properties.
+
+        This preserves the historical `DoubleSphere.gain()` API while using
+        the exact CWEB algebra.
+        """
+        if uru is None:
+            uru = self.uru
+        if utu is None:
+            utu = self.utu
+        return self.gain_11(uru, utu), self.gain_22(uru, utu)
+
+    def two_sphere_r(self, ur1, uru, ut1, utu):
+        """Exact CWEB `Two_Sphere_R()` power expression."""
+        gp = self.gain_single(self.TRANSMISSION_SPHERE, uru, 0.0)
+        x = self.r_sphere.detector.a * (1 - self.r_sphere.third.a) * self.r_sphere.r_wall
+        x *= self.gain_11(uru, utu)
+        x *= (
+            (1 - self.f_r) * ur1
+            + self.r_sphere.r_wall * self.f_r
+            + (1 - self.f_r)
+            * self.t_sphere.sample.a
+            * (1 - self.t_sphere.third.a)
+            * self.t_sphere.r_wall
+            * ut1
+            * utu
+            * gp
+        )
+        return x
+
+    def two_sphere_t(self, ur1, uru, ut1, utu):
+        """Exact CWEB `Two_Sphere_T()` power expression."""
+        g = self.gain_single(self.REFLECTION_SPHERE, uru, 0.0)
+        x = self.t_sphere.detector.a * (1 - self.t_sphere.third.a) * self.t_sphere.r_wall
+        x *= self.gain_22(uru, utu)
+        x *= (
+            (1 - self.f_r) * ut1
+            + (1 - self.r_sphere.third.a)
+            * self.r_sphere.r_wall
+            * self.r_sphere.sample.a
+            * utu
+            * (self.f_r * self.r_sphere.r_wall + (1 - self.f_r) * ur1)
+            * g
+        )
+        return x
+
+    def measured_rt(self, ur1, uru, ut1, utu):
+        """
+        Exact CWEB two-sphere normalization for measured `M_R` and `M_T`.
+
+        Inputs must already include any unscattered/lost-light corrections.
+        """
+        r_0 = self.two_sphere_r(0.0, 0.0, 0.0, 0.0)
+        t_0 = self.two_sphere_t(0.0, 0.0, 0.0, 0.0)
+
+        m_r = self.r_sphere.r_std * (self.two_sphere_r(ur1, uru, ut1, utu) - r_0)
+        m_r *= self._safe_inverse(self.two_sphere_r(self.r_sphere.r_std, self.r_sphere.r_std, 0.0, 0.0) - r_0)
+
+        m_t = self.two_sphere_t(ur1, uru, ut1, utu) - t_0
+        m_t *= self._safe_inverse(self.two_sphere_t(0.0, 0.0, 1.0, 1.0) - t_0)
+
+        return m_r, m_t
+
+    def MR(self, ur1, uru, ut1, utu):
+        """Convenience wrapper for the two-sphere measured reflection."""
+        m_r, _ = self.measured_rt(ur1, uru, ut1, utu)
+        return m_r
+
+    def MT(self, ur1, uru, ut1, utu):
+        """Convenience wrapper for the two-sphere measured transmission."""
+        _, m_t = self.measured_rt(ur1, uru, ut1, utu)
+        return m_t
