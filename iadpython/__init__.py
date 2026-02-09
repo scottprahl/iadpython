@@ -4,9 +4,9 @@ Forward and inverse adding-doubling radiative transport calculations.
 Extensive documentation is at <https://iadpython.readthedocs.io>
 
 `iadpython` is a pure Python module to do radiative transport calculations
-in layered slabs.  The forward calculation and the inverse calculation work
-fine as long as integrating spheres are not used.  That code has yet to be
-ported to pure python.
+in layered slabs.  Core forward and inverse calculations are available in
+pure Python. Integrating-sphere support is being ported incrementally and
+now includes single-sphere and double-sphere forward measurement formulas.
 
 An example::
 
@@ -35,10 +35,10 @@ An example::
 
 __author__ = "Scott Prahl"
 __email__ = "scott.prahl@oit.edu"
-__copyright__ = "2018-25, Scott Prahl"
+__copyright__ = "2018-2026, Scott Prahl"
 __license__ = "MIT"
 __url__ = "https://github.com/scottprahl/iadpython"
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 from .constants import *
 from .fresnel import *
