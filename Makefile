@@ -151,6 +151,8 @@ pylint-check: venv
 	-@$(PYLINT) tests/test_port.py
 	-@$(PYLINT) tests/test_quadrature.py
 	-@$(PYLINT) tests/test_redistribution.py
+	-@$(PYLINT) tests/test_roundtrip_0_spheres.py
+	-@$(PYLINT) tests/test_roundtrip_1_sphere.py
 	-@$(PYLINT) tests/test_rxt.py
 	-@$(PYLINT) tests/test_sphere.py
 	-@$(PYLINT) tests/test_start.py
@@ -158,7 +160,7 @@ pylint-check: venv
 	-@$(PYLINT) tests/test_ur1_uru.py
 	-@$(PYLINT) tests_iadc/test_iadc.py
 	-@$(PYLINT) tests_iadc/test_performance.py
-#	-@$(PYLINT) tests/test_all_notebooks.py
+	-@$(PYLINT) tests/test_all_notebooks.py
 
 .PHONY: yaml-check
 yaml-check: venv
