@@ -1,6 +1,21 @@
 Changelog for `iadpython` package
 =================================
 
+0.7.0
+-----
+* align build, packaging, CI, and docs infrastructure with miepython patterns
+* move JupyterLite configuration into package-managed location
+* integrate adaptive AGrid warm starts for inverse-search acceleration
+* align `iadcommand` behavior more closely with legacy `iad` CLI
+* improve wavelength handling to match legacy `iad` behavior
+* add and expand round-trip coverage (including one-sphere workflows)
+* increase minimum supported Python version to 3.10
+* improve linting quality and add/expand pylint checks
+* port two-sphere integrating-sphere gain and normalization equations from CWEB/C into `DoubleSphere`
+* wire two-sphere forward measurement path into `Experiment.measured_rt()` for `num_spheres == 2`
+* fix `DoubleSphere.do_one_photon()` return contract to return two values by default
+* expand two-sphere tests to cover CWEB-equation parity, normalization anchors, and experiment wiring
+
 0.6.0
 ------
 * fully support single integrating spheres
