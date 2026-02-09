@@ -132,35 +132,35 @@ class RTRoundTripNoSphereTest(unittest.TestCase):
 
     def test_round_trip_matched_boundaries(self):
         """Matched boundaries: 1/1/1."""
-        self._assert_boundary_round_trip(dict(n=1.0, n_above=1.0, n_below=1.0, quad_pts=16))
+        self._assert_boundary_round_trip({"n": 1.0, "n_above": 1.0, "n_below": 1.0, "quad_pts": 16})
 
     def test_round_trip_slab_in_air(self):
         """Slab in air: 1/1.4/1."""
-        self._assert_boundary_round_trip(dict(n=1.4, n_above=1.0, n_below=1.0, quad_pts=16))
+        self._assert_boundary_round_trip({"n": 1.4, "n_above": 1.0, "n_below": 1.0, "quad_pts": 16})
 
     def test_round_trip_between_glass_slides_in_air(self):
         """Between slides in air: 1/1.5/1.4/1.5/1."""
-        self._assert_boundary_round_trip(dict(n=1.4, n_above=1.5, n_below=1.5, quad_pts=16))
+        self._assert_boundary_round_trip({"n": 1.4, "n_above": 1.5, "n_below": 1.5, "quad_pts": 16})
 
     def test_round_trip_with_unscattered_matched_boundaries(self):
         """Matched boundaries using R,T and unscattered transmission."""
         self._assert_boundary_round_trip_with_unscattered(
             "matched",
-            dict(n=1.0, n_above=1.0, n_below=1.0, quad_pts=16),
+            {"n": 1.0, "n_above": 1.0, "n_below": 1.0, "quad_pts": 16},
         )
 
     def test_round_trip_with_unscattered_slab_in_air(self):
         """Slab in air using R,T and unscattered transmission."""
         self._assert_boundary_round_trip_with_unscattered(
             "slab_in_air",
-            dict(n=1.4, n_above=1.0, n_below=1.0, quad_pts=16),
+            {"n": 1.4, "n_above": 1.0, "n_below": 1.0, "quad_pts": 16},
         )
 
     def test_round_trip_with_unscattered_between_glass_slides_in_air(self):
         """Between slides in air using R,T and unscattered transmission."""
         self._assert_boundary_round_trip_with_unscattered(
             "glass_slides_in_air",
-            dict(n=1.4, n_above=1.5, n_below=1.5, quad_pts=16),
+            {"n": 1.4, "n_above": 1.5, "n_below": 1.5, "quad_pts": 16},
         )
 
 

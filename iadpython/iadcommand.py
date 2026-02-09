@@ -5,6 +5,7 @@ import os
 import sys
 from enum import Enum
 import argparse
+from contextlib import redirect_stdout
 import time
 import numpy as np
 import iadpython
@@ -88,8 +89,8 @@ def what_char(err):
 
 def print_dot(start_time, err, points, final, verbosity):
     """Print a character for each datapoint during analysis."""
-    global COUNTER
-    global ANY_ERROR
+    global COUNTER  # pylint: disable=global-statement
+    global ANY_ERROR  # pylint: disable=global-statement
     COUNTER += 1
 
     if err != InputError.NO_ERROR:
@@ -414,6 +415,7 @@ def add_sample_constraints(exp, args):
 
 def add_experiment_constraints(exp, args):
     """Command-line constraints on experiment."""
+
     def cli_sphere_to_object(values, refl):
         """Convert `-1`/`-2` CLI sphere values to a Sphere object."""
         sphere_d, sample_d, entrance_d, detector_d, wall_r = values
@@ -543,7 +545,7 @@ def forward_calculation(exp):
 
     print(exp.sample)
 
-    ur1, ut1, uru, utu = exp.sample.rt()
+    ur1, ut1, _uru, _utu = exp.sample.rt()
     ru, tu = exp.sample.unscattered_rt()
     print("Calculated quantities")
     print("   R total         = %.3f" % ur1)
@@ -601,19 +603,14 @@ def invert_file(exp, args):
         else:
             args.out_fname = args.filename + ".txt"
 
-    original_stdout = sys.stdout
-    output_stream = None
-    try:
-        output_stream = open(args.out_fname, "w", encoding="utf-8")
-        sys.stdout = output_stream
-
+    with open(args.out_fname, "w", encoding="utf-8") as output_stream, redirect_stdout(output_stream):
         a, b, g = exp.invert_rt()
 
         print_results_header()
-        for i in range(len(a)):
-            exp.sample.a = a[i]
-            exp.sample.b = b[i]
-            exp.sample.g = g[i]
+        for i, (a_i, b_i, g_i) in enumerate(zip(a, b, g)):
+            exp.sample.a = a_i
+            exp.sample.b = b_i
+            exp.sample.g = g_i
 
             mr, mt = exp.measured_rt()
 
@@ -645,10 +642,6 @@ def invert_file(exp, args):
             print("% 9.4f" % exp.sample.mu_sp(), end="\t")
             print("% 9.4f" % exp.sample.g, end="\t")
             print()
-    finally:
-        sys.stdout = original_stdout
-        if output_stream is not None:
-            output_stream.close()
     sys.exit(0)
 
 
@@ -691,9 +684,7 @@ def main():
                     "Commandline: Dual beam (-X) cannot be used with double integrating spheres."
                 )
             if getattr(exp, "f_r", 0.0) != 0:
-                raise argparse.ArgumentTypeError(
-                    "Commandline: Dual beam (-X) cannot be used when -f is non-zero."
-                )
+                raise argparse.ArgumentTypeError("Commandline: Dual beam (-X) cannot be used when -f is non-zero.")
 
         if args.z:
             forward_calculation(exp)
@@ -712,7 +703,7 @@ def main():
         print("   g = %.3f" % g)
         sys.exit(0)
 
-    except Exception as e:
+    except (argparse.ArgumentTypeError, OSError, ValueError, RuntimeError, TypeError) as e:
         print(f"Error: {e}")
         sys.exit(1)
 

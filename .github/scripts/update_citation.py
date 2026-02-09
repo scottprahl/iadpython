@@ -46,15 +46,15 @@ def get_release_date() -> tuple[str, str]:
     response.raise_for_status()
     release_info = response.json()
 
-    release_date = release_info["published_at"].split("T")[0]  # e.g. "2025-11-17"
-    year = release_date.split("-")[0]
+    latest_release_date = release_info["published_at"].split("T")[0]  # e.g. "2025-11-17"
+    release_year = latest_release_date.split("-")[0]
     tag_version = release_info.get("tag_name", "").lstrip("v")
 
     print(
         f"GitHub latest release → tag: {release_info.get('tag_name')}, "
-        f"version (from tag): {tag_version}, date: {release_date}"
+        f"version (from tag): {tag_version}, date: {latest_release_date}"
     )
-    return release_date, year
+    return latest_release_date, release_year
 
 
 def get_code_version() -> str:
@@ -63,13 +63,13 @@ def get_code_version() -> str:
     if not init_path.exists():
         raise FileNotFoundError(f"{init_path} not found; cannot read __version__")
 
-    text = init_path.read_text(encoding="utf-8")
-    m = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", text)
+    init_text = init_path.read_text(encoding="utf-8")
+    m = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", init_text)
     if not m:
         raise RuntimeError(f"Could not find __version__ = 'x.y.z' in {init_path}")
-    version = m.group(1).strip()
-    print(f"Version from {init_path} → {version}")
-    return version
+    code_version = m.group(1).strip()
+    print(f"Version from {init_path} → {code_version}")
+    return code_version
 
 
 # --------------------------------------------------------------------

@@ -59,8 +59,8 @@ class TestPort(unittest.TestCase):
 
     def test_uniform_01(self):
         """Test the generating points on the top of the sphere."""
-        for i in range(20):
-            x, y, z = self.port.uniform()
+        for _i in range(20):
+            _x, _y, _z = self.port.uniform()
             self.assertTrue(self.port.hit(), "Hit detection is incorrect")
 
 

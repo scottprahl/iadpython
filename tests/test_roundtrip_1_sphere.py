@@ -18,15 +18,15 @@ class RTRoundTripOneSphereTest(unittest.TestCase):
     U_RT_TOLERANCE = 5e-2
     U_TOLERANCE = 2e-3
 
-    SPHERE_CONFIG = dict(
-        d_sphere=150.0,
-        d_sample=10.0,
-        d_third=10.0,
-        d_detector=5.0,
-        r_detector=0.04,
-        r_wall=0.98,
-        r_std=0.99,
-    )
+    SPHERE_CONFIG = {
+        "d_sphere": 150.0,
+        "d_sample": 10.0,
+        "d_third": 10.0,
+        "d_detector": 5.0,
+        "r_detector": 0.04,
+        "r_wall": 0.98,
+        "r_std": 0.99,
+    }
 
     def _make_spheres(self):
         r_sphere = iadpython.Sphere(**self.SPHERE_CONFIG, refl=True)
@@ -146,33 +146,27 @@ class RTRoundTripOneSphereTest(unittest.TestCase):
 
     def test_round_trip_matched_boundaries(self):
         """Matched boundaries: 1/1/1."""
-        self._assert_boundary_round_trip(dict(n=1.0, n_above=1.0, n_below=1.0, quad_pts=16))
+        self._assert_boundary_round_trip({"n": 1.0, "n_above": 1.0, "n_below": 1.0, "quad_pts": 16})
 
     def test_round_trip_slab_in_air(self):
         """Slab in air: 1/1.4/1."""
-        self._assert_boundary_round_trip(dict(n=1.4, n_above=1.0, n_below=1.0, quad_pts=16))
+        self._assert_boundary_round_trip({"n": 1.4, "n_above": 1.0, "n_below": 1.0, "quad_pts": 16})
 
     def test_round_trip_between_glass_slides_in_air(self):
         """Between slides in air: 1/1.5/1.4/1.5/1."""
-        self._assert_boundary_round_trip(dict(n=1.4, n_above=1.5, n_below=1.5, quad_pts=16))
+        self._assert_boundary_round_trip({"n": 1.4, "n_above": 1.5, "n_below": 1.5, "quad_pts": 16})
 
     def test_round_trip_with_unscattered_matched_boundaries(self):
         """Matched boundaries using R,T and unscattered transmission."""
-        self._assert_boundary_round_trip_with_unscattered(
-            dict(n=1.0, n_above=1.0, n_below=1.0, quad_pts=16)
-        )
+        self._assert_boundary_round_trip_with_unscattered({"n": 1.0, "n_above": 1.0, "n_below": 1.0, "quad_pts": 16})
 
     def test_round_trip_with_unscattered_slab_in_air(self):
         """Slab in air using R,T and unscattered transmission."""
-        self._assert_boundary_round_trip_with_unscattered(
-            dict(n=1.4, n_above=1.0, n_below=1.0, quad_pts=16)
-        )
+        self._assert_boundary_round_trip_with_unscattered({"n": 1.4, "n_above": 1.0, "n_below": 1.0, "quad_pts": 16})
 
     def test_round_trip_with_unscattered_between_glass_slides_in_air(self):
         """Between slides in air using R,T and unscattered transmission."""
-        self._assert_boundary_round_trip_with_unscattered(
-            dict(n=1.4, n_above=1.5, n_below=1.5, quad_pts=16)
-        )
+        self._assert_boundary_round_trip_with_unscattered({"n": 1.4, "n_above": 1.5, "n_below": 1.5, "quad_pts": 16})
 
 
 if __name__ == "__main__":

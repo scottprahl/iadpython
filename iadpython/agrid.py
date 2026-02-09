@@ -8,6 +8,7 @@ requires fewer RT evaluations than a dense uniform grid.
 
 from __future__ import annotations
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from .cache import Cache
@@ -243,14 +244,14 @@ class AGrid:
         if self.search == "find_ab":
             ggg = np.full((N, N), self.default)
             aaa, bbb = np.meshgrid(aa, bb)
-
-        if self.search == "find_bg":
+        elif self.search == "find_bg":
             aaa = np.full((N, N), self.default)
             ggg, bbb = np.meshgrid(gg, bb)
-
-        if self.search == "find_ag":
+        elif self.search == "find_ag":
             bbb = np.full((N, N), self.default)
             aaa, ggg = np.meshgrid(aa, gg)
+        else:
+            raise ValueError(f"Unknown search mode: {self.search!r}")
 
         ur1 = np.zeros((N, N))
         ut1 = np.zeros((N, N))
@@ -265,8 +266,6 @@ class AGrid:
 
     def plot(self):
         """Plot the grid."""
-        import matplotlib.pyplot as plt
-
         # turn the cache into a (N×7) array
         data = np.array(list(self.cache))
         if data.size == 0:

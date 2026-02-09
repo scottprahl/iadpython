@@ -446,7 +446,7 @@ class Experiment:
             [float, float]: measured reflection and transmission
         """
         s = self.sample
-        ur1, ut1, uru, _utu = s.rt()
+        ur1, ut1, uru, utu = s.rt()
 
         # find the unscattered reflection and transmission
         nu_inside = iad.cos_snell(1, s.nu_0, s.n)
@@ -455,7 +455,8 @@ class Experiment:
         # correct for lost light
         ur1_actual = ur1 - self.ur1_lost
         ut1_actual = ut1 - self.ut1_lost
-        uru - self.uru_lost
+        _uru_actual = uru - self.uru_lost
+        _utu_actual = utu - self.utu_lost
 
         # correct for fraction not collected
         m_r = ur1_actual - (1.0 - self.fraction_of_rc_in_mr) * r_u
