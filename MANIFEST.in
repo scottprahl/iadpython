@@ -6,3 +6,7 @@ include CITATION.cff
 
 # Package data needed at runtime
 include iadpython/data/*.csv
+
+# Test suite + fixtures for reproducible sdist testing
+recursive-include tests *.py
+recursive-include tests/data *.rxt *.txt

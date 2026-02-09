@@ -153,6 +153,7 @@ pylint-check: venv
 	-@$(PYLINT) tests/test_redistribution.py
 	-@$(PYLINT) tests/test_roundtrip_0_spheres.py
 	-@$(PYLINT) tests/test_roundtrip_1_sphere.py
+	-@$(PYLINT) tests/test_roundtrip_2_spheres.py
 	-@$(PYLINT) tests/test_rxt.py
 	-@$(PYLINT) tests/test_sphere.py
 	-@$(PYLINT) tests/test_start.py
@@ -310,6 +311,7 @@ clean:
 	@find . -name '.DS_Store' -type f -delete
 	@find . -name '.ipynb_checkpoints' -type d -prune -exec rm -rf {} +
 	@find . -name '.pytest_cache' -type d -prune -exec rm -rf {} +
+	rm -rf .cache
 	rm -rf .ruff_cache
 	rm -rf $(PACKAGE).egg-info
 	rm -rf docs/api
