@@ -152,15 +152,9 @@ class TestDoubleSphere(unittest.TestCase):
         )
 
         t_expected = t_sphere.detector.a * (1 - t_sphere.third.a) * t_sphere.r_wall * g22
-        t_expected *= (
-            (1 - ds.f_r) * ut1
-            + (1 - r_sphere.third.a)
-            * r_sphere.r_wall
-            * r_sphere.sample.a
-            * utu
-            * (ds.f_r * r_sphere.r_wall + (1 - ds.f_r) * ur1)
-            * g
-        )
+        t_expected *= (1 - ds.f_r) * ut1 + (1 - r_sphere.third.a) * r_sphere.r_wall * r_sphere.sample.a * utu * (
+            ds.f_r * r_sphere.r_wall + (1 - ds.f_r) * ur1
+        ) * g
 
         self.assertAlmostEqual(ds.gain_single(ds.REFLECTION_SPHERE, uru, 0.0), g, places=12)
         self.assertAlmostEqual(ds.gain_single(ds.TRANSMISSION_SPHERE, uru, 0.0), gp, places=12)
@@ -171,7 +165,9 @@ class TestDoubleSphere(unittest.TestCase):
 
         r_0 = ds.two_sphere_r(0, 0, 0, 0)
         t_0 = ds.two_sphere_t(0, 0, 0, 0)
-        mr_expected = r_sphere.r_std * (r_expected - r_0) / (ds.two_sphere_r(r_sphere.r_std, r_sphere.r_std, 0, 0) - r_0)
+        mr_expected = (
+            r_sphere.r_std * (r_expected - r_0) / (ds.two_sphere_r(r_sphere.r_std, r_sphere.r_std, 0, 0) - r_0)
+        )
         mt_expected = (t_expected - t_0) / (ds.two_sphere_t(0, 0, 1, 1) - t_0)
 
         mr_calc, mt_calc = ds.measured_rt(ur1, uru, ut1, utu)

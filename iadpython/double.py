@@ -341,15 +341,11 @@ class DoubleSphere:
         g = self.gain_single(self.REFLECTION_SPHERE, uru, 0.0)
         x = self.t_sphere.detector.a * (1 - self.t_sphere.third.a) * self.t_sphere.r_wall
         x *= self.gain_22(uru, utu)
-        x *= (
-            (1 - self.f_r) * ut1
-            + (1 - self.r_sphere.third.a)
-            * self.r_sphere.r_wall
-            * self.r_sphere.sample.a
-            * utu
-            * (self.f_r * self.r_sphere.r_wall + (1 - self.f_r) * ur1)
-            * g
-        )
+        x *= (1 - self.f_r) * ut1 + (
+            1 - self.r_sphere.third.a
+        ) * self.r_sphere.r_wall * self.r_sphere.sample.a * utu * (
+            self.f_r * self.r_sphere.r_wall + (1 - self.f_r) * ur1
+        ) * g
         return x
 
     def measured_rt(self, ur1, uru, ut1, utu):

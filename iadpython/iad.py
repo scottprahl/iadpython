@@ -540,7 +540,7 @@ def abfun(x, *args):
     exp.sample.b = x[1]
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
-#    print("%7.4f %7.4f %7.4f %7.4f %7.4f" % (exp.sample.a, exp.sample.b, m_r, m_t, delta))
+    #    print("%7.4f %7.4f %7.4f %7.4f %7.4f" % (exp.sample.a, exp.sample.b, m_r, m_t, delta))
     return delta
 
 
