@@ -28,12 +28,27 @@ class RTRoundTripOneSphereTest(unittest.TestCase):
         "r_std": 0.99,
     }
 
+    LOSS_CONFIG = {
+        "f_r": 0.17,
+        "fraction_of_rc_in_mr": 0.91,
+        "fraction_of_tc_in_mt": 0.83,
+        "ur1_lost": 0.01,
+        "ut1_lost": 0.02,
+        "uru_lost": 0.03,
+        "utu_lost": 0.04,
+    }
+
     def _make_spheres(self):
         r_sphere = iadpython.Sphere(**self.SPHERE_CONFIG, refl=True)
         t_sphere = iadpython.Sphere(**self.SPHERE_CONFIG, refl=False)
         return r_sphere, t_sphere
 
-    def _measured_rt(self, sample):
+    def _configure_losses(self, exp):
+        exp.method = "substitution"
+        for attr, value in self.LOSS_CONFIG.items():
+            setattr(exp, attr, value)
+
+    def _measured_rt(self, sample, use_losses=False):
         r_sphere, t_sphere = self._make_spheres()
         exp = iadpython.Experiment(
             sample=sample,
@@ -41,6 +56,8 @@ class RTRoundTripOneSphereTest(unittest.TestCase):
             r_sphere=r_sphere,
             t_sphere=t_sphere,
         )
+        if use_losses:
+            self._configure_losses(exp)
         self.assertEqual(exp.num_spheres, 1)
         m_r, m_t = exp.measured_rt()
         return float(m_r), float(m_t)
@@ -167,6 +184,69 @@ class RTRoundTripOneSphereTest(unittest.TestCase):
     def test_round_trip_with_unscattered_between_glass_slides_in_air(self):
         """Between slides in air using R,T and unscattered transmission."""
         self._assert_boundary_round_trip_with_unscattered({"n": 1.4, "n_above": 1.5, "n_below": 1.5, "quad_pts": 16})
+
+    def test_measured_rt_uses_loss_corrected_inputs(self):
+        """One-sphere substitution should apply loss corrections before sphere normalization."""
+        sample_kwargs = {"n": 1.4, "n_above": 1.5, "n_below": 1.5, "quad_pts": 16}
+        sample = iadpython.Sample(a=0.7, b=1.2, g=0.5, **sample_kwargs)
+        r_sphere, t_sphere = self._make_spheres()
+        exp = iadpython.Experiment(
+            sample=sample,
+            num_spheres=1,
+            r_sphere=r_sphere,
+            t_sphere=t_sphere,
+        )
+        self._configure_losses(exp)
+
+        m_r, m_t = exp.measured_rt()
+
+        ur1, ut1, uru, _ = sample.rt()
+        nu_inside = iadpython.cos_snell(1, sample.nu_0, sample.n)
+        r_u, t_u = iadpython.specular_rt(sample.n_above, sample.n, sample.n_below, sample.b, nu_inside)
+
+        expected_r = r_sphere.MR(
+            ur1 - exp.ur1_lost,
+            uru - exp.uru_lost,
+            R_u=r_u,
+            f_u=exp.fraction_of_rc_in_mr,
+            f_w=exp.f_r,
+        )
+        expected_t = t_sphere.MT(
+            ut1 - exp.ut1_lost,
+            uru - exp.uru_lost,
+            T_u=t_u,
+            f_u=exp.fraction_of_tc_in_mt,
+        )
+
+        self.assertAlmostEqual(float(m_r), float(expected_r), places=12)
+        self.assertAlmostEqual(float(m_t), float(expected_t), places=12)
+
+    def test_round_trip_with_losses_slab_in_air(self):
+        """Lossy one-sphere substitution should still round-trip for a representative slab."""
+        sample_kwargs = {"n": 1.4, "n_above": 1.0, "n_below": 1.0, "quad_pts": 16}
+        sample_args = {"a": 0.7, "b": 1.2, "g": 0.5}
+
+        forward_sample = iadpython.Sample(**sample_args, **sample_kwargs)
+        m_r_forward, m_t_forward = self._measured_rt(forward_sample, use_losses=True)
+
+        r_sphere, t_sphere = self._make_spheres()
+        inv_exp = iadpython.Experiment(
+            r=m_r_forward,
+            t=m_t_forward,
+            sample=iadpython.Sample(**sample_kwargs),
+            default_g=sample_args["g"],
+            num_spheres=1,
+            r_sphere=r_sphere,
+            t_sphere=t_sphere,
+        )
+        self._configure_losses(inv_exp)
+        a_inv, b_inv, g_inv = inv_exp.invert_rt()
+
+        inverse_sample = iadpython.Sample(a=a_inv, b=b_inv, g=g_inv, **sample_kwargs)
+        m_r_inverse, m_t_inverse = self._measured_rt(inverse_sample, use_losses=True)
+
+        self.assertLessEqual(abs(m_r_forward - m_r_inverse), self.RT_TOLERANCE)
+        self.assertLessEqual(abs(m_t_forward - m_t_inverse), self.RT_TOLERANCE)
 
 
 if __name__ == "__main__":

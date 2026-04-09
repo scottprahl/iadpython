@@ -23,6 +23,7 @@ import copy
 import numpy as np
 import scipy.optimize
 import iadpython as iad
+from iadpython.mc_lost import run_mc_lost
 
 G_BOUND_EPS = 1e-6
 
@@ -93,6 +94,9 @@ class Experiment:
         self.debug_level = 0
         self.max_mc_iterations = 19
         self.n_photons = 100000
+        self.mc_lost_path = None   # path to mc_lost binary; None disables MC iteration
+        self.t_slide = 0.0         # physical thickness of cover glass slides [mm]
+        self._mc_iterations = 0    # number of MC iterations used in last invert_rt() call
         self.use_adaptive_grid = True
         self.adaptive_grid_tol = 0.03
         self.adaptive_grid_max_depth = 6
@@ -334,10 +338,116 @@ class Experiment:
         print(".", end="", file=sys.stderr)
         sys.stderr.flush()
 
+    def _update_lost_light(self, a, b, g):
+        """Call mc_lost binary once; apply damped update to lost fractions.
+
+        Uses the current sphere geometry and sample parameters to assemble the
+        mc_lost command.  Applies a damped update (factor 0.3, matching the C
+        implementation in iad_main.w) to avoid oscillation.
+
+        Args:
+            a: albedo from the most recent invert_scalar_rt() call
+            b: optical thickness from the most recent invert_scalar_rt() call
+            g: anisotropy from the most recent invert_scalar_rt() call
+
+        Returns:
+            Maximum absolute change across all four lost fractions (used as a
+            convergence criterion).
+        """
+        n_sample = float(self.sample.n)
+        n_slide = float(self.sample.n_above) if self.sample.n_above != 1.0 else 1.0
+        t_sample = float(self.sample.d)
+
+        d_port_r = float(self.r_sphere.sample.d) if self.r_sphere is not None else 1000.0
+        d_port_t = float(self.t_sphere.sample.d) if self.t_sphere is not None else d_port_r
+
+        new_ur1, new_ut1, new_uru, new_utu = run_mc_lost(
+            a=float(a),
+            b=float(b),
+            g=float(g),
+            n_sample=n_sample,
+            n_slide=n_slide,
+            d_port_r=d_port_r,
+            d_port_t=d_port_t,
+            d_beam=float(self.d_beam),
+            t_sample=t_sample,
+            t_slide=float(self.t_slide),
+            n_photons=int(self.n_photons),
+            method=self.method,
+            binary_path=self.mc_lost_path,
+        )
+
+        if self.debug_level & 8:
+            print(
+                f"  MC iter {self._mc_iterations + 1}: "
+                f"a={a:.5f} b={b:.5f} g={g:.5f} | "
+                f"ur1_lost {self.ur1_lost:.5f}→{new_ur1:.5f}  "
+                f"ut1_lost {self.ut1_lost:.5f}→{new_ut1:.5f}  "
+                f"uru_lost {self.uru_lost:.5f}→{new_uru:.5f}  "
+                f"utu_lost {self.utu_lost:.5f}→{new_utu:.5f}",
+                file=sys.stderr,
+            )
+
+        FACTOR = 0.3
+        diff_ur1 = new_ur1 - self.ur1_lost
+        diff_ut1 = new_ut1 - self.ut1_lost
+        diff_uru = new_uru - self.uru_lost
+        diff_utu = new_utu - self.utu_lost
+
+        self.ur1_lost += FACTOR * diff_ur1
+        self.ut1_lost += FACTOR * diff_ut1
+        self.uru_lost += FACTOR * diff_uru
+        self.utu_lost += FACTOR * diff_utu
+
+        return max(abs(diff_ur1), abs(diff_ut1), abs(diff_uru), abs(diff_utu))
+
+    def _invert_scalar_with_mc(self):
+        """Run invert_scalar_rt() with optional MC lost light iteration.
+
+        When mc_lost_path is set and num_spheres > 0, repeatedly calls the
+        mc_lost binary to refine the four lost-light fractions until they
+        converge, then re-inverts with the final lost values.
+
+        The algorithm mirrors iad_main.w:998-1049:
+          1. Invert ignoring lost light (ur1_lost etc. start at 0 or prior value)
+          2. MC estimate → damped update of lost fractions
+          3. Re-invert with updated lost fractions
+          4. Repeat until max |diff| < MC_tolerance or max_mc_iterations reached
+
+        Returns:
+            (a, b, g) — optical properties of the slab
+        """
+        self._mc_iterations = 0
+        a, b, g = self.invert_scalar_rt()
+
+        if self.mc_lost_path is None or self.num_spheres == 0:
+            return a, b, g
+
+        if self.debug_level & 8:
+            print(
+                f"\nMC lost light iteration (max {self.max_mc_iterations}, "
+                f"tol {self.MC_tolerance})",
+                file=sys.stderr,
+            )
+
+        for _ in range(self.max_mc_iterations):
+            max_diff = self._update_lost_light(a, b, g)
+            # Invalidate the grid: lost-light values changed, so measured_rt()
+            # produces different values and the grid must be recomputed.
+            self.grid = None
+            a, b, g = self.invert_scalar_rt()
+            self._mc_iterations += 1
+            if max_diff < self.MC_tolerance:
+                break
+
+        return a, b, g
+
     def invert_rt(self):
         """Find a,b,g for experimental measurements.
 
         This method works if `m_r`, `m_t`, and `m_u` are scalars or arrays.
+        When mc_lost_path is set and num_spheres > 0, an outer MC iteration
+        loop refines the lost-light fractions before returning.
 
         Returns:
             - `a` is the single scattering albedo of the slab
@@ -345,11 +455,11 @@ class Experiment:
             - `g` is the anisotropy of single scattering
         """
         if self.m_r is None and self.m_t is None and self.m_u is None:
-            return self.invert_scalar_rt()
+            return self._invert_scalar_with_mc()
 
         # any scalar measurement indicates a single data point
         if np.isscalar(self.m_r) or np.isscalar(self.m_t) or np.isscalar(self.m_u):
-            return self.invert_scalar_rt()
+            return self._invert_scalar_with_mc()
 
         # figure out the number of points that we need to invert
         if self.m_r is not None:
@@ -375,7 +485,7 @@ class Experiment:
                 x.m_t = self.m_t[i]
             if self.m_u is not None:
                 x.m_u = self.m_u[i]
-            a[i], b[i], g[i] = x.invert_scalar_rt()
+            a[i], b[i], g[i] = x._invert_scalar_with_mc()
             self.print_dot()
 
         print(file=sys.stderr)
@@ -483,10 +593,10 @@ class Experiment:
 
             if self.r_sphere is not None:
                 f_u = self.fraction_of_rc_in_mr
-                m_r = self.r_sphere.MR(ur1, uru, R_u=r_u, f_u=f_u, f_w=self.f_r)
+                m_r = self.r_sphere.MR(ur1_actual, uru_actual, R_u=r_u, f_u=f_u, f_w=self.f_r)
 
             if self.t_sphere is not None:
-                m_t = self.t_sphere.MT(ut1, uru, T_u=t_u, f_u=self.fraction_of_tc_in_mt)
+                m_t = self.t_sphere.MT(ut1_actual, uru_actual, T_u=t_u, f_u=self.fraction_of_tc_in_mt)
 
         return m_r, m_t
 
