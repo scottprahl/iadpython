@@ -191,6 +191,7 @@ class InvertType(ctypes.Structure):
         ("default_mus", ctypes.c_double),
     )
 
+
 libiad.ez_RT.argtypes = (
     ctypes.c_int,  # n quadrature points
     ctypes.c_double,  # slab index of refraction

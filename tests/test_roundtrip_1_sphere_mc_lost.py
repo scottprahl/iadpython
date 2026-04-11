@@ -27,7 +27,6 @@ import pytest
 import iadpython
 from iadpython.mc_lost import run_mc_lost
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -36,7 +35,7 @@ A_VALUES = (0.0, 0.5, 0.99)
 B_VALUES = (0.1, 1.0, 10.0)
 G_VALUES = (-0.9, 0.0, 0.9)
 
-RT_TOLERANCE = 5e-2   # 5 %, matching the no-lost-light round-trip tests
+RT_TOLERANCE = 5e-2  # 5 %, matching the no-lost-light round-trip tests
 
 SPHERE_CONFIG = {
     "d_sphere": 150.0,
@@ -56,6 +55,7 @@ MC_PHOTONS = 100_000
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_spheres():
     r_sphere = iadpython.Sphere(**SPHERE_CONFIG, refl=True)
@@ -162,6 +162,7 @@ def _round_trip_error(sample_kwargs, mc_lost_path):
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_round_trip_mc_lost_matched_boundaries(mc_lost_path):
     """1-sphere MC lost light round-trip: matched boundaries (n=1/1/1)."""

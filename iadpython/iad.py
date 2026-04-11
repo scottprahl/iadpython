@@ -94,9 +94,9 @@ class Experiment:
         self.debug_level = 0
         self.max_mc_iterations = 19
         self.n_photons = 100000
-        self.mc_lost_path = None   # path to mc_lost binary; None disables MC iteration
-        self.t_slide = 0.0         # physical thickness of cover glass slides [mm]
-        self._mc_iterations = 0    # number of MC iterations used in last invert_rt() call
+        self.mc_lost_path = None  # path to mc_lost binary; None disables MC iteration
+        self.t_slide = 0.0  # physical thickness of cover glass slides [mm]
+        self._mc_iterations = 0  # number of MC iterations used in last invert_rt() call
         self.use_adaptive_grid = True
         self.adaptive_grid_tol = 0.03
         self.adaptive_grid_max_depth = 6
@@ -435,8 +435,7 @@ class Experiment:
 
         if self.debug_level & 8:
             print(
-                f"\nMC lost light iteration (max {self.max_mc_iterations}, "
-                f"tol {self.MC_tolerance})",
+                f"\nMC lost light iteration (max {self.max_mc_iterations}, " f"tol {self.MC_tolerance})",
                 file=sys.stderr,
             )
 

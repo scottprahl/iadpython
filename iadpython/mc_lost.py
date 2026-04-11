@@ -107,19 +107,29 @@ def run_mc_lost(
     RuntimeError
         If the binary exits with a non-zero status or produces unexpected output.
     """
+
     def _call(d_port, collimated_only):
         """Build and run one mc_lost command; return the 12-float machine line."""
         cmd = [
             binary_path,
-            "-a", f"{float(a):.8g}",
-            "-b", f"{float(b):.8g}",
-            "-g", f"{float(g):.8g}",
-            "-n", f"{float(n_sample):.8g}",
-            "-N", f"{float(n_slide):.8g}",
-            "-P", f"{float(d_port):.8g}",
-            "-B", f"{float(d_beam):.8g}",
-            "-t", f"{float(t_sample):.8g}",
-            "-p", str(int(n_photons)),
+            "-a",
+            f"{float(a):.8g}",
+            "-b",
+            f"{float(b):.8g}",
+            "-g",
+            f"{float(g):.8g}",
+            "-n",
+            f"{float(n_sample):.8g}",
+            "-N",
+            f"{float(n_slide):.8g}",
+            "-P",
+            f"{float(d_port):.8g}",
+            "-B",
+            f"{float(d_beam):.8g}",
+            "-t",
+            f"{float(t_sample):.8g}",
+            "-p",
+            str(int(n_photons)),
             "-m",
         ]
         if n_slide != 1.0 and t_slide > 0.0:
@@ -136,21 +146,17 @@ def run_mc_lost(
             )
         except FileNotFoundError as exc:
             raise FileNotFoundError(
-                f"mc_lost binary not found at {shlex.quote(binary_path)!r}. "
-                "Build it with: cd iad && make mc_lost"
+                f"mc_lost binary not found at {shlex.quote(binary_path)!r}. " "Build it with: cd iad && make mc_lost"
             ) from exc
         except subprocess.CalledProcessError as exc:
             raise RuntimeError(
-                f"mc_lost exited with status {exc.returncode}.\n"
-                f"stderr: {exc.stderr.strip()}"
+                f"mc_lost exited with status {exc.returncode}.\n" f"stderr: {exc.stderr.strip()}"
             ) from exc
 
         line = result.stdout.strip()
         parts = line.split()
         if len(parts) != 12:
-            raise RuntimeError(
-                f"Expected 12 values from mc_lost -m, got {len(parts)}: {line!r}"
-            )
+            raise RuntimeError(f"Expected 12 values from mc_lost -m, got {len(parts)}: {line!r}")
         return [float(p) for p in parts]
 
     if d_port_r == d_port_t:
