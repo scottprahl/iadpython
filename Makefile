@@ -2,7 +2,7 @@ PACKAGE         := iadpython
 GITHUB_USER     := scottprahl
 
 # -------- venv config --------
-PY_VERSION      ?= 3.12
+PY_VERSION      ?= 3.14
 VENV            ?= .venv
 PY              := /opt/homebrew/opt/python@$(PY_VERSION)/bin/python$(PY_VERSION)
 PYTHON          := $(VENV)/bin/python
@@ -81,8 +81,24 @@ $(VENV)/.ready: Makefile $(PYPROJECT)
 		echo "   Try: brew install python@$(PY_VERSION)"; \
 		exit 1; \
 	fi
+	@if [ -d "$(VENV)" ]; then \
+		if [ ! -x "$(PYTHON)" ]; then \
+			echo "==> Existing $(VENV) is missing $(PYTHON); recreating"; \
+			/bin/rm -rf "$(VENV)"; \
+		else \
+			VENV_PY_VERSION=$$("$(PYTHON)" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo missing); \
+			if [ "$$VENV_PY_VERSION" != "$(PY_VERSION)" ]; then \
+				echo "==> Existing $(VENV) uses Python $$VENV_PY_VERSION; recreating for Python $(PY_VERSION)"; \
+				/bin/rm -rf "$(VENV)"; \
+			fi; \
+		fi; \
+	fi
 	@if [ ! -d "$(VENV)" ]; then \
 		"$(PY)" -m venv "$(VENV)"; \
+	fi
+	@if ! "$(PYTHON)" -m pip --version >/dev/null 2>&1; then \
+		echo "==> Bootstrapping pip in $(VENV)"; \
+		"$(PYTHON)" -m ensurepip --upgrade; \
 	fi
 	@$(PYTHON) -m pip -q install --upgrade pip wheel
 	@echo "==> Installing iadpython + dev extras"
@@ -99,6 +115,11 @@ venv: $(VENV)/.ready
 dist: venv
 	$(PYTHON) -m build
 	
+.PHONY: lab
+lab: venv
+	@echo "==> Launching JupyterLab using venv ($(PYTHON))"
+	"$(PYTHON)" -m jupyter lab --ServerApp.root_dir="$(CURDIR)"
+
 .PHONY: test
 test: venv
 	$(PYTEST) $(PYTEST_OPTS) --ignore=tests/test_double.py tests
@@ -298,11 +319,6 @@ lite-deploy:
 	    git push "$(REMOTE)" "$(PAGES_BRANCH)" && \
 	    echo "✅ Deployed to https://$(GITHUB_USER).github.io/$(PACKAGE)/"; \
 	  fi
-
-.PHONY: lab
-lab: venv
-	@echo "==> Launching JupyterLab using venv ($(PYTHON))"
-	"$(PYTHON)" -m jupyter lab --ServerApp.root_dir="$(CURDIR)"
 
 .PHONY: clean
 clean:

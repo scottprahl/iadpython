@@ -92,7 +92,7 @@ Changelog = "https://github.com/scottprahl/iadpython/blob/main/docs/CHANGELOG.rs
 
 [tool.black]
 line-length = 120
-target-version = ["py310", "py311", "py312", "py313"]
+target-version = ["py310", "py311", "py312", "py313", "py314"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

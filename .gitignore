@@ -7,17 +7,29 @@
 
 _site/
 
+CLAUDE.md
+DOCS_PLAN.md
+PLAN.md
 dist/
 
-docs/.ipynb_checkpoints/
 docs/_build/
+docs/.ipynb_checkpoints/
+docs/.jupyter/
+docs/*.graffle
+docs/ad-simple.nb
 docs/api/
 docs/doi.org/
-docs/*.graffle
+docs/IAD_paper/
+docs/manual/
+docs/sphere-refs/
 
+iad/
 iadpython/__pycache__/
 iadpython.egg-info/
 iadpython/.ipynb_checkpoints/
 iadp
 
 tests/.ipynb_checkpoints/
+tests/iad-problems/
+
+uv.lock

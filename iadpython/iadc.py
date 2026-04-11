@@ -16,9 +16,11 @@ Example:
         >>> print("total transmitted light for diffuse incidence %.5f" % UTU)
 """
 
+import os
 import sys
 import ctypes
 import ctypes.util
+import pathlib
 import numpy as np
 
 __all__ = (
@@ -34,7 +36,35 @@ __all__ = (
     "rt_inverse",
 )
 
-libiad_path = ctypes.util.find_library("libiad")
+_UNKNOWN = 0
+_COMPARISON = 1
+_SUBSTITUTION = 2
+_MC_NONE = 0
+_MC_USE_EXISTING = 1
+_UNINITIALIZED = -99
+_HENYEY_GREENSTEIN = 1
+_REFLECTION_SPHERE = 1
+_TRANSMISSION_SPHERE = 0
+
+
+def _libiad_candidates():
+    """Yield candidate shared-library paths in preference order."""
+    override = os.environ.get("IADPYTHON_LIBIAD")
+    if override:
+        yield override
+
+    repo_root = pathlib.Path(__file__).resolve().parents[1]
+    for name in ("libiad.dylib", "libiad.so", "libiad.dll"):
+        candidate = repo_root / "iad" / "src" / name
+        if candidate.exists():
+            yield str(candidate)
+
+    found = ctypes.util.find_library("libiad")
+    if found:
+        yield found
+
+
+libiad_path = next(iter(_libiad_candidates()), None)
 
 if not libiad_path:
     print("Unable to find the libiad library.")
@@ -42,6 +72,7 @@ if not libiad_path:
     print("     unix    = 'libiad.so'")
     print("     Windows = 'libiad.dll'")
     print("Paths searched:")
+    print("     env var = IADPYTHON_LIBIAD")
     for p in sys.path:
         print("    ", p)
     sys.exit()
@@ -52,6 +83,113 @@ except OSError:
     print("Unable to load the libiad library")
     print("Sorry")
     sys.exit()
+
+
+class ADSlabType(ctypes.Structure):
+    """ctypes mirror of the C `struct AD_slab_type`."""
+
+    _fields_ = (
+        ("a", ctypes.c_double),
+        ("b", ctypes.c_double),
+        ("g", ctypes.c_double),
+        ("phase_function", ctypes.c_int),
+        ("n_slab", ctypes.c_double),
+        ("n_top_slide", ctypes.c_double),
+        ("n_bottom_slide", ctypes.c_double),
+        ("b_top_slide", ctypes.c_double),
+        ("b_bottom_slide", ctypes.c_double),
+        ("cos_angle", ctypes.c_double),
+    )
+
+
+class ADMethodType(ctypes.Structure):
+    """ctypes mirror of the C `struct AD_method_type`."""
+
+    _fields_ = (
+        ("quad_pts", ctypes.c_int),
+        ("a_calc", ctypes.c_double),
+        ("b_calc", ctypes.c_double),
+        ("g_calc", ctypes.c_double),
+        ("b_thinnest", ctypes.c_double),
+    )
+
+
+class MeasureType(ctypes.Structure):
+    """ctypes mirror of the C `struct measure_type`."""
+
+    _fields_ = (
+        ("slab_index", ctypes.c_double),
+        ("slab_thickness", ctypes.c_double),
+        ("slab_top_slide_index", ctypes.c_double),
+        ("slab_top_slide_b", ctypes.c_double),
+        ("slab_top_slide_thickness", ctypes.c_double),
+        ("slab_bottom_slide_index", ctypes.c_double),
+        ("slab_bottom_slide_b", ctypes.c_double),
+        ("slab_bottom_slide_thickness", ctypes.c_double),
+        ("slab_cos_angle", ctypes.c_double),
+        ("num_spheres", ctypes.c_int),
+        ("num_measures", ctypes.c_int),
+        ("method", ctypes.c_int),
+        ("flip_sample", ctypes.c_int),
+        ("baffle_r", ctypes.c_int),
+        ("baffle_t", ctypes.c_int),
+        ("d_beam", ctypes.c_double),
+        ("fraction_of_ru_in_mr", ctypes.c_double),
+        ("fraction_of_tu_in_mt", ctypes.c_double),
+        ("m_r", ctypes.c_double),
+        ("m_t", ctypes.c_double),
+        ("m_u", ctypes.c_double),
+        ("lambda_", ctypes.c_double),
+        ("as_r", ctypes.c_double),
+        ("ad_r", ctypes.c_double),
+        ("at_r", ctypes.c_double),
+        ("aw_r", ctypes.c_double),
+        ("rd_r", ctypes.c_double),
+        ("rw_r", ctypes.c_double),
+        ("rstd_r", ctypes.c_double),
+        ("f_r", ctypes.c_double),
+        ("as_t", ctypes.c_double),
+        ("ad_t", ctypes.c_double),
+        ("at_t", ctypes.c_double),
+        ("aw_t", ctypes.c_double),
+        ("rd_t", ctypes.c_double),
+        ("rw_t", ctypes.c_double),
+        ("rstd_t", ctypes.c_double),
+        ("ur1_lost", ctypes.c_double),
+        ("uru_lost", ctypes.c_double),
+        ("ut1_lost", ctypes.c_double),
+        ("utu_lost", ctypes.c_double),
+        ("d_sphere_r", ctypes.c_double),
+        ("d_sphere_t", ctypes.c_double),
+    )
+
+
+class InvertType(ctypes.Structure):
+    """ctypes mirror of the C `struct invert_type`."""
+
+    _fields_ = (
+        ("a", ctypes.c_double),
+        ("b", ctypes.c_double),
+        ("g", ctypes.c_double),
+        ("found", ctypes.c_int),
+        ("search", ctypes.c_int),
+        ("metric", ctypes.c_int),
+        ("tolerance", ctypes.c_double),
+        ("MC_tolerance", ctypes.c_double),
+        ("final_distance", ctypes.c_double),
+        ("error", ctypes.c_int),
+        ("slab", ADSlabType),
+        ("method", ADMethodType),
+        ("AD_iterations", ctypes.c_int),
+        ("MC_iterations", ctypes.c_int),
+        ("default_a", ctypes.c_double),
+        ("default_b", ctypes.c_double),
+        ("default_g", ctypes.c_double),
+        ("default_ba", ctypes.c_double),
+        ("default_bs", ctypes.c_double),
+        ("default_mua", ctypes.c_double),
+        ("default_mus", ctypes.c_double),
+    )
 
 libiad.ez_RT.argtypes = (
     ctypes.c_int,  # n quadrature points
@@ -314,6 +452,242 @@ def basic_rt_inverse(nslab, nslide, ur1, ut1, tc):
     error = ctypes.c_int()
     libiad.ez_Inverse_RT(nslab, nslide, ur1, ut1, tc, a, b, g, error)
     return a.value, b.value, g.value, error.value
+
+
+libiad.Initialize_Measure.argtypes = (ctypes.POINTER(MeasureType),)
+libiad.Initialize_Measure.restype = None
+
+libiad.Initialize_Result.argtypes = (MeasureType, ctypes.POINTER(InvertType), ctypes.c_int)
+libiad.Initialize_Result.restype = None
+
+libiad.Inverse_RT.argtypes = (MeasureType, ctypes.POINTER(InvertType))
+libiad.Inverse_RT.restype = None
+
+libiad.Set_Calc_State.argtypes = (MeasureType, InvertType)
+libiad.Set_Calc_State.restype = None
+
+libiad.Get_Calc_State.argtypes = (ctypes.POINTER(MeasureType), ctypes.POINTER(InvertType))
+libiad.Get_Calc_State.restype = None
+
+libiad.Calculate_MR_MT.argtypes = (
+    MeasureType,
+    InvertType,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.POINTER(ctypes.c_double),
+)
+libiad.Calculate_MR_MT.restype = None
+
+libiad.Calculate_Distance_With_Corrections.argtypes = (
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.POINTER(ctypes.c_double),
+)
+libiad.Calculate_Distance_With_Corrections.restype = None
+
+libiad.Gain.argtypes = (ctypes.c_int, MeasureType, ctypes.c_double, ctypes.c_double)
+libiad.Gain.restype = ctypes.c_double
+
+
+def _init_measure():
+    """Return a C measurement structure populated with library defaults."""
+    measure = MeasureType()
+    libiad.Initialize_Measure(ctypes.byref(measure))
+    return measure
+
+
+def _c_method(method):
+    """Translate Python method names to the C enum values."""
+    if method in ("comparison", _COMPARISON):
+        return _COMPARISON
+    if method in ("substitution", _SUBSTITUTION):
+        return _SUBSTITUTION
+    return _UNKNOWN
+
+
+def _apply_sphere_to_measure(measure, sphere, reflection):
+    """Copy a Python `Sphere` into the corresponding C measurement fields."""
+    if sphere is None:
+        return
+
+    prefix = "r" if reflection else "t"
+    setattr(measure, f"d_sphere_{prefix}", float(sphere.d))
+    setattr(measure, f"as_{prefix}", float(sphere.sample.a))
+    setattr(measure, f"at_{prefix}", float(sphere.third.a))
+    setattr(measure, f"ad_{prefix}", float(sphere.detector.a))
+    setattr(measure, f"aw_{prefix}", float(sphere.a_wall))
+    setattr(measure, f"rd_{prefix}", float(sphere.detector.uru))
+    setattr(measure, f"rw_{prefix}", float(sphere.r_wall))
+    setattr(measure, f"rstd_{prefix}", float(sphere.r_std))
+    setattr(measure, f"baffle_{prefix}", int(bool(sphere.baffle)))
+
+
+def _measure_from_experiment(experiment):
+    """Create a C measurement struct from a Python `iadpython.Experiment`."""
+    sample = experiment.sample
+    measure = _init_measure()
+
+    measure.slab_index = float(sample.n)
+    measure.slab_thickness = float(sample.d)
+    measure.slab_top_slide_index = float(sample.n_above)
+    measure.slab_top_slide_b = float(sample.b_above)
+    measure.slab_top_slide_thickness = float(sample.d_above)
+    measure.slab_bottom_slide_index = float(sample.n_below)
+    measure.slab_bottom_slide_b = float(sample.b_below)
+    measure.slab_bottom_slide_thickness = float(sample.d_below)
+    measure.slab_cos_angle = float(sample.nu_0)
+
+    measure.num_spheres = int(experiment.num_spheres or 0)
+    measure.num_measures = sum(value is not None for value in (experiment.m_r, experiment.m_t, experiment.m_u))
+    measure.method = _c_method(experiment.method)
+    measure.flip_sample = int(bool(experiment.flip_sample))
+
+    measure.d_beam = float(experiment.d_beam)
+    measure.fraction_of_ru_in_mr = float(experiment.fraction_of_rc_in_mr)
+    measure.fraction_of_tu_in_mt = float(experiment.fraction_of_tc_in_mt)
+
+    measure.m_r = 0.0 if experiment.m_r is None else float(experiment.m_r)
+    measure.m_t = 0.0 if experiment.m_t is None else float(experiment.m_t)
+    measure.m_u = 0.0 if experiment.m_u is None else float(experiment.m_u)
+    measure.lambda_ = 0.0 if experiment.lambda0 is None else float(experiment.lambda0)
+    measure.f_r = float(experiment.f_r)
+
+    _apply_sphere_to_measure(measure, experiment.r_sphere, reflection=True)
+    _apply_sphere_to_measure(measure, experiment.t_sphere, reflection=False)
+
+    if measure.num_spheres == 0:
+        measure.ur1_lost = 0.0
+        measure.ut1_lost = 0.0
+        measure.uru_lost = 0.0
+        measure.utu_lost = 0.0
+    else:
+        measure.ur1_lost = float(experiment.ur1_lost)
+        measure.ut1_lost = float(experiment.ut1_lost)
+        measure.uru_lost = float(experiment.uru_lost)
+        measure.utu_lost = float(experiment.utu_lost)
+
+    return measure
+
+
+def _result_from_experiment(experiment, measure):
+    """Create a C inversion/result struct from a Python `iadpython.Experiment`."""
+    sample = experiment.sample
+    result = InvertType()
+    libiad.Initialize_Result(measure, ctypes.byref(result), 1)
+
+    result.slab.a = float(sample.a)
+    result.slab.b = float(sample.b)
+    result.slab.g = float(sample.g)
+    result.slab.phase_function = _HENYEY_GREENSTEIN
+    result.slab.n_slab = float(sample.n)
+    result.slab.n_top_slide = float(sample.n_above)
+    result.slab.n_bottom_slide = float(sample.n_below)
+    result.slab.b_top_slide = float(sample.b_above)
+    result.slab.b_bottom_slide = float(sample.b_below)
+    result.slab.cos_angle = float(sample.nu_0)
+
+    result.tolerance = float(experiment.tolerance)
+    result.MC_tolerance = float(experiment.MC_tolerance)
+    result.metric = int(experiment.metric)
+    result.method.quad_pts = int(sample.quad_pts)
+    if sample.b_thinnest is not None:
+        result.method.b_thinnest = float(sample.b_thinnest)
+
+    for attr in (
+        "default_a",
+        "default_b",
+        "default_g",
+        "default_ba",
+        "default_bs",
+        "default_mua",
+        "default_mus",
+    ):
+        value = getattr(experiment, attr)
+        if value is not None:
+            setattr(result, attr, float(value))
+        else:
+            setattr(result, attr, float(_UNINITIALIZED))
+
+    return result
+
+
+def _c_gain(sphere, sample_uru=None, third_uru=None):
+    """Developer-facing single-sphere gain calculation through libiad."""
+    measure = _init_measure()
+    _apply_sphere_to_measure(measure, sphere, reflection=bool(sphere.refl))
+
+    if sample_uru is None:
+        sample_uru = sphere.sample.uru
+    if third_uru is None:
+        third_uru = sphere.third.uru
+
+    sphere_kind = _REFLECTION_SPHERE if sphere.refl else _TRANSMISSION_SPHERE
+    return libiad.Gain(sphere_kind, measure, float(sample_uru), float(third_uru))
+
+
+def _c_calculate_measured_rt(experiment, include_mc=False, include_spheres=True):
+    """Developer-facing direct measured `M_R/M_T` calculation through libiad."""
+    measure = _measure_from_experiment(experiment)
+    result = _result_from_experiment(experiment, measure)
+
+    measured_r = ctypes.c_double()
+    measured_t = ctypes.c_double()
+    include_mc_flag = _MC_USE_EXISTING if include_mc else _MC_NONE
+    libiad.Calculate_MR_MT(
+        measure,
+        result,
+        include_mc_flag,
+        int(bool(include_spheres)),
+        ctypes.byref(measured_r),
+        ctypes.byref(measured_t),
+    )
+    return measured_r.value, measured_t.value
+
+
+def _c_calculate_measured_rt_from_rt(experiment, ur1, ut1, uru, utu, ru, tu):
+    """Developer-facing one-sphere normalization using explicit RT inputs."""
+    measure = _measure_from_experiment(experiment)
+    result = _result_from_experiment(experiment, measure)
+
+    old_measure = MeasureType()
+    old_result = InvertType()
+    measured_r = ctypes.c_double()
+    measured_t = ctypes.c_double()
+    deviation = ctypes.c_double()
+
+    libiad.Get_Calc_State(ctypes.byref(old_measure), ctypes.byref(old_result))
+    try:
+        libiad.Set_Calc_State(measure, result)
+        libiad.Calculate_Distance_With_Corrections(
+            float(ur1),
+            float(ut1),
+            float(ru),
+            float(tu),
+            float(uru),
+            float(utu),
+            ctypes.byref(measured_r),
+            ctypes.byref(measured_t),
+            ctypes.byref(deviation),
+        )
+    finally:
+        libiad.Set_Calc_State(old_measure, old_result)
+
+    return measured_r.value, measured_t.value
+
+
+def _c_invert_experiment(experiment):
+    """Developer-facing inverse calculation through libiad."""
+    measure = _measure_from_experiment(experiment)
+    result = _result_from_experiment(experiment, measure)
+    libiad.Inverse_RT(measure, ctypes.byref(result))
+    return result.a, result.b, result.g, result.error
 
 
 def rt(nslab, nslide, a, b, g):

@@ -163,6 +163,50 @@ class RTRoundTripNoSphereTest(unittest.TestCase):
             {"n": 1.4, "n_above": 1.5, "n_below": 1.5, "quad_pts": 16},
         )
 
+    def test_measured_rt_ignores_lost_light_without_spheres(self):
+        """Zero-sphere forward calculations should ignore lost-light state."""
+        sample = iadpython.Sample(a=0.73, b=1.4, g=0.3, n=1.4, n_above=1.0, n_below=1.0, quad_pts=16)
+
+        base = iadpython.Experiment(sample=sample, num_spheres=0)
+        base.fraction_of_rc_in_mr = 0.63
+        base.fraction_of_tc_in_mt = 0.41
+        expected_r, expected_t = base.measured_rt()
+
+        with_losses = iadpython.Experiment(sample=sample, num_spheres=0)
+        with_losses.fraction_of_rc_in_mr = 0.63
+        with_losses.fraction_of_tc_in_mt = 0.41
+        with_losses.ur1_lost = 0.11
+        with_losses.ut1_lost = 0.07
+        with_losses.uru_lost = 0.05
+        with_losses.utu_lost = 0.03
+        measured_r, measured_t = with_losses.measured_rt()
+
+        self.assertAlmostEqual(float(measured_r), float(expected_r), delta=1e-12)
+        self.assertAlmostEqual(float(measured_t), float(expected_t), delta=1e-12)
+
+    def test_invalid_mc_path_is_ignored_without_spheres(self):
+        """Zero-sphere inversion should not try to run the MC lost-light binary."""
+        sample_kwargs = {"n": 1.4, "n_above": 1.0, "n_below": 1.0, "quad_pts": 16}
+        forward_sample = iadpython.Sample(a=0.81, b=2.5, g=0.45, **sample_kwargs)
+        r_forward, t_forward, _, _ = forward_sample.rt()
+
+        inverse_exp = iadpython.Experiment(
+            r=float(r_forward),
+            t=float(t_forward),
+            sample=iadpython.Sample(**sample_kwargs),
+            default_g=0.45,
+            num_spheres=0,
+        )
+        inverse_exp.mc_lost_path = "/definitely/not/a/real/mc_lost"
+
+        a_inv, b_inv, g_inv = inverse_exp.invert_rt()
+
+        inverse_sample = iadpython.Sample(a=a_inv, b=b_inv, g=g_inv, **sample_kwargs)
+        r_inverse, t_inverse, _, _ = inverse_sample.rt()
+
+        self.assertLessEqual(abs(float(r_forward) - float(r_inverse)), self.RT_TOLERANCE)
+        self.assertLessEqual(abs(float(t_forward) - float(t_inverse)), self.RT_TOLERANCE)
+
 
 if __name__ == "__main__":
     unittest.main()

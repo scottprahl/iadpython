@@ -351,8 +351,12 @@ class Experiment:
             g: anisotropy from the most recent invert_scalar_rt() call
 
         Returns:
-            Maximum absolute change across all four lost fractions (used as a
-            convergence criterion).
+            Tuple of:
+              - maximum absolute change across all four lost fractions
+              - raw change in direct reflected lost light
+              - raw change in direct transmitted lost light
+              - raw change in diffuse reflected lost light
+              - raw change in diffuse transmitted lost light
         """
         n_sample = float(self.sample.n)
         n_slide = float(self.sample.n_above) if self.sample.n_above != 1.0 else 1.0
@@ -399,7 +403,12 @@ class Experiment:
         self.uru_lost += FACTOR * diff_uru
         self.utu_lost += FACTOR * diff_utu
 
-        return max(abs(diff_ur1), abs(diff_ut1), abs(diff_uru), abs(diff_utu))
+        max_abs_diff = max(abs(diff_ur1), abs(diff_ut1), abs(diff_uru), abs(diff_utu))
+        return max_abs_diff, diff_ur1, diff_ut1, diff_uru, diff_utu
+
+    def _current_optical_coefficients(self):
+        """Return the current `(mu_a, mu_s')` implied by the sample state."""
+        return self.sample.mu_a(), self.sample.mu_sp()
 
     def _invert_scalar_with_mc(self):
         """Run invert_scalar_rt() with optional MC lost light iteration.
@@ -408,11 +417,12 @@ class Experiment:
         mc_lost binary to refine the four lost-light fractions until they
         converge, then re-inverts with the final lost values.
 
-        The algorithm mirrors iad_main.w:998-1049:
+        The algorithm mirrors iad_main.w:998-1078:
           1. Invert ignoring lost light (ur1_lost etc. start at 0 or prior value)
           2. MC estimate → damped update of lost fractions
           3. Re-invert with updated lost fractions
-          4. Repeat until max |diff| < MC_tolerance or max_mc_iterations reached
+          4. Repeat until `mu_a` and `mu_s'` stop changing, with the same
+             direct-loss guard used by the C implementation
 
         Returns:
             (a, b, g) — optical properties of the slab
@@ -431,14 +441,34 @@ class Experiment:
             )
 
         for _ in range(self.max_mc_iterations):
-            max_diff = self._update_lost_light(a, b, g)
+            last_mu_a, last_mu_sp = self._current_optical_coefficients()
+            max_diff, diff_ur1, diff_ut1, _diff_uru, _diff_utu = self._update_lost_light(a, b, g)
             # Invalidate the grid: lost-light values changed, so measured_rt()
             # produces different values and the grid must be recomputed.
             self.grid = None
             a, b, g = self.invert_scalar_rt()
             self._mc_iterations += 1
-            if max_diff < self.MC_tolerance:
-                break
+            mu_a, mu_sp = self._current_optical_coefficients()
+
+            # Match the CWEB iad_main.w convergence gate:
+            # 1. wait for optical properties to stabilize
+            # 2. keep iterating while direct lost-light terms are still moving
+            if mu_a is None or mu_sp is None or last_mu_a is None or last_mu_sp is None:
+                if max_diff < self.MC_tolerance:
+                    break
+                continue
+
+            if abs(last_mu_a - mu_a) > self.MC_tolerance:
+                continue
+
+            if abs(last_mu_sp - mu_sp) > self.MC_tolerance:
+                continue
+
+            too_much_lost = diff_ur1 > 0.001 or diff_ut1 > 0.001
+            if too_much_lost:
+                continue
+
+            break
 
         return a, b, g
 
@@ -562,11 +592,19 @@ class Experiment:
         nu_inside = iad.cos_snell(1, s.nu_0, s.n)
         r_u, t_u = iad.specular_rt(s.n_above, s.n, s.n_below, s.b, nu_inside)
 
-        # correct for lost light
-        ur1_actual = ur1 - self.ur1_lost
-        ut1_actual = ut1 - self.ut1_lost
-        uru_actual = uru - self.uru_lost
-        utu_actual = utu - self.utu_lost
+        # Lost-light corrections are only defined when one or two spheres are
+        # actually being modeled.  Keep zero-sphere calculations independent
+        # of any stale or user-supplied lost-light values.
+        if self.num_spheres == 0:
+            ur1_actual = ur1
+            ut1_actual = ut1
+            uru_actual = uru
+            utu_actual = utu
+        else:
+            ur1_actual = ur1 - self.ur1_lost
+            ut1_actual = ut1 - self.ut1_lost
+            uru_actual = uru - self.uru_lost
+            utu_actual = utu - self.utu_lost
 
         # correct for fraction not collected
         m_r = ur1_actual - (1.0 - self.fraction_of_rc_in_mr) * r_u
