@@ -26,6 +26,32 @@ import iadpython as iad
 from iadpython.mc_lost import run_mc_lost
 
 G_BOUND_EPS = 1e-6
+DEBUG_A_LITTLE = 1
+DEBUG_GRID = 2
+DEBUG_ITERATIONS = 4
+DEBUG_LOST_LIGHT = 8
+DEBUG_BEST_GUESS = 16
+DEBUG_SEARCH = 32
+DEBUG_GRID_CALC = 64
+DEBUG_SPHERE_GAIN = 128
+DEBUG_EVERY_CALC = 256
+DEBUG_MC = 512
+
+SEARCH_CODE_TO_NAME = {
+    0: "find_a",
+    1: "find_b",
+    2: "find_ab",
+    3: "find_ag",
+    4: "auto",
+    5: "find_bg",
+    6: "find_bag",
+    7: "find_bsg",
+    8: "find_ba",
+    9: "find_bs",
+    10: "find_g",
+    11: "find_b_no_absorption",
+    12: "find_b_no_scattering",
+}
 
 
 class Experiment:
@@ -92,6 +118,7 @@ class Experiment:
         self.grid = None
         self.method = "unknown"
         self.debug_level = 0
+        self.verbosity = 2
         self.max_mc_iterations = 19
         self.n_photons = 100000
         self.mc_lost_path = None  # path to mc_lost binary; None disables MC iteration
@@ -102,6 +129,8 @@ class Experiment:
         self.adaptive_grid_max_depth = 6
         self.counter = 0
         self.include_measurements = True
+        self.search_override = None
+        self.search_code = 4
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -167,55 +196,54 @@ class Experiment:
 
     def determine_one_parameter_search(self):
         """Establish proper search when only one measurement is available."""
-        # default case
-        self.search = "find_a"
-
-        # albedo is known
         if self.default_a is not None:
-            if self.default_b is None:
-                self.search = "find_b"
-            else:
+            if np.isclose(self.default_a, 0.0):
+                self.search = "find_b_no_scattering"
+            elif np.isclose(self.default_a, 1.0):
+                self.search = "find_b_no_absorption"
+            elif self.m_t == 0:
                 self.search = "find_g"
-
-        # optical thickness is known
+            else:
+                self.search = "find_b"
         elif self.default_b is not None:
             self.search = "find_a"
-
-        # anisotropy is known
-        elif self.default_g is not None:
-            self.search = "find_a"
-
-        # scattering coefficient is known
         elif self.default_bs is not None:
             self.search = "find_ba"
-
-        # absorption coefficient is known
         elif self.default_ba is not None:
             self.search = "find_bs"
+        elif self.m_t == 0:
+            self.search = "find_a"
+        elif self.m_r == 0:
+            self.search = "find_b_no_scattering"
+        else:
+            self.search = "find_b_no_absorption"
 
     def determine_two_parameter_search(self):
         """Establish proper search when 2 or 3 measurements are available."""
-        # albedo is known
         if self.default_a is not None:
-            self.search = "find_bg"
-
-        # optical thickness is known
+            if np.isclose(self.default_a, 0.0) or self.default_g is not None:
+                self.search = "find_b"
+            elif self.default_b is not None:
+                self.search = "find_g"
+            else:
+                self.search = "find_bg"
         elif self.default_b is not None:
-            self.search = "find_ag"
-
-        # anisotropy is known
+            if self.default_g is not None:
+                self.search = "find_a"
+            else:
+                self.search = "find_ag"
         elif self.default_g is not None:
             self.search = "find_ab"
-
-        # scattering coefficient is known
-        elif self.default_bs is not None:
-            self.search = "find_bag"
-
-        # absorption coefficient is known
         elif self.default_ba is not None:
-            self.search = "find_bsg"
-
-        # by this point, assume that M_R, M_T, and M_U are known
+            if self.default_g is not None:
+                self.search = "find_bs"
+            else:
+                self.search = "find_bsg"
+        elif self.default_bs is not None:
+            if self.default_g is not None:
+                self.search = "find_ba"
+            else:
+                self.search = "find_bag"
         else:
             if self.m_u is None or self.m_u <= 0:
                 self.search = "find_ab"
@@ -224,14 +252,57 @@ class Experiment:
 
     def determine_search(self):
         """Determine type of search to do."""
+        if self.search_override not in (None, "auto"):
+            self.search = self.search_override
+            self.search_code = next(
+                (code for code, name in SEARCH_CODE_TO_NAME.items() if name == self.search),
+                4,
+            )
+            self._debug(DEBUG_SEARCH, f"search override -> {self.search} ({self.search_code})")
+            return
+
         if self.num_measurements == 0:
             self.search = "unknown"
+            self.search_code = -1
+            return
 
         if self.num_measurements == 1:
             self.determine_one_parameter_search()
-
         else:
             self.determine_two_parameter_search()
+
+        self.search_code = next(
+            (code for code, name in SEARCH_CODE_TO_NAME.items() if name == self.search),
+            4,
+        )
+        self._debug(DEBUG_SEARCH, f"automatic search -> {self.search} ({self.search_code})")
+
+    def _debug(self, mask, message):
+        """Emit debug output matching the enabled bitmask."""
+        if self.debug_level & mask:
+            print(message, file=sys.stderr)
+
+    def _set_sample_from_ba_bs(self, ba, bs):
+        """Set `(a, b)` from absorption/scattering optical depths."""
+        ba = max(float(ba), 0.0)
+        bs = max(float(bs), 0.0)
+        total = ba + bs
+        self.sample.b = total
+        self.sample.a = 0.0 if np.isclose(total, 0.0) else bs / total
+
+    def _positive_guess(self, value, floor=1e-6):
+        """Return a usable non-negative optimizer starting point."""
+        if value is None:
+            return floor
+        if np.isscalar(value):
+            if np.isfinite(value):
+                return max(float(value), floor)
+            return 1.0
+        arr = np.asarray(value)
+        finite = arr[np.isfinite(arr)]
+        if finite.size == 0:
+            return 1.0
+        return max(float(np.max(finite)), floor)
 
     def invert_scalar_rt(self):
         """Find a,b,g for a single experimental measurement.
@@ -251,23 +322,32 @@ class Experiment:
             return None, None, None
 
         # assign default values
-        self.sample.a = self.default_a or 0
-        self.sample.b = self.default_b or self.what_is_b()
-        self.sample.g = self.default_g or 0
+        self.sample.a = 0 if self.default_a is None else self.default_a
+        self.sample.b = self.what_is_b() if self.default_b is None else self.default_b
+        self.sample.g = 0 if self.default_g is None else self.default_g
+
+        if self.default_bs is not None and self.default_ba is None:
+            guess_ba = max(self._positive_guess(self.sample.b) - self.default_bs, 0.0)
+            self._set_sample_from_ba_bs(guess_ba, self.default_bs)
+
+        if self.default_ba is not None and self.default_bs is None:
+            guess_bs = max(self._positive_guess(self.sample.b) - self.default_ba, 0.0)
+            self._set_sample_from_ba_bs(self.default_ba, guess_bs)
 
         #        print('search is', self.search)
         #        print('     a = ', self.sample.a)
         #        print('     b = ', self.sample.b)
         #        print('     g = ', self.sample.g)
 
+        result = None
         if self.search == "find_a":
-            _ = scipy.optimize.minimize_scalar(afun, args=(self), bounds=(0, 1), method="bounded")
+            result = scipy.optimize.minimize_scalar(afun, args=(self), bounds=(0, 1), method="bounded")
 
         if self.search == "find_b":
-            _ = scipy.optimize.minimize_scalar(bfun, args=(self), method="brent")
+            result = scipy.optimize.minimize_scalar(bfun, args=(self), method="brent")
 
         if self.search == "find_g":
-            _ = scipy.optimize.minimize_scalar(
+            result = scipy.optimize.minimize_scalar(
                 gfun,
                 args=(self),
                 bounds=(-1 + G_BOUND_EPS, 1 - G_BOUND_EPS),
@@ -298,40 +378,97 @@ class Experiment:
 
             if isinstance(self.grid, iad.AGrid):
                 if self.grid.is_stale(grid_constant, search=self.search):
+                    self._debug(DEBUG_GRID_CALC, f"recomputing adaptive grid for {self.search}")
                     self.grid.calc(self, default=grid_constant, search=self.search)
             else:
                 if self.grid.is_stale(grid_constant):
+                    self._debug(DEBUG_GRID_CALC, f"recomputing grid for {self.search}")
                     self.grid.calc(self, grid_constant)
 
             a, b, g = self.grid.min_abg(self.m_r, self.m_t)
-            if self.debug_level & 2:
+            if self.debug_level & DEBUG_BEST_GUESS:
                 print("grid constant %8.5f" % grid_constant)
                 print("grid start a=%8.5f" % a)
                 print("grid start b=%8.5f" % b)
                 print("grid start g=%8.5f" % g)
+            elif self.debug_level & DEBUG_GRID:
+                print(f"grid constant {grid_constant:8.5f}", file=sys.stderr)
 
         if self.search == "find_ab":
             x = scipy.optimize.Bounds(np.array([0, 0]), np.array([1, np.inf]))
-            _ = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=x, method="Nelder-Mead")
+            result = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=x, method="Nelder-Mead")
 
         if self.search == "find_ag":
             x = scipy.optimize.Bounds(
                 np.array([0, -1 + G_BOUND_EPS]),
                 np.array([1, 1 - G_BOUND_EPS]),
             )
-            _ = scipy.optimize.minimize(agfun, [a, g], args=(self), bounds=x, method="Nelder-Mead")
+            result = scipy.optimize.minimize(agfun, [a, g], args=(self), bounds=x, method="Nelder-Mead")
 
         if self.search == "find_bg":
             x = scipy.optimize.Bounds(
                 np.array([0, -1 + G_BOUND_EPS]),
                 np.array([np.inf, 1 - G_BOUND_EPS]),
             )
-            _ = scipy.optimize.minimize(bgfun, [b, g], args=(self), bounds=x, method="Nelder-Mead")
+            result = scipy.optimize.minimize(bgfun, [b, g], args=(self), bounds=x, method="Nelder-Mead")
+
+        if self.search == "find_ba":
+            guess = max(self.sample.b - self.default_bs, 0.0)
+            x = scipy.optimize.Bounds(np.array([0.0]), np.array([np.inf]))
+            result = scipy.optimize.minimize(bafun, [guess], args=(self), bounds=x, method="Powell")
+
+        if self.search == "find_bs":
+            guess = max(self.sample.b - self.default_ba, 0.0)
+            x = scipy.optimize.Bounds(np.array([0.0]), np.array([np.inf]))
+            result = scipy.optimize.minimize(bsfun, [guess], args=(self), bounds=x, method="Powell")
+
+        if self.search == "find_bag":
+            guess_ba = max(self.sample.b - self.default_bs, 0.0)
+            x = scipy.optimize.Bounds(
+                np.array([0.0, -1 + G_BOUND_EPS]),
+                np.array([np.inf, 1 - G_BOUND_EPS]),
+            )
+            result = scipy.optimize.minimize(
+                bagfun,
+                [guess_ba, self.sample.g],
+                args=(self),
+                bounds=x,
+                method="Powell",
+            )
+
+        if self.search == "find_bsg":
+            guess_bs = max(self.sample.b - self.default_ba, 0.0)
+            x = scipy.optimize.Bounds(
+                np.array([0.0, -1 + G_BOUND_EPS]),
+                np.array([np.inf, 1 - G_BOUND_EPS]),
+            )
+            result = scipy.optimize.minimize(
+                bsgfun,
+                [guess_bs, self.sample.g],
+                args=(self),
+                bounds=x,
+                method="Powell",
+            )
+
+        if self.search == "find_b_no_absorption":
+            self.sample.a = 1.0
+            result = scipy.optimize.minimize_scalar(bfun, args=(self), method="brent")
+
+        if self.search == "find_b_no_scattering":
+            self.sample.a = 0.0
+            result = scipy.optimize.minimize_scalar(bfun, args=(self), method="brent")
+
+        if result is not None:
+            self.iterations = getattr(result, "nit", getattr(result, "nfev", 0))
+            self.final_distance = float(getattr(result, "fun", np.nan))
+            self._debug(DEBUG_ITERATIONS, f"{self.search}: iterations={self.iterations} distance={self.final_distance:.6g}")
 
         return self.sample.a, self.sample.b, self.sample.g
 
     def print_dot(self):
         """Print a character for each datapoint during analysis."""
+        if self.verbosity == 0 or self.debug_level:
+            return
         self.counter += 1
         if self.counter % 50 == 0:
             print(file=sys.stderr)
@@ -381,7 +518,19 @@ class Experiment:
             binary_path=self.mc_lost_path,
         )
 
-        if self.debug_level & 8:
+        if self.debug_level & DEBUG_MC:
+            print(
+                "mc_lost input: "
+                f"a={a:.5f} b={b:.5f} g={g:.5f} "
+                f"n_sample={n_sample:.5f} n_slide={n_slide:.5f} "
+                f"d_port_r={d_port_r:.5f} d_port_t={d_port_t:.5f} "
+                f"d_beam={float(self.d_beam):.5f} t_sample={t_sample:.5f} "
+                f"t_slide={float(self.t_slide):.5f} n_photons={int(self.n_photons)} "
+                f"method={self.method}",
+                file=sys.stderr,
+            )
+
+        if self.debug_level & DEBUG_LOST_LIGHT:
             print(
                 f"  MC iter {self._mc_iterations + 1}: "
                 f"a={a:.5f} b={b:.5f} g={g:.5f} | "
@@ -433,7 +582,7 @@ class Experiment:
         if self.mc_lost_path is None or self.num_spheres == 0:
             return a, b, g
 
-        if self.debug_level & 8:
+        if self.debug_level & DEBUG_LOST_LIGHT:
             print(
                 f"\nMC lost light iteration (max {self.max_mc_iterations}, " f"tol {self.MC_tolerance})",
                 file=sys.stderr,
@@ -445,6 +594,7 @@ class Experiment:
             # Invalidate the grid: lost-light values changed, so measured_rt()
             # produces different values and the grid must be recomputed.
             self.grid = None
+            self._debug(DEBUG_GRID_CALC, "invalidating grid after lost-light update")
             a, b, g = self.invert_scalar_rt()
             self._mc_iterations += 1
             mu_a, mu_sp = self._current_optical_coefficients()
@@ -454,19 +604,24 @@ class Experiment:
             # 2. keep iterating while direct lost-light terms are still moving
             if mu_a is None or mu_sp is None or last_mu_a is None or last_mu_sp is None:
                 if max_diff < self.MC_tolerance:
+                    self._debug(DEBUG_ITERATIONS, "MC convergence: lost fractions stable without optical coefficients")
                     break
                 continue
 
             if abs(last_mu_a - mu_a) > self.MC_tolerance:
+                self._debug(DEBUG_ITERATIONS, "MC keep going: mu_a still changing")
                 continue
 
             if abs(last_mu_sp - mu_sp) > self.MC_tolerance:
+                self._debug(DEBUG_ITERATIONS, "MC keep going: mu_s' still changing")
                 continue
 
             too_much_lost = diff_ur1 > 0.001 or diff_ut1 > 0.001
             if too_much_lost:
+                self._debug(DEBUG_ITERATIONS, "MC keep going: direct-loss guard still active")
                 continue
 
+            self._debug(DEBUG_ITERATIONS, "MC convergence: optical properties stabilized")
             break
 
         return a, b, g
@@ -605,6 +760,16 @@ class Experiment:
             uru_actual = uru - self.uru_lost
             utu_actual = utu - self.utu_lost
 
+        if self.debug_level & DEBUG_A_LITTLE:
+            print(
+                "measured_rt corrections: "
+                f"ur1={ur1:.5f}->{ur1_actual:.5f} "
+                f"ut1={ut1:.5f}->{ut1_actual:.5f} "
+                f"uru={uru:.5f}->{uru_actual:.5f} "
+                f"utu={utu:.5f}->{utu_actual:.5f}",
+                file=sys.stderr,
+            )
+
         # correct for fraction not collected
         m_r = ur1_actual - (1.0 - self.fraction_of_rc_in_mr) * r_u
         m_t = ut1_actual - (1.0 - self.fraction_of_tc_in_mt) * t_u
@@ -622,6 +787,14 @@ class Experiment:
             d_spheres = iad.DoubleSphere(self.r_sphere, self.t_sphere)
             d_spheres.f_r = self.f_r
             m_r, m_t = d_spheres.measured_rt(ur1_calc, uru_calc, ut1_calc, utu_calc)
+            if self.debug_level & DEBUG_SPHERE_GAIN:
+                print(
+                    "double sphere: "
+                    f"ur1={ur1_calc:.5f} uru={uru_calc:.5f} "
+                    f"ut1={ut1_calc:.5f} utu={utu_calc:.5f} -> "
+                    f"MR={m_r:.5f} MT={m_t:.5f}",
+                    file=sys.stderr,
+                )
             return m_r, m_t
 
         if self.num_spheres == 1:
@@ -631,9 +804,19 @@ class Experiment:
             if self.r_sphere is not None:
                 f_u = self.fraction_of_rc_in_mr
                 m_r = self.r_sphere.MR(ur1_actual, uru_actual, R_u=r_u, f_u=f_u, f_w=self.f_r)
+                if self.debug_level & DEBUG_SPHERE_GAIN:
+                    print(
+                        f"reflectance sphere MR={m_r:.5f} from ur1={ur1_actual:.5f} uru={uru_actual:.5f}",
+                        file=sys.stderr,
+                    )
 
             if self.t_sphere is not None:
                 m_t = self.t_sphere.MT(ut1_actual, uru_actual, T_u=t_u, f_u=self.fraction_of_tc_in_mt)
+                if self.debug_level & DEBUG_SPHERE_GAIN:
+                    print(
+                        f"transmission sphere MT={m_t:.5f} from ut1={ut1_actual:.5f} uru={uru_actual:.5f}",
+                        file=sys.stderr,
+                    )
 
         return m_r, m_t
 
@@ -649,6 +832,8 @@ def afun(x, *args):
         result += np.abs(m_r - exp.m_r)
     if exp.m_t is not None:
         result += np.abs(m_t - exp.m_t)
+    if exp.debug_level & DEBUG_EVERY_CALC:
+        print(f"calc find_a: a={x:.7f} mr={m_r:.7f} mt={m_t:.7f} delta={result:.7g}", file=sys.stderr)
     return result
 
 
@@ -663,6 +848,8 @@ def bfun(x, *args):
         result += np.abs(m_r - exp.m_r)
     if exp.m_t is not None:
         result += np.abs(m_t - exp.m_t)
+    if exp.debug_level & DEBUG_EVERY_CALC:
+        print(f"calc find_b: b={x:.7f} mr={m_r:.7f} mt={m_t:.7f} delta={result:.7g}", file=sys.stderr)
     return result
 
 
@@ -677,6 +864,8 @@ def gfun(x, *args):
         result += np.abs(m_r - exp.m_r)
     if exp.m_t is not None:
         result += np.abs(m_t - exp.m_t)
+    if exp.debug_level & DEBUG_EVERY_CALC:
+        print(f"calc find_g: g={x:.7f} mr={m_r:.7f} mt={m_t:.7f} delta={result:.7g}", file=sys.stderr)
     return result
 
 
@@ -687,7 +876,12 @@ def abfun(x, *args):
     exp.sample.b = x[1]
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
-    #    print("%7.4f %7.4f %7.4f %7.4f %7.4f" % (exp.sample.a, exp.sample.b, m_r, m_t, delta))
+    if exp.debug_level & DEBUG_EVERY_CALC:
+        print(
+            f"calc find_ab: a={exp.sample.a:.7f} b={exp.sample.b:.7f} "
+            f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
+            file=sys.stderr,
+        )
     return delta
 
 
@@ -698,6 +892,12 @@ def bgfun(x, *args):
     exp.sample.g = x[1]
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    if exp.debug_level & DEBUG_EVERY_CALC:
+        print(
+            f"calc find_bg: b={exp.sample.b:.7f} g={exp.sample.g:.7f} "
+            f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
+            file=sys.stderr,
+        )
     return delta
 
 
@@ -708,5 +908,78 @@ def agfun(x, *args):
     exp.sample.g = x[1]
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
-    #    print("%9.7f %8.5f %8.5f %8.5f %8.5f" % (delta, x[0], x[1], m_r, m_t))
+    if exp.debug_level & DEBUG_EVERY_CALC:
+        print(
+            f"calc find_ag: a={exp.sample.a:.7f} g={exp.sample.g:.7f} "
+            f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
+            file=sys.stderr,
+        )
+    return delta
+
+
+def bafun(x, *args):
+    """Vary the absorption optical depth with scattering optical depth fixed."""
+    exp = args[0]
+    ba = float(np.atleast_1d(x)[0])
+    exp._set_sample_from_ba_bs(ba, exp.default_bs)
+    m_r, m_t = exp.measured_rt()
+    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    if exp.debug_level & DEBUG_EVERY_CALC:
+        print(
+            f"calc find_ba: ba={ba:.7f} a={exp.sample.a:.7f} b={exp.sample.b:.7f} "
+            f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
+            file=sys.stderr,
+        )
+    return delta
+
+
+def bsfun(x, *args):
+    """Vary the scattering optical depth with absorption optical depth fixed."""
+    exp = args[0]
+    bs = float(np.atleast_1d(x)[0])
+    exp._set_sample_from_ba_bs(exp.default_ba, bs)
+    m_r, m_t = exp.measured_rt()
+    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    if exp.debug_level & DEBUG_EVERY_CALC:
+        print(
+            f"calc find_bs: bs={bs:.7f} a={exp.sample.a:.7f} b={exp.sample.b:.7f} "
+            f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
+            file=sys.stderr,
+        )
+    return delta
+
+
+def bagfun(x, *args):
+    """Vary absorption optical depth and anisotropy with scattering fixed."""
+    exp = args[0]
+    ba = float(np.atleast_1d(x)[0])
+    g = float(np.atleast_1d(x)[1])
+    exp._set_sample_from_ba_bs(ba, exp.default_bs)
+    exp.sample.g = g
+    m_r, m_t = exp.measured_rt()
+    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    if exp.debug_level & DEBUG_EVERY_CALC:
+        print(
+            f"calc find_bag: ba={ba:.7f} g={g:.7f} a={exp.sample.a:.7f} b={exp.sample.b:.7f} "
+            f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
+            file=sys.stderr,
+        )
+    return delta
+
+
+def bsgfun(x, *args):
+    """Vary scattering optical depth and anisotropy with absorption fixed."""
+    exp = args[0]
+    bs = float(np.atleast_1d(x)[0])
+    g = float(np.atleast_1d(x)[1])
+    exp._set_sample_from_ba_bs(exp.default_ba, bs)
+    exp.sample.g = g
+    m_r, m_t = exp.measured_rt()
+    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    if exp.debug_level & DEBUG_EVERY_CALC:
+        print(
+            f"calc find_bsg: bs={bs:.7f} g={g:.7f} a={exp.sample.a:.7f} b={exp.sample.b:.7f} "
+            f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
+            file=sys.stderr,
+        )
     return delta

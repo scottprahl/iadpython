@@ -2,6 +2,8 @@
 """Command line for support for iadpython."""
 
 import os
+import copy
+import shutil
 import sys
 from enum import Enum
 import argparse
@@ -134,6 +136,10 @@ def validator_11(value):
         raise argparse.ArgumentTypeError(f"{value} is not a valid number") from exc
     if not -1 <= fvalue <= 1:
         raise argparse.ArgumentTypeError(f"Commandline: {value} is not between -1 and 1")
+    if fvalue == -1:
+        return -0.999999
+    if fvalue == 1:
+        return 0.999999
     return fvalue
 
 
@@ -157,6 +163,54 @@ def validator_mc_iterations(value):
     if not 0 <= ivalue <= 50:
         raise argparse.ArgumentTypeError(f"Commandline: {value} must be between 0 and 50")
     return ivalue
+
+
+def validator_search_code(value):
+    """Is search override a valid CWEB search code."""
+    try:
+        ivalue = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"Commandline: {value} is not a valid integer") from exc
+    if ivalue not in iadpython.SEARCH_CODE_TO_NAME:
+        raise argparse.ArgumentTypeError(f"Commandline: {value} must be between 0 and 12")
+    return ivalue
+
+
+def validator_wave_limits(value):
+    """Parse a quoted wavelength-limit string like '500 600'."""
+    parts = str(value).replace(",", " ").split()
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError("Commandline: -l expects two wavelength limits")
+    try:
+        wave_min = float(parts[0])
+        wave_max = float(parts[1])
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("Commandline: wavelength limits must be numeric") from exc
+    if wave_min > wave_max:
+        raise argparse.ArgumentTypeError("Commandline: wavelength limits must be in ascending order")
+    return (wave_min, wave_max)
+
+
+def validator_scattering_constraint(value):
+    """Accept a constant mus or a CWEB-style power-law scattering constraint."""
+    text = str(value).strip()
+    if text[:1].lower() != "p":
+        return validator_positive(text)
+
+    parts = text.split()
+    if len(parts) != 4 or parts[0].lower() != "p":
+        raise argparse.ArgumentTypeError(
+            "Commandline: bad -F option. Use '-F 1.0' or \"-F 'P 500 1.0 -1.3'\""
+        )
+    try:
+        lambda0 = float(parts[1])
+        mus0 = float(parts[2])
+        gamma = float(parts[3])
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("Commandline: bad numeric value in -F power law") from exc
+    if lambda0 <= 0 or mus0 < 0:
+        raise argparse.ArgumentTypeError("Commandline: bad -F option. lambda0 must be positive and mus0 non-negative")
+    return ("power", lambda0, mus0, gamma)
 
 
 # Argument specifications
@@ -246,7 +300,7 @@ arg_specs = [
     {
         "flags": ["-F", "--mus"],
         "dest": "mus",
-        "type": validator_positive,
+        "type": validator_scattering_constraint,
         "help": "Use this scattering coefficient",
     },
     {"flags": ["-g"], "type": validator_11, "help": "Scattering anisotropy"},
@@ -256,7 +310,12 @@ arg_specs = [
         "choices": ["0", "2", "t", "b", "n", "f"],
         "help": "Type of boundary ",
     },
+    {"flags": ["-H"], "type": int, "choices": [0, 1, 2, 3], "help": "Sphere baffle configuration"},
     {"flags": ["-i"], "type": float, "help": "Light incident at this angle in degrees"},
+    {"flags": ["-j"], "dest": "musp", "type": validator_positive, "help": "Use this reduced scattering coefficient"},
+    {"flags": ["-J"], "action": "store_true", "help": "Generate grid after inverse calculation"},
+    {"flags": ["-l"], "type": validator_wave_limits, "help": "Wavelength limits"},
+    {"flags": ["-L"], "type": float, "help": "Specify the wavelength lambda"},
     {"flags": ["-M"], "type": validator_mc_iterations, "help": "Number of Monte Carlo iterations"},
     {
         "flags": ["-n", "--nslab"],
@@ -271,7 +330,7 @@ arg_specs = [
         "help": "Index of refraction of slides",
     },
     {"flags": ["-o"], "dest": "out_fname", "type": str, "help": "Filename for output"},
-    {"flags": ["-p"], "type": int, "help": "# of Monte Carlo photons (default 100000)"},
+    {"flags": ["-p"], "type": int, "help": "# of Monte Carlo photons (negative means milliseconds)"},
     {
         "flags": ["-q"],
         "type": int,
@@ -284,6 +343,7 @@ arg_specs = [
         "type": validator_01,
         "help": "Actual reflectance for 100%% measurement",
     },
+    {"flags": ["-s"], "type": validator_search_code, "help": "Search override"},
     {
         "flags": ["-S"],
         "type": int,
@@ -303,17 +363,20 @@ arg_specs = [
     },
     {
         "flags": ["-v", "--version"],
-        "action": "version",
-        "version": "iadp " + iadpython.__version__,
+        "dest": "v",
+        "action": "store_true",
         "help": "short version",
     },
-    {"flags": ["-V"], "action": "store_true", "help": "long version"},
+    {"flags": ["-V"], "type": int, "choices": [0, 1, 2], "default": 2, "help": "verbosity level"},
     {
         "flags": ["--verbosity"],
+        "dest": "V",
         "type": int,
         "choices": [0, 1, 2],
-        "help": "Verbosity level",
+        "help": argparse.SUPPRESS,
     },
+    {"flags": ["-w"], "type": validator_01, "help": "Reflection sphere wall reflectivity"},
+    {"flags": ["-W"], "type": validator_01, "help": "Transmission sphere wall reflectivity"},
     {"flags": ["-x"], "type": int, "help": "Set debugging level"},
     {"flags": ["-X"], "action": "store_true", "help": "Dual beam configuration"},
     {"flags": ["-z"], "action": "store_true", "help": "Do forward calculation"},
@@ -327,18 +390,18 @@ arg_specs = [
 ]
 
 
-def print_long_version():
-    """Print the version information and quit."""
+def print_version(verbosity):
+    """Print version information using the CWEB `-v/-V` convention."""
+    if verbosity == 0:
+        print(f"iadp {iadpython.__version__}", end="")
+        return
+
     s = ""
-    s += "    version: " + iadpython.__version__ + "\n"
-    s += "    Author: " + iadpython.__author__ + "\n"
-    s += "    Copyright: " + iadpython.__copyright__ + "\n"
-    s += "    License: " + iadpython.__license__ + "\n"
-    s += "    URL:" + iadpython.__url__ + "\n"
-    s += "\n    Forward and inverse adding-doubling radiative transport calculations.\n"
-    s += "    Extensive documentation is at <https://iadpython.readthedocs.io>\n"
-    print(s)
-    sys.exit(0)
+    s += "iadp " + iadpython.__version__ + "\n"
+    s += "Copyright " + iadpython.__copyright__ + ", " + iadpython.__author__ + "\n"
+    s += "\nForward and inverse adding-doubling radiative transport calculations.\n"
+    s += "Extensive documentation is at <https://iadpython.readthedocs.io>\n"
+    print(s, end="")
 
 
 def example_text():
@@ -354,6 +417,114 @@ def example_text():
     s += "  iad -o out file.rxt       Calculated values in out\n"
     s += "  iad -r 0.3                R_total=0.\n"
     return s
+
+
+def build_parser():
+    """Create the command-line parser."""
+    parser = argparse.ArgumentParser(
+        description="iad command line program",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog=example_text(),
+    )
+    for spec in arg_specs:
+        flags = spec["flags"]
+        other_args = {k: v for k, v in spec.items() if k != "flags"}
+        parser.add_argument(*flags, **other_args)
+    return parser
+
+
+def _resolve_scattering_constraint(constraint, wavelength):
+    """Resolve a constant or power-law scattering constraint."""
+    if constraint is None:
+        return None
+
+    if not (isinstance(constraint, tuple) and constraint and constraint[0] == "power"):
+        return constraint
+
+    if wavelength is None:
+        raise argparse.ArgumentTypeError(
+            "Commandline: power-law scattering (-F 'P ...') requires wavelength data or -L"
+        )
+
+    _, lambda0, mus0, gamma = constraint
+    resolved = mus0 * np.power(np.asarray(wavelength, dtype=float) / lambda0, gamma)
+    if np.ndim(resolved) == 0:
+        return float(resolved)
+    return resolved
+
+
+def _slice_if_matching_length(value, mask):
+    """Slice arrays that align with a wavelength mask; leave scalars unchanged."""
+    if value is None or np.isscalar(value) or np.ndim(value) == 0:
+        return value
+    arr = np.asarray(value)
+    if arr.shape[0] != mask.shape[0]:
+        return value
+    return arr[mask]
+
+
+def _filter_experiment_by_wavelength(exp, limits):
+    """Return a wavelength-filtered copy of an experiment."""
+    if limits is None or exp.lambda0 is None or np.isscalar(exp.lambda0):
+        return exp
+
+    wave_min, wave_max = limits
+    mask = (np.asarray(exp.lambda0) >= wave_min) & (np.asarray(exp.lambda0) <= wave_max)
+    if not np.any(mask):
+        raise argparse.ArgumentTypeError(
+            f"Commandline: no wavelengths fall within {wave_min:g} to {wave_max:g}"
+        )
+
+    filtered = copy.deepcopy(exp)
+    exp_attrs = [
+        "lambda0",
+        "m_r",
+        "m_t",
+        "m_u",
+        "d_beam",
+        "fraction_of_rc_in_mr",
+        "fraction_of_tc_in_mt",
+        "default_a",
+        "default_b",
+        "default_g",
+        "default_mua",
+        "default_mus",
+        "default_ba",
+        "default_bs",
+    ]
+    for attr in exp_attrs:
+        setattr(filtered, attr, _slice_if_matching_length(getattr(filtered, attr), mask))
+
+    sample_attrs = ["d", "n", "n_above", "n_below", "d_above", "d_below", "b_above", "b_below"]
+    for attr in sample_attrs:
+        setattr(filtered.sample, attr, _slice_if_matching_length(getattr(filtered.sample, attr), mask))
+
+    for sphere_name in ["r_sphere", "t_sphere"]:
+        sphere = getattr(filtered, sphere_name)
+        if sphere is None:
+            continue
+        sphere.r_wall = _slice_if_matching_length(sphere.r_wall, mask)
+        sphere.r_std = _slice_if_matching_length(sphere.r_std, mask)
+
+    return filtered
+
+
+def _discover_mc_lost_binary():
+    """Return a repo-local or PATH `mc_lost` binary if present."""
+    repo_binary = os.path.join(os.path.dirname(os.path.dirname(__file__)), "iad", "mc_lost")
+    if os.path.exists(repo_binary):
+        return repo_binary
+    src_binary = os.path.join(os.path.dirname(os.path.dirname(__file__)), "iad", "src", "mc_lost")
+    if os.path.exists(src_binary):
+        return src_binary
+    return shutil.which("mc_lost")
+
+
+def _point_value(value, index=None):
+    """Return a scalar value for a single row."""
+    if value is None or np.isscalar(value) or np.ndim(value) == 0:
+        return value
+    return value[index]
 
 
 def add_sample_constraints(exp, args):
@@ -401,8 +572,8 @@ def add_sample_constraints(exp, args):
             exp.sample.n_below = args.nslide
 
     if args.i is not None:
-        if abs(args.i) > 90:
-            raise argparse.ArgumentTypeError("Commandline: Bad argument to -i, value must be between -90 and 90")
+        if args.i < 0 or args.i > 90:
+            raise argparse.ArgumentTypeError("Commandline: Bad argument to -i, value must be between 0 and 90")
         exp.sample.nu_0 = np.cos(np.radians(args.i))
 
     if args.q is not None:
@@ -433,9 +604,19 @@ def add_experiment_constraints(exp, args):
 
     if args.r_sphere is not None:
         exp.r_sphere = cli_sphere_to_object(args.r_sphere, refl=True)
+        if args.S is None:
+            exp.num_spheres = 1
 
     if args.t_sphere is not None:
         exp.t_sphere = cli_sphere_to_object(args.t_sphere, refl=False)
+        if args.S is None:
+            exp.num_spheres = 2
+
+    if getattr(args, "w", None) is not None and args.r_sphere is not None:
+        raise argparse.ArgumentTypeError("Commandline: -w is overridden by -1 option. omit.")
+
+    if getattr(args, "W", None) is not None and args.t_sphere is not None:
+        raise argparse.ArgumentTypeError("Commandline: -W is overridden by -2 option. omit.")
 
     if args.diameter is not None:
         exp.d_beam = args.diameter
@@ -463,6 +644,23 @@ def add_experiment_constraints(exp, args):
         if exp.r_sphere is not None and rstd_r is None:
             exp.r_sphere.r_std = rstd_t
 
+    if getattr(args, "w", None) is not None and exp.r_sphere is not None:
+        exp.r_sphere.r_wall = args.w
+
+    if getattr(args, "W", None) is not None and exp.t_sphere is not None:
+        exp.t_sphere.r_wall = args.W
+
+    if getattr(args, "H", None) is not None:
+        r_baffle = args.H in (1, 3)
+        t_baffle = args.H in (2, 3)
+        if exp.r_sphere is not None:
+            exp.r_sphere.baffle = r_baffle
+        if exp.t_sphere is not None:
+            exp.t_sphere.baffle = t_baffle
+
+    if getattr(args, "L", None) is not None:
+        exp.lambda0 = args.L
+
 
 def add_analysis_constraints(exp, args):
     """Add command line constraints on analysis."""
@@ -478,9 +676,18 @@ def add_analysis_constraints(exp, args):
 
     if args.mua is not None:
         exp.default_mua = args.mua
+        exp.default_ba = args.mua * exp.sample.d
 
     if args.mus is not None:
-        exp.default_mus = args.mus
+        exp.default_mus = _resolve_scattering_constraint(args.mus, exp.lambda0)
+        exp.default_bs = exp.default_mus * exp.sample.d
+
+    if getattr(args, "musp", None) is not None:
+        if exp.default_g is not None:
+            exp.default_mus = args.musp / max(1.0 - exp.default_g, 1e-6)
+        else:
+            exp.default_mus = args.musp
+        exp.default_bs = exp.default_mus * exp.sample.d
 
     if args.f_r is not None:
         exp.fraction_of_rc_in_mr = args.f_r
@@ -503,6 +710,11 @@ def add_analysis_constraints(exp, args):
 
     if getattr(args, "x", None) is not None:
         exp.debug_level = args.x
+
+    if getattr(args, "s", None) is not None:
+        exp.search_override = iadpython.SEARCH_CODE_TO_NAME[args.s]
+
+    exp.verbosity = getattr(args, "V", 2)
 
     if getattr(args, "X", False):
         exp.method = "comparison"
@@ -593,6 +805,149 @@ def print_results_header(debug_lost_light=False):
     print()
 
 
+def _row_count(exp):
+    """Return the number of scalar inversions represented by an experiment."""
+    for value in [exp.lambda0, exp.m_r, exp.m_t, exp.m_u]:
+        if value is not None and not np.isscalar(value) and np.ndim(value) > 0:
+            return len(value)
+    return 1
+
+
+def _point_experiment(exp, index=None):
+    """Create a scalar experiment for a single row of input data."""
+    point = copy.deepcopy(exp)
+    exp_attrs = [
+        "lambda0",
+        "m_r",
+        "m_t",
+        "m_u",
+        "d_beam",
+        "fraction_of_rc_in_mr",
+        "fraction_of_tc_in_mt",
+        "default_a",
+        "default_b",
+        "default_g",
+        "default_mua",
+        "default_mus",
+        "default_ba",
+        "default_bs",
+    ]
+    for attr in exp_attrs:
+        setattr(point, attr, _point_value(getattr(exp, attr), index))
+
+    sample_attrs = ["d", "n", "n_above", "n_below", "d_above", "d_below", "b_above", "b_below"]
+    for attr in sample_attrs:
+        setattr(point.sample, attr, _point_value(getattr(exp.sample, attr), index))
+
+    for sphere_name in ["r_sphere", "t_sphere"]:
+        sphere = getattr(point, sphere_name)
+        source = getattr(exp, sphere_name)
+        if sphere is None or source is None:
+            continue
+        sphere.r_wall = _point_value(source.r_wall, index)
+        sphere.r_std = _point_value(source.r_std, index)
+
+    point.grid = None
+    point.include_measurements = False
+    return point
+
+
+def _grid_filename(args):
+    """Return the output filename for `-J` grid generation."""
+    if args.filename:
+        root, _ext = os.path.splitext(args.filename)
+        return root + ".grid"
+    if args.out_fname:
+        root, _ext = os.path.splitext(args.out_fname)
+        return root + ".grid"
+    return "iad.grid"
+
+
+def _populate_grid_lost_light(exp):
+    """Apply a direct MC lost-light estimate to a scalar grid point."""
+    if exp.max_mc_iterations == 0 or exp.num_spheres == 0 or exp.mc_lost_path is None:
+        exp.ur1_lost = 0
+        exp.ut1_lost = 0
+        exp.uru_lost = 0
+        exp.utu_lost = 0
+        return
+
+    n_sample = float(exp.sample.n)
+    n_slide = float(exp.sample.n_above) if exp.sample.n_above != 1.0 else 1.0
+    d_port_r = float(exp.r_sphere.sample.d) if exp.r_sphere is not None else 1000.0
+    d_port_t = float(exp.t_sphere.sample.d) if exp.t_sphere is not None else d_port_r
+
+    exp.ur1_lost, exp.ut1_lost, exp.uru_lost, exp.utu_lost = iadpython.mc_lost.run_mc_lost(
+        a=float(exp.sample.a),
+        b=float(exp.sample.b),
+        g=float(exp.sample.g),
+        n_sample=n_sample,
+        n_slide=n_slide,
+        d_port_r=d_port_r,
+        d_port_t=d_port_t,
+        d_beam=float(exp.d_beam),
+        t_sample=float(exp.sample.d),
+        t_slide=float(exp.t_slide),
+        n_photons=int(exp.n_photons),
+        method=exp.method,
+        binary_path=exp.mc_lost_path,
+    )
+
+
+def _write_grid_file(exp, args):
+    """Write a CWEB-style `.grid` file for a scalar experiment."""
+    grid_name = _grid_filename(args)
+    aa = [0, 0.8, 0.9, 0.95, 0.98, 0.99, 1.0]
+    bb = [0, 0.2, 0.5, 1.0, 3.0, 10.0, 100]
+    g_value = exp.default_g if exp.default_g is not None else exp.sample.g
+
+    with open(grid_name, "w", encoding="utf-8") as grid:
+        print(f"# g={g_value:6.4f}", file=grid)
+        print("#    a'          b'          g           M_R         M_T", file=grid)
+        for aprime in aa:
+            for bprime in bb:
+                point = copy.deepcopy(exp)
+                point.ur1_lost = 0
+                point.ut1_lost = 0
+                point.uru_lost = 0
+                point.utu_lost = 0
+                point.sample.g = g_value
+                point.sample.a = aprime / max(1 - g_value + aprime * g_value, 1e-12)
+                point.sample.b = bprime / max(1 - point.sample.a * g_value, 1e-12)
+                _populate_grid_lost_light(point)
+                m_r, m_t = point.measured_rt()
+                print(
+                    f"{aprime:10.5f}, {bprime:10.5f}, {g_value:10.5f}, {m_r:10.5f}, {m_t:10.5f}",
+                    file=grid,
+                )
+
+
+def print_result_row(exp, line=0, debug_lost_light=False):
+    """Print one scalar result row."""
+    m_r_fit, m_t_fit = exp.measured_rt()
+    wavelength = exp.lambda0
+    mu_a = min(float(exp.sample.mu_a()), 199.9999)
+    mu_sp = min(float(exp.sample.mu_sp()), 999.9999)
+    m_r = 0.0 if exp.m_r is None else float(exp.m_r)
+    m_t = 0.0 if exp.m_t is None else float(exp.m_t)
+
+    if wavelength not in (None, 0):
+        print(f"{float(wavelength):6.1f}", end="\t")
+    else:
+        print(f"{line:6d}", end="\t")
+
+    print(f"{m_r: 9.4f}\t{m_r_fit: 9.4f}\t{m_t: 9.4f}\t{m_t_fit: 9.4f}\t", end="")
+    print(f"{mu_a: 9.4f}\t{mu_sp: 9.4f}\t{float(exp.sample.g): 9.4f}", end="")
+
+    if debug_lost_light:
+        print(
+            f"\t{exp.ur1_lost: 8.4f}\t{exp.uru_lost: 8.4f}\t{exp.ut1_lost: 8.4f}\t{exp.utu_lost: 8.4f}"
+            f"\t{exp._mc_iterations: 3d}\t{exp.iterations: 3d}\t  {what_char(InputError.NO_ERROR)}",
+            end="",
+        )
+    print()
+
+
 def invert_file(exp, args):
     """Process an entire .rxt file."""
     # determine output file name
@@ -603,65 +958,39 @@ def invert_file(exp, args):
         else:
             args.out_fname = args.filename + ".txt"
 
+    exp = _filter_experiment_by_wavelength(exp, getattr(args, "l", None))
+    n_rows = _row_count(exp)
+    debug_lost_light = bool(exp.debug_level & iadpython.DEBUG_LOST_LIGHT)
+    last_point = None
+
     with open(args.out_fname, "w", encoding="utf-8") as output_stream, redirect_stdout(output_stream):
-        a, b, g = exp.invert_rt()
+        if exp.verbosity > 0:
+            print_results_header(debug_lost_light=debug_lost_light)
 
-        print_results_header()
-        for i, (a_i, b_i, g_i) in enumerate(zip(a, b, g)):
-            exp.sample.a = a_i
-            exp.sample.b = b_i
-            exp.sample.g = g_i
+        for i in range(n_rows):
+            point = _point_experiment(exp, None if n_rows == 1 else i)
+            a, b, g = point.invert_rt()
+            point.sample.a = a
+            point.sample.b = b
+            point.sample.g = g
+            print_result_row(point, line=i, debug_lost_light=debug_lost_light)
+            last_point = point
 
-            mr, mt = exp.measured_rt()
-
-            wavelength = None
-            if exp.lambda0 is not None:
-                wavelength = exp.lambda0 if np.isscalar(exp.lambda0) else exp.lambda0[i]
-
-            if wavelength not in (None, 0):
-                print("%6.1f" % wavelength, end="\t")
-            else:
-                print("%6d" % i, end="\t")
-
-            if exp.m_r is not None:
-                print("% 9.4f" % exp.m_r[i], end="\t")
-            else:
-                print("% 9.4f" % 0, end="\t")
-            print("% 9.4f" % mr, end="\t")
-
-            if exp.m_t is not None:
-                print("% 9.4f" % exp.m_t[i], end="\t")
-            else:
-                print("% 9.4f" % 0, end="\t")
-
-            print("% 9.4f" % mt, end="\t")
-
-            #            print("% 9.4f" % exp.sample.a, end='\t')
-            #            print("% 9.4f" % exp.sample.b, end='\t')
-            print("% 9.4f" % exp.sample.mu_a(), end="\t")
-            print("% 9.4f" % exp.sample.mu_sp(), end="\t")
-            print("% 9.4f" % exp.sample.g, end="\t")
-            print()
+        if getattr(args, "J", False) and last_point is not None:
+            _write_grid_file(last_point, args)
     sys.exit(0)
 
 
 def main():
     """Main command-line interface."""
-    parser = argparse.ArgumentParser(
-        description="iad command line program",
-        formatter_class=argparse.RawTextHelpFormatter,
-        epilog=example_text(),
-    )
-    for spec in arg_specs:
-        flags = spec["flags"]
-        other_args = {k: v for k, v in spec.items() if k != "flags"}
-        parser.add_argument(*flags, **other_args)
+    parser = build_parser()
 
     try:
         args = parser.parse_args()
 
-        if args.V:
-            print_long_version()
+        if args.v:
+            print_version(args.V)
+            sys.exit(0)
 
         # If there is a file then read it, otherwise create a blank experiment
         if args.filename:
@@ -678,6 +1007,11 @@ def main():
         if np.isscalar(exp.num_spheres) and exp.num_spheres > 0 and getattr(exp, "method", "unknown") == "unknown":
             exp.method = "substitution"
 
+        if np.isscalar(exp.num_spheres) and exp.num_spheres > 0 and exp.max_mc_iterations > 0:
+            exp.mc_lost_path = _discover_mc_lost_binary()
+            if exp.mc_lost_path is None:
+                raise RuntimeError("mc_lost binary not found. Build it with: cd iad && make mc_lost")
+
         if getattr(exp, "method", "unknown") in ("comparison", 1):
             if np.isscalar(exp.num_spheres) and exp.num_spheres == 2:
                 raise argparse.ArgumentTypeError(
@@ -692,15 +1026,20 @@ def main():
         if args.filename:
             invert_file(exp, args)
 
-        print(exp)
         if (exp.m_r is None) and (exp.m_t is None) and (exp.m_u is None):
             raise argparse.ArgumentTypeError("Commandline: One measurement needed or use '-z' for forward calc.")
 
-        # invert parameters specified on the commandline
-        a, b, g = exp.invert_rt()
-        print("   a = %.3f" % a)
-        print("   b = %.3f" % b)
-        print("   g = %.3f" % g)
+        point = _point_experiment(_filter_experiment_by_wavelength(exp, getattr(args, "l", None)))
+        a, b, g = point.invert_rt()
+        point.sample.a = a
+        point.sample.b = b
+        point.sample.g = g
+        debug_lost_light = bool(point.debug_level & iadpython.DEBUG_LOST_LIGHT)
+        if point.verbosity > 0:
+            print_results_header(debug_lost_light=debug_lost_light)
+        print_result_row(point, debug_lost_light=debug_lost_light)
+        if getattr(args, "J", False):
+            _write_grid_file(point, args)
         sys.exit(0)
 
     except (argparse.ArgumentTypeError, OSError, ValueError, RuntimeError, TypeError) as e:

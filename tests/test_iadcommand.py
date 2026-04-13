@@ -3,6 +3,7 @@
 import sys
 import os
 import io
+import shutil
 import tempfile
 import unittest
 import argparse
@@ -53,6 +54,11 @@ class TestCommandLineArgs(unittest.TestCase):
         """Invalid test for positive."""
         with self.assertRaises(argparse.ArgumentTypeError):
             iadcommand.validator_positive("-5")
+
+    def test_validator_scattering_constraint_power_law(self):
+        """Power-law `-F` syntax should parse like the CWEB CLI."""
+        parsed = iadcommand.validator_scattering_constraint("P 500 1.0 -1.3")
+        self.assertEqual(parsed, ("power", 500.0, 1.0, -1.3))
 
 
 class TestIadFile(unittest.TestCase):
@@ -199,6 +205,36 @@ class TestExperimentConstraints(unittest.TestCase):
         self.assertEqual(exp.r_sphere.r_std, 0.91)
         self.assertEqual(exp.t_sphere.r_std, 0.91)
 
+    def test_baffle_wall_and_lambda_overrides_are_applied(self):
+        """`-H`, `-w`, `-W`, and `-L` should update the experiment like iad."""
+        exp = iadcommand.iadpython.Experiment(
+            r_sphere=iadcommand.iadpython.Sphere(250, 20),
+            t_sphere=iadcommand.iadpython.Sphere(250, 20, refl=False),
+        )
+        args = argparse.Namespace(
+            S=None,
+            r_sphere=None,
+            t_sphere=None,
+            diameter=None,
+            r=None,
+            t=None,
+            u=None,
+            R=None,
+            T=None,
+            H=3,
+            w=0.88,
+            W=0.77,
+            L=632.8,
+        )
+
+        iadcommand.add_experiment_constraints(exp, args)
+
+        self.assertTrue(exp.r_sphere.baffle)
+        self.assertTrue(exp.t_sphere.baffle)
+        self.assertEqual(exp.r_sphere.r_wall, 0.88)
+        self.assertEqual(exp.t_sphere.r_wall, 0.77)
+        self.assertEqual(exp.lambda0, 632.8)
+
 
 class TestAnalysisConstraints(unittest.TestCase):
     """Tests for command-line constraints on analysis setup."""
@@ -211,13 +247,16 @@ class TestAnalysisConstraints(unittest.TestCase):
             "g": None,
             "mua": None,
             "mus": None,
+            "musp": None,
             "f_r": None,
             "f_t": None,
             "f_wall": None,
             "error": None,
             "M": None,
             "p": None,
+            "s": None,
             "x": None,
+            "V": 2,
             "X": False,
         }
         args.update(overrides)
@@ -226,7 +265,7 @@ class TestAnalysisConstraints(unittest.TestCase):
     def test_extra_analysis_flags_are_applied(self):
         """Apply -e, -f, -M, -p, -x and -X like iad command-line behavior."""
         exp = iadcommand.iadpython.Experiment()
-        args = self._base_analysis_args(error=0.002, f_wall=0.3, M=4, p=12345, x=8, X=True)
+        args = self._base_analysis_args(error=0.002, f_wall=0.3, M=4, p=-12345, x=8, X=True, s=8, V=1)
 
         iadcommand.add_analysis_constraints(exp, args)
 
@@ -234,9 +273,23 @@ class TestAnalysisConstraints(unittest.TestCase):
         self.assertEqual(exp.MC_tolerance, 0.002)
         self.assertEqual(exp.f_r, 0.3)
         self.assertEqual(exp.max_mc_iterations, 4)
-        self.assertEqual(exp.n_photons, 12345)
+        self.assertEqual(exp.n_photons, -12345)
         self.assertEqual(exp.debug_level, 8)
         self.assertEqual(exp.method, "comparison")
+        self.assertEqual(exp.search_override, "find_ba")
+        self.assertEqual(exp.verbosity, 1)
+
+    def test_mua_musp_constraints_fill_ba_and_bs(self):
+        """`-A` and `-j` should populate optical-depth constraints."""
+        exp = iadcommand.iadpython.Experiment()
+        exp.sample.d = 2.0
+        args = self._base_analysis_args(mua=0.4, musp=1.2, g=0.2)
+
+        iadcommand.add_analysis_constraints(exp, args)
+
+        self.assertAlmostEqual(exp.default_ba, 0.8)
+        self.assertAlmostEqual(exp.default_mus, 1.5)
+        self.assertAlmostEqual(exp.default_bs, 3.0)
 
 
 class TestSampleConstraints(unittest.TestCase):
@@ -276,6 +329,14 @@ class TestSampleConstraints(unittest.TestCase):
 
         self.assertEqual(exp.sample.n_above, 1.5)
         self.assertEqual(exp.sample.n_below, 1.5)
+
+    def test_oblique_incidence_requires_nonnegative_angle(self):
+        """`-i` should reject negative angles like the CWEB CLI."""
+        exp = iadcommand.iadpython.Experiment()
+        args = self._base_sample_args(i=-5, q=12)
+
+        with self.assertRaises(argparse.ArgumentTypeError):
+            iadcommand.add_sample_constraints(exp, args)
 
 
 class TestIadCommandForward(unittest.TestCase):
@@ -464,6 +525,51 @@ class TestIadSingle(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm:
                 iadcommand.main()
         self.assertEqual(cm.exception.code, 1)
+
+    def test_version_uses_cweb_verbosity_convention(self):
+        """`-v` should honor `-V` instead of acting like the old Python long-version flag."""
+        test_args = ["iadcommand.py", "-v", "-V", "0"]
+        with patch("sys.argv", test_args):
+            with patch("sys.stdout", new_callable=io.StringIO) as fake_stdout:
+                with self.assertRaises(SystemExit) as cm:
+                    iadcommand.main()
+        self.assertEqual(cm.exception.code, 0)
+        self.assertEqual(fake_stdout.getvalue(), f"iadp {iadcommand.iadpython.__version__}")
+
+    def test_wavelength_limits_filter_file_output(self):
+        """`-l` should keep only wavelengths within the requested interval."""
+        sample_file = os.path.join(current_dir, "data", "sample-A.rxt")
+        with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as handle:
+            out_file = handle.name
+        test_args = ["iadcommand.py", sample_file, "-l", "850 900", "-o", out_file]
+        try:
+            with patch("sys.argv", test_args):
+                with self.assertRaises(SystemExit) as cm:
+                    iadcommand.main()
+            self.assertEqual(cm.exception.code, 0)
+            with open(out_file, encoding="utf-8") as fh:
+                data_lines = [line for line in fh.readlines() if line.strip() and not line.startswith("#")]
+            self.assertEqual(len(data_lines), 6)
+        finally:
+            if os.path.exists(out_file):
+                os.remove(out_file)
+
+    def test_grid_generation_writes_grid_file(self):
+        """`-J` should emit a `.grid` file next to the input/output target."""
+        source = os.path.join(current_dir, "data", "basic-A.rxt")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_copy = os.path.join(tmpdir, "basic-A.rxt")
+            shutil.copyfile(source, input_copy)
+            test_args = ["iadcommand.py", input_copy, "-J"]
+            with patch("sys.argv", test_args):
+                with self.assertRaises(SystemExit) as cm:
+                    iadcommand.main()
+            self.assertEqual(cm.exception.code, 0)
+            grid_file = os.path.join(tmpdir, "basic-A.grid")
+            self.assertTrue(os.path.exists(grid_file))
+            with open(grid_file, encoding="utf-8") as fh:
+                contents = fh.read()
+            self.assertIn("a'", contents)
 
 
 if __name__ == "__main__":
