@@ -201,6 +201,9 @@ class Experiment:
                 self.search = "find_b_no_scattering"
             elif np.isclose(self.default_a, 1.0):
                 self.search = "find_b_no_absorption"
+            elif self.default_b is not None:
+                # both a and b fixed → only anisotropy is free
+                self.search = "find_g"
             elif self.m_t == 0:
                 self.search = "find_g"
             else:
@@ -211,10 +214,11 @@ class Experiment:
             self.search = "find_ba"
         elif self.default_ba is not None:
             self.search = "find_bs"
+        elif self.m_r is not None:
+            # only reflection given, no defaults → semi-infinite slab, find albedo
+            self.search = "find_a"
         elif self.m_t == 0:
             self.search = "find_a"
-        elif self.m_r == 0:
-            self.search = "find_b_no_scattering"
         else:
             self.search = "find_b_no_absorption"
 
