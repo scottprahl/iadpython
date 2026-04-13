@@ -8,10 +8,17 @@ requires fewer RT evaluations than a dense uniform grid.
 
 from __future__ import annotations
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from .cache import Cache
+
+# Mirrors CWEB iad_type.w: @d MAX_ABS_G 0.999999
+_MAX_ABS_G = 0.999999
+
+# Log-b limits mirror CWEB iad_calc.w Fill_AB_Grid / Fill_BG_Grid
+_MIN_LOG_B = -8.0
+_MAX_LOG_B_AB = 8.0    # exp(+8)  ≈ 2981  (find_ab, find_ag)
+_MAX_LOG_B_BG = 10.0   # exp(+10) ≈ 22026 (find_bg)
 
 
 class AGrid:
@@ -24,11 +31,11 @@ class AGrid:
         "find_bg": ("a", ("b", "g")),
     }
 
-    # overall ranges for each axis
+    # overall ranges for each axis; b is stored in log space
     _ranges = {
         "a": (0.0, 1.0),
-        "b": (0.0, 10.0),
-        "g": (-0.99, 0.99),
+        "b": (_MIN_LOG_B, _MAX_LOG_B_AB),   # log-b; find_bg overrides upper limit in build()
+        "g": (-_MAX_ABS_G, _MAX_ABS_G),
     }
 
     def __init__(
@@ -171,13 +178,20 @@ class AGrid:
             )
 
     def _make_args(self, u, v):
-        """Build (a,b,g) from the 2D coords (u,v) and the fixed axis."""
+        """Build (a,b,g) from the 2D coords (u,v) and the fixed axis.
+
+        When b is a free axis its coordinate is stored in log space; exponentiate
+        before passing to the RT solver.
+        """
         if self.fixed_axis == "g":
-            return (u, v, self.default)
+            # u = a, v = log_b
+            return (u, np.exp(v), self.default)
         if self.fixed_axis == "b":
+            # u = a, v = g  (b is fixed — already a real value)
             return (u, self.default, v)
         if self.fixed_axis == "a":
-            return (self.default, u, v)
+            # u = log_b, v = g
+            return (self.default, np.exp(u), v)
         raise ValueError(f"Bad fixed axis: {self.fixed_axis!r}")
 
     def build(self) -> None:
@@ -197,8 +211,11 @@ class AGrid:
 
         axis0, axis1 = self.vary_axes
 
-        # grab the ranges for the two free axes
-        (u0, u1), (v0, v1) = self._ranges[axis0], self._ranges[axis1]
+        # grab the ranges for the two free axes; for find_bg use the wider b limit
+        ranges = dict(self._ranges)
+        if self.search == "find_bg":
+            ranges["b"] = (_MIN_LOG_B, _MAX_LOG_B_BG)
+        (u0, u1), (v0, v1) = ranges[axis0], ranges[axis1]
 
         # collect the (u,v) corner points that meet the tolerance
         uv_points: set[tuple[float, float]] = set()
@@ -238,7 +255,8 @@ class AGrid:
     def square_grid(self, N=21):
         """Return a square grid."""
         aa = np.linspace(self._ranges["a"][0], self._ranges["a"][1], N)
-        bb = np.linspace(self._ranges["b"][0], self._ranges["b"][1], N)
+        max_log_b = _MAX_LOG_B_BG if self.search == "find_bg" else _MAX_LOG_B_AB
+        bb = np.exp(np.linspace(_MIN_LOG_B, max_log_b, N))
         gg = np.linspace(self._ranges["g"][0], self._ranges["g"][1], N)
 
         if self.search == "find_ab":
@@ -266,6 +284,8 @@ class AGrid:
 
     def plot(self):
         """Plot the grid."""
+        import matplotlib.pyplot as plt  # lazy import — not required at module load
+
         # turn the cache into a (N×7) array
         data = np.array(list(self.cache))
         if data.size == 0:

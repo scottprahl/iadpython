@@ -12,6 +12,7 @@ class AGridTest(unittest.TestCase):
         """`find_ag` grid should keep b fixed at the provided default."""
         fixed_b = 4.0
         exp = iadpython.Experiment(r=0.1, t=0.5, default_b=fixed_b)
+        exp.useful_measurements()
         exp.determine_search()
 
         grid = iadpython.AGrid(tol=0.02, max_depth=3)
