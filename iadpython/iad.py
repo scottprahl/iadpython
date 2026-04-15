@@ -54,6 +54,26 @@ SEARCH_CODE_TO_NAME = {
 }
 
 
+def _point_value(value, index=None):
+    """Return a scalar value for one row of array-valued input."""
+    if value is None or np.isscalar(value) or np.ndim(value) == 0:
+        return value
+    return value[index]
+
+
+def _as_scalar_float(value, label):
+    """Return a Python float from a scalar-like value."""
+    if value is None:
+        raise ValueError(f"{label} cannot be None")
+
+    arr = np.asarray(value)
+    if arr.ndim == 0:
+        return float(arr)
+    if arr.size == 1:
+        return float(arr.reshape(()))
+    raise ValueError(f"{label} must be scalar, got shape {arr.shape}")
+
+
 class Experiment:
     """Container class for details of an experiment."""
 
@@ -124,13 +144,16 @@ class Experiment:
         self.mc_lost_path = None  # path to mc_lost binary; None disables MC iteration
         self.t_slide = 0.0  # physical thickness of cover glass slides [mm]
         self._mc_iterations = 0  # number of MC iterations used in last invert_rt() call
-        self.use_adaptive_grid = True
+        self.use_adaptive_grid = None  # None = auto-select by search mode
         self.adaptive_grid_tol = 0.03
         self.adaptive_grid_max_depth = 6
+        self.adaptive_grid_min_depth = 2
+        self.grid_n = 21  # N for Grid when not using AGrid
         self.counter = 0
         self.include_measurements = True
         self.search_override = None
         self.search_code = 4
+        self.first_pass_abg = None
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -308,6 +331,174 @@ class Experiment:
             return 1.0
         return max(float(np.max(finite)), floor)
 
+    def point_at(self, index=None):
+        """Return a scalar experiment for one row of vector-valued input."""
+        point = copy.deepcopy(self)
+
+        exp_attrs = [
+            "lambda0",
+            "m_r",
+            "m_t",
+            "m_u",
+            "d_beam",
+            "fraction_of_rc_in_mr",
+            "fraction_of_tc_in_mt",
+            "default_a",
+            "default_b",
+            "default_g",
+            "default_mua",
+            "default_mus",
+            "default_ba",
+            "default_bs",
+            "num_spheres",
+            "rstd_r",
+            "error",
+            "f_r",
+        ]
+        for attr in exp_attrs:
+            setattr(point, attr, _point_value(getattr(self, attr), index))
+
+        sample_attrs = [
+            "a",
+            "b",
+            "g",
+            "d",
+            "n",
+            "n_above",
+            "n_below",
+            "d_above",
+            "d_below",
+            "b_above",
+            "b_below",
+        ]
+        for attr in sample_attrs:
+            setattr(point.sample, attr, _point_value(getattr(self.sample, attr), index))
+
+        for sphere_name in ["r_sphere", "t_sphere"]:
+            sphere = getattr(point, sphere_name)
+            source = getattr(self, sphere_name)
+            if sphere is None or source is None:
+                continue
+            sphere.r_wall = _point_value(source.r_wall, index)
+            sphere.r_std = _point_value(source.r_std, index)
+
+        point.grid = None
+        point.include_measurements = False
+        point.first_pass_abg = None
+        return point
+
+    def measured_rt_from_raw(self, ur1, ut1, uru, utu, include_lost=True, a=None, b=None, g=None):
+        """Convert raw RT values into the measured `M_R/M_T` for this experiment."""
+        s = self.sample
+        original = None
+
+        if a is not None or b is not None or g is not None:
+            original = (s.a, s.b, s.g)
+            if a is not None:
+                s.a = a
+            if b is not None:
+                s.b = b
+            if g is not None:
+                s.g = g
+
+        try:
+            nu_inside = iad.cos_snell(1, s.nu_0, s.n)
+            r_u, t_u = iad.specular_rt(s.n_above, s.n, s.n_below, s.b, nu_inside)
+
+            if self.num_spheres == 0 or not include_lost:
+                ur1_actual = ur1
+                ut1_actual = ut1
+                uru_actual = uru
+                utu_actual = utu
+            else:
+                ur1_actual = ur1 - self.ur1_lost
+                ut1_actual = ut1 - self.ut1_lost
+                uru_actual = uru - self.uru_lost
+                utu_actual = utu - self.utu_lost
+
+            if self.debug_level & DEBUG_A_LITTLE:
+                print(
+                    "measured_rt corrections: "
+                    f"ur1={ur1:.5f}->{ur1_actual:.5f} "
+                    f"ut1={ut1:.5f}->{ut1_actual:.5f} "
+                    f"uru={uru:.5f}->{uru_actual:.5f} "
+                    f"utu={utu:.5f}->{utu_actual:.5f}",
+                    file=sys.stderr,
+                )
+
+            m_r = ur1_actual - (1.0 - self.fraction_of_rc_in_mr) * r_u
+            m_t = ut1_actual - (1.0 - self.fraction_of_tc_in_mt) * t_u
+
+            if self.num_spheres == 2:
+                if self.r_sphere is None or self.t_sphere is None:
+                    raise ValueError("Double sphere mode requires both reflection and transmission spheres.")
+
+                lost_ur1 = self.ur1_lost if include_lost else 0.0
+                lost_ut1 = self.ut1_lost if include_lost else 0.0
+                uru_calc = max(uru_actual, 0.0)
+                utu_calc = max(utu_actual, 0.0)
+                ur1_calc = max(ur1 - (1.0 - self.fraction_of_rc_in_mr) * r_u - lost_ur1, 0.0)
+                ut1_calc = max(ut1 - (1.0 - self.fraction_of_tc_in_mt) * t_u - lost_ut1, 0.0)
+
+                d_spheres = iad.DoubleSphere(self.r_sphere, self.t_sphere)
+                d_spheres.f_r = self.f_r
+                m_r, m_t = d_spheres.measured_rt(ur1_calc, uru_calc, ut1_calc, utu_calc)
+                if self.debug_level & DEBUG_SPHERE_GAIN:
+                    print(
+                        "double sphere: "
+                        f"ur1={ur1_calc:.5f} uru={uru_calc:.5f} "
+                        f"ut1={ut1_calc:.5f} utu={utu_calc:.5f} -> "
+                        f"MR={m_r:.5f} MT={m_t:.5f}",
+                        file=sys.stderr,
+                    )
+                return m_r, m_t
+
+            if self.num_spheres == 1:
+                if self.method in ("comparison", 1):
+                    return m_r, m_t
+
+                if self.r_sphere is not None:
+                    f_u = self.fraction_of_rc_in_mr
+                    m_r = self.r_sphere.MR(ur1_actual, uru_actual, R_u=r_u, f_u=f_u, f_w=self.f_r)
+                    if self.debug_level & DEBUG_SPHERE_GAIN:
+                        print(
+                            f"reflectance sphere MR={m_r:.5f} from ur1={ur1_actual:.5f} uru={uru_actual:.5f}",
+                            file=sys.stderr,
+                        )
+
+                if self.t_sphere is not None:
+                    m_t = self.t_sphere.MT(ut1_actual, uru_actual, T_u=t_u, f_u=self.fraction_of_tc_in_mt)
+                    if self.debug_level & DEBUG_SPHERE_GAIN:
+                        print(
+                            f"transmission sphere MT={m_t:.5f} from ut1={ut1_actual:.5f} uru={uru_actual:.5f}",
+                            file=sys.stderr,
+                        )
+
+            return m_r, m_t
+        finally:
+            if original is not None:
+                s.a, s.b, s.g = original
+
+    def measurement_distance_from_raw(self, ur1, ut1, uru, utu, include_lost=True, a=None, b=None, g=None):
+        """Return corrected `M_R/M_T` and scalar L1 distance to the measurements."""
+        m_r, m_t = self.measured_rt_from_raw(
+            ur1,
+            ut1,
+            uru,
+            utu,
+            include_lost=include_lost,
+            a=a,
+            b=b,
+            g=g,
+        )
+
+        delta = 0.0
+        if self.m_r is not None:
+            delta += abs(_as_scalar_float(m_r, "calculated M_R") - _as_scalar_float(self.m_r, "measured M_R"))
+        if self.m_t is not None:
+            delta += abs(_as_scalar_float(m_t, "calculated M_T") - _as_scalar_float(self.m_t, "measured M_T"))
+        return m_r, m_t, delta
+
     def invert_scalar_rt(self):
         """Find a,b,g for a single experimental measurement.
 
@@ -324,6 +515,8 @@ class Experiment:
 
         if self.m_r is None and self.m_t is None and self.m_u is None:
             return None, None, None
+
+        self.sample.rt_evals = 0
 
         # assign default values
         self.sample.a = 0 if self.default_a is None else self.default_a
@@ -360,16 +553,42 @@ class Experiment:
 
         if self.search in ["find_ab", "find_ag", "find_bg"]:
 
-            if self.grid is None:
-                if self.use_adaptive_grid:
-                    self.grid = iad.AGrid(tol=self.adaptive_grid_tol, max_depth=self.adaptive_grid_max_depth)
+            # Determine grid type for this search mode.
+            # use_adaptive_grid=None (default): auto-select based on benchmark results.
+            #   find_ab/find_bg: AGrid(fine) — robust on the no-MC Stage A fixtures,
+            #     including the one-sphere cases where AGrid(medium) can miss.
+            #   find_ag: AGrid(medium) — gives good coverage without the full fine-grid cost.
+            # use_adaptive_grid=True : always AGrid with user-tunable tol/depth.
+            # use_adaptive_grid=False: always Grid(N=grid_n).
+            if self.use_adaptive_grid is None:
+                want_agrid = True
+                if self.search in ("find_ab", "find_bg"):
+                    agrid_tol       = 0.01
+                    agrid_max_depth = 8
+                    agrid_min_depth = 3
                 else:
-                    self.grid = iad.Grid()
+                    agrid_tol       = self.adaptive_grid_tol
+                    agrid_max_depth = self.adaptive_grid_max_depth
+                    agrid_min_depth = getattr(self, "adaptive_grid_min_depth", 2)
+            elif self.use_adaptive_grid:
+                want_agrid      = True
+                agrid_tol       = self.adaptive_grid_tol
+                agrid_max_depth = self.adaptive_grid_max_depth
+                agrid_min_depth = getattr(self, "adaptive_grid_min_depth", 2)
+            else:
+                want_agrid = False
 
-            if self.use_adaptive_grid and not isinstance(self.grid, iad.AGrid):
-                self.grid = iad.AGrid(tol=self.adaptive_grid_tol, max_depth=self.adaptive_grid_max_depth)
-            if not self.use_adaptive_grid and isinstance(self.grid, iad.AGrid):
-                self.grid = iad.Grid()
+            # Replace grid if type changed
+            if want_agrid and not isinstance(self.grid, iad.AGrid):
+                self.grid = None
+            if not want_agrid and isinstance(self.grid, iad.AGrid):
+                self.grid = None
+            if self.grid is None:
+                if want_agrid:
+                    self.grid = iad.AGrid(tol=agrid_tol, max_depth=agrid_max_depth,
+                                          min_depth=agrid_min_depth)
+                else:
+                    self.grid = iad.Grid(N=self.grid_n)
 
             # the grids are two-dimensional, one value is held constant
             grid_constant = None
@@ -381,15 +600,16 @@ class Experiment:
                 grid_constant = self.sample.g
 
             if isinstance(self.grid, iad.AGrid):
-                if self.grid.is_stale(grid_constant, search=self.search):
+                if self.grid.is_stale(self, grid_constant, search=self.search):
                     self._debug(DEBUG_GRID_CALC, f"recomputing adaptive grid for {self.search}")
                     self.grid.calc(self, default=grid_constant, search=self.search)
             else:
-                if self.grid.is_stale(grid_constant):
+                if self.grid.is_stale(self, grid_constant, search=self.search):
                     self._debug(DEBUG_GRID_CALC, f"recomputing grid for {self.search}")
                     self.grid.calc(self, grid_constant)
 
-            a, b, g = self.grid.min_abg(self.m_r, self.m_t)
+            a, b, g = self.grid.min_abg(self.m_r, self.m_t, exp=self)
+            self._grid_evals = self.sample.rt_evals
             if self.debug_level & DEBUG_BEST_GUESS:
                 print("grid constant %8.5f" % grid_constant)
                 print("grid start a=%8.5f" % a)
@@ -466,6 +686,9 @@ class Experiment:
             self.iterations = getattr(result, "nit", getattr(result, "nfev", 0))
             self.final_distance = float(getattr(result, "fun", np.nan))
             self._debug(DEBUG_ITERATIONS, f"{self.search}: iterations={self.iterations} distance={self.final_distance:.6g}")
+
+        grid_evals = getattr(self, "_grid_evals", 0)
+        self._optimizer_evals = self.sample.rt_evals - grid_evals
 
         return self.sample.a, self.sample.b, self.sample.g
 
@@ -582,6 +805,7 @@ class Experiment:
         """
         self._mc_iterations = 0
         a, b, g = self.invert_scalar_rt()
+        self.first_pass_abg = (a, b, g)
 
         if self.mc_lost_path is None or self.num_spheres == 0:
             return a, b, g
@@ -661,18 +885,8 @@ class Experiment:
         b = np.zeros(N)
         g = np.zeros(N)
 
-        x = copy.deepcopy(self)
-        x.m_r = None
-        x.m_t = None
-        x.m_u = None
-
         for i in range(N):
-            if self.m_r is not None:
-                x.m_r = self.m_r[i]
-            if self.m_t is not None:
-                x.m_t = self.m_t[i]
-            if self.m_u is not None:
-                x.m_u = self.m_u[i]
+            x = self.point_at(i)
             a[i], b[i], g[i] = x._invert_scalar_with_mc()
             self.print_dot()
 
@@ -743,86 +957,8 @@ class Experiment:
         Returns:
             [float, float]: measured reflection and transmission
         """
-        s = self.sample
-        ur1, ut1, uru, utu = s.rt()
-
-        # find the unscattered reflection and transmission
-        nu_inside = iad.cos_snell(1, s.nu_0, s.n)
-        r_u, t_u = iad.specular_rt(s.n_above, s.n, s.n_below, s.b, nu_inside)
-
-        # Lost-light corrections are only defined when one or two spheres are
-        # actually being modeled.  Keep zero-sphere calculations independent
-        # of any stale or user-supplied lost-light values.
-        if self.num_spheres == 0:
-            ur1_actual = ur1
-            ut1_actual = ut1
-            uru_actual = uru
-            utu_actual = utu
-        else:
-            ur1_actual = ur1 - self.ur1_lost
-            ut1_actual = ut1 - self.ut1_lost
-            uru_actual = uru - self.uru_lost
-            utu_actual = utu - self.utu_lost
-
-        if self.debug_level & DEBUG_A_LITTLE:
-            print(
-                "measured_rt corrections: "
-                f"ur1={ur1:.5f}->{ur1_actual:.5f} "
-                f"ut1={ut1:.5f}->{ut1_actual:.5f} "
-                f"uru={uru:.5f}->{uru_actual:.5f} "
-                f"utu={utu:.5f}->{utu_actual:.5f}",
-                file=sys.stderr,
-            )
-
-        # correct for fraction not collected
-        m_r = ur1_actual - (1.0 - self.fraction_of_rc_in_mr) * r_u
-        m_t = ut1_actual - (1.0 - self.fraction_of_tc_in_mt) * t_u
-
-        if self.num_spheres == 2:
-            if self.r_sphere is None or self.t_sphere is None:
-                raise ValueError("Double sphere mode requires both reflection and transmission spheres.")
-
-            # Match CWEB/C correction path in iad_calc.c before two-sphere formulas
-            uru_calc = max(uru_actual, 0.0)
-            utu_calc = max(utu_actual, 0.0)
-            ur1_calc = max(ur1 - (1.0 - self.fraction_of_rc_in_mr) * r_u - self.ur1_lost, 0.0)
-            ut1_calc = max(ut1 - (1.0 - self.fraction_of_tc_in_mt) * t_u - self.ut1_lost, 0.0)
-
-            d_spheres = iad.DoubleSphere(self.r_sphere, self.t_sphere)
-            d_spheres.f_r = self.f_r
-            m_r, m_t = d_spheres.measured_rt(ur1_calc, uru_calc, ut1_calc, utu_calc)
-            if self.debug_level & DEBUG_SPHERE_GAIN:
-                print(
-                    "double sphere: "
-                    f"ur1={ur1_calc:.5f} uru={uru_calc:.5f} "
-                    f"ut1={ut1_calc:.5f} utu={utu_calc:.5f} -> "
-                    f"MR={m_r:.5f} MT={m_t:.5f}",
-                    file=sys.stderr,
-                )
-            return m_r, m_t
-
-        if self.num_spheres == 1:
-            if self.method in ("comparison", 1):
-                return m_r, m_t
-
-            if self.r_sphere is not None:
-                f_u = self.fraction_of_rc_in_mr
-                m_r = self.r_sphere.MR(ur1_actual, uru_actual, R_u=r_u, f_u=f_u, f_w=self.f_r)
-                if self.debug_level & DEBUG_SPHERE_GAIN:
-                    print(
-                        f"reflectance sphere MR={m_r:.5f} from ur1={ur1_actual:.5f} uru={uru_actual:.5f}",
-                        file=sys.stderr,
-                    )
-
-            if self.t_sphere is not None:
-                m_t = self.t_sphere.MT(ut1_actual, uru_actual, T_u=t_u, f_u=self.fraction_of_tc_in_mt)
-                if self.debug_level & DEBUG_SPHERE_GAIN:
-                    print(
-                        f"transmission sphere MT={m_t:.5f} from ut1={ut1_actual:.5f} uru={uru_actual:.5f}",
-                        file=sys.stderr,
-                    )
-
-        return m_r, m_t
+        ur1, ut1, uru, utu = self.sample.rt()
+        return self.measured_rt_from_raw(ur1, ut1, uru, utu, include_lost=True)
 
 
 def afun(x, *args):

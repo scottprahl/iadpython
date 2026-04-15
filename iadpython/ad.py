@@ -470,6 +470,7 @@ class Sample:
 
         This is extended so that arrays can be handled.
         """
+        self.rt_evals = getattr(self, "rt_evals", 0) + 1
         len_a = 0
         len_b = 0
         len_g = 0
