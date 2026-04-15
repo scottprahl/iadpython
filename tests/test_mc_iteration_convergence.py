@@ -36,7 +36,7 @@ def test_mc_iteration_waits_for_mu_stability(monkeypatch):
         ]
     )
 
-    def fake_invert_scalar_rt():
+    def fake_invert_scalar_rt(hot_start=None, initial_simplex=None):
         a, b, g = next(states)
         exp.sample.a = a
         exp.sample.b = b
@@ -74,7 +74,7 @@ def test_mc_iteration_honors_direct_loss_guard(monkeypatch):
         ]
     )
 
-    def fake_invert_scalar_rt():
+    def fake_invert_scalar_rt(hot_start=None, initial_simplex=None):
         a, b, g = next(states)
         exp.sample.a = a
         exp.sample.b = b

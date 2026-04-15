@@ -77,14 +77,14 @@ class AGridTest(unittest.TestCase):
         exp.invert_rt()
         self.assertIsInstance(exp.grid, iadpython.AGrid)
 
-    def test_experiment_auto_find_ab_uses_fine_agrid(self):
-        """Auto mode: find_ab now uses the fine adaptive grid settings."""
+    def test_experiment_auto_find_ab_uses_coarse_agrid(self):
+        """Auto mode: find_ab uses the coarse adaptive grid settings."""
         exp = iadpython.Experiment(r=0.1, t=0.5, default_g=0.5)
         exp.invert_rt()
         self.assertIsInstance(exp.grid, iadpython.AGrid)
-        self.assertAlmostEqual(exp.grid.tol, 0.01)
-        self.assertEqual(exp.grid.max_depth, 8)
-        self.assertEqual(exp.grid.min_depth, 3)
+        self.assertAlmostEqual(exp.grid.tol, 0.05)
+        self.assertEqual(exp.grid.max_depth, 4)
+        self.assertEqual(exp.grid.min_depth, 2)
 
     def test_experiment_auto_selects_agrid_for_find_bg(self):
         """Auto mode: find_bg uses AGrid(fine) (33% fewer optimizer evals)."""
@@ -92,13 +92,13 @@ class AGridTest(unittest.TestCase):
         exp.invert_rt()
         self.assertIsInstance(exp.grid, iadpython.AGrid)
 
-    def test_experiment_auto_find_bg_uses_fine_agrid(self):
-        """Auto mode: find_bg AGrid uses tol=0.01 and max_depth=8."""
+    def test_experiment_auto_find_bg_uses_coarse_agrid(self):
+        """Auto mode: find_bg AGrid uses coarse settings."""
         exp = iadpython.Experiment(r=0.19, t=0.06, default_a=0.9)
         exp.invert_rt()
         self.assertIsInstance(exp.grid, iadpython.AGrid)
-        self.assertAlmostEqual(exp.grid.tol, 0.01)
-        self.assertEqual(exp.grid.max_depth, 8)
+        self.assertAlmostEqual(exp.grid.tol, 0.05)
+        self.assertEqual(exp.grid.max_depth, 4)
 
     def test_experiment_override_forces_grid(self):
         """use_adaptive_grid=False forces Grid even for find_bg."""

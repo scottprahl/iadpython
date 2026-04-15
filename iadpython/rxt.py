@@ -99,6 +99,8 @@ def fill_in_data_variable(exp, data_in_columns, column_letters_str):
             exp.error = data_in_columns[:, col]
         elif letter == "g":
             exp.default_g = data_in_columns[:, col]
+        elif letter == "i":
+            exp._row_quad_pts = data_in_columns[:, col].astype(int)
         elif letter == "t":
             exp.m_t = data_in_columns[:, col]
         elif letter == "L":

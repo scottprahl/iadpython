@@ -26,6 +26,106 @@ import iadpython as iad
 from iadpython.mc_lost import run_mc_lost
 
 G_BOUND_EPS = 1e-6
+
+# ---------------------------------------------------------------------------
+# Adaptive simplex helpers for MC re-inversion (used by _invert_scalar_with_mc)
+# ---------------------------------------------------------------------------
+
+_SIMPLEX_A_STEP = 1e-3
+_SIMPLEX_B_REL_STEP = 1e-2
+_SIMPLEX_G_STEP = 1e-3
+_SIMPLEX_ADAPTIVE_SCALE = 1.0
+_SIMPLEX_A_MIN_STEP = 1e-5
+_SIMPLEX_B_MIN_STEP = 1e-4
+_SIMPLEX_G_MIN_STEP = 1e-5
+
+
+def _simplex_bounded_vertex(center, step, lower, upper):
+    """Offset one simplex vertex from *center* by *step*, respecting bounds."""
+    pos_room = np.inf if not np.isfinite(upper) else upper - center
+    neg_room = np.inf if not np.isfinite(lower) else center - lower
+    if pos_room >= step:
+        return center + step
+    if neg_room >= step:
+        return center - step
+    if pos_room > neg_room and pos_room > 0:
+        return center + 0.5 * pos_room
+    if neg_room > 0:
+        return center - 0.5 * neg_room
+    return center
+
+
+def _simplex_geometry(search, hot_start):
+    """Return (x0, lower, upper) for the 2-D Nelder-Mead search."""
+    a, b, g = hot_start
+    if search == "find_ab":
+        return (
+            np.array([a, b], dtype=float),
+            np.array([0.0, 0.0], dtype=float),
+            np.array([1.0, np.inf], dtype=float),
+        )
+    if search == "find_ag":
+        return (
+            np.array([a, g], dtype=float),
+            np.array([0.0, -1.0 + G_BOUND_EPS], dtype=float),
+            np.array([1.0, 1.0 - G_BOUND_EPS], dtype=float),
+        )
+    if search == "find_bg":
+        return (
+            np.array([b, g], dtype=float),
+            np.array([0.0, -1.0 + G_BOUND_EPS], dtype=float),
+            np.array([np.inf, 1.0 - G_BOUND_EPS], dtype=float),
+        )
+    raise ValueError(f"adaptive simplex not applicable to search={search!r}")
+
+
+def _adaptive_simplex_steps(search, hot_start, previous_delta):
+    """Return per-axis simplex step sizes, shrunk by the previous MC stage movement.
+
+    On the first MC iteration *previous_delta* is None and the fixed defaults
+    are returned.  On subsequent iterations each axis step is
+    ``adaptive_scale * |Δparam|`` clamped to ``[min_step, fixed_step]``.
+    """
+    a, b, _g = hot_start
+    if search == "find_ab":
+        fixed = np.array([_SIMPLEX_A_STEP,
+                          max(_SIMPLEX_B_MIN_STEP, _SIMPLEX_B_REL_STEP * max(abs(b), 1.0))],
+                         dtype=float)
+        minimum = np.array([_SIMPLEX_A_MIN_STEP, _SIMPLEX_B_MIN_STEP], dtype=float)
+    elif search == "find_ag":
+        fixed = np.array([_SIMPLEX_A_STEP, _SIMPLEX_G_STEP], dtype=float)
+        minimum = np.array([_SIMPLEX_A_MIN_STEP, _SIMPLEX_G_MIN_STEP], dtype=float)
+    elif search == "find_bg":
+        fixed = np.array([max(_SIMPLEX_B_MIN_STEP, _SIMPLEX_B_REL_STEP * max(abs(b), 1.0)),
+                          _SIMPLEX_G_STEP],
+                         dtype=float)
+        minimum = np.array([_SIMPLEX_B_MIN_STEP, _SIMPLEX_G_MIN_STEP], dtype=float)
+    else:
+        raise ValueError(f"adaptive simplex not applicable to search={search!r}")
+
+    if previous_delta is None or not np.all(np.isfinite(previous_delta)):
+        return fixed
+
+    adaptive = _SIMPLEX_ADAPTIVE_SCALE * np.abs(previous_delta)
+    return np.clip(adaptive, minimum, fixed)
+
+
+def _build_adaptive_simplex(search, hot_start, previous_delta):
+    """Build an N+1 × N initial simplex for a 2-D Nelder-Mead hot-start.
+
+    The simplex is centred on *hot_start* with step sizes derived from the
+    previous MC iteration's parameter change (or fixed defaults on the first
+    iteration when *previous_delta* is None).
+    """
+    steps = _adaptive_simplex_steps(search, hot_start, previous_delta)
+    x0, lower, upper = _simplex_geometry(search, hot_start)
+    simplex = np.tile(x0, (len(x0) + 1, 1))
+    for axis in range(len(x0)):
+        simplex[axis + 1, axis] = _simplex_bounded_vertex(x0[axis], steps[axis],
+                                                           lower[axis], upper[axis])
+    return simplex
+
+
 DEBUG_A_LITTLE = 1
 DEBUG_GRID = 2
 DEBUG_ITERATIONS = 4
@@ -145,8 +245,8 @@ class Experiment:
         self.t_slide = 0.0  # physical thickness of cover glass slides [mm]
         self._mc_iterations = 0  # number of MC iterations used in last invert_rt() call
         self.use_adaptive_grid = None  # None = auto-select by search mode
-        self.adaptive_grid_tol = 0.03
-        self.adaptive_grid_max_depth = 6
+        self.adaptive_grid_tol = 0.05
+        self.adaptive_grid_max_depth = 4
         self.adaptive_grid_min_depth = 2
         self.grid_n = 21  # N for Grid when not using AGrid
         self.counter = 0
@@ -356,7 +456,7 @@ class Experiment:
             "f_r",
         ]
         for attr in exp_attrs:
-            setattr(point, attr, _point_value(getattr(self, attr), index))
+            setattr(point, attr, _point_value(getattr(self, attr, None), index))
 
         sample_attrs = [
             "a",
@@ -381,6 +481,10 @@ class Experiment:
                 continue
             sphere.r_wall = _point_value(source.r_wall, index)
             sphere.r_std = _point_value(source.r_std, index)
+
+        row_quad_pts = getattr(self, "_row_quad_pts", None)
+        if row_quad_pts is not None:
+            point.sample.quad_pts = int(_point_value(row_quad_pts, index))
 
         point.grid = None
         point.include_measurements = False
@@ -499,10 +603,21 @@ class Experiment:
             delta += abs(_as_scalar_float(m_t, "calculated M_T") - _as_scalar_float(self.m_t, "measured M_T"))
         return m_r, m_t, delta
 
-    def invert_scalar_rt(self):
+    def invert_scalar_rt(self, hot_start=None, initial_simplex=None):
         """Find a,b,g for a single experimental measurement.
 
         This routine assumes that `m_r`, `m_t`, and `m_u` are scalars.
+
+        Args:
+            hot_start: optional (a, b, g) tuple to use as the optimizer
+                starting point for two-parameter searches, bypassing the grid
+                lookup.  Pass the previous inversion result here when
+                re-inverting after a lost-light update so the grid is not
+                rebuilt and the previous solution seeds the optimizer.
+            initial_simplex: optional (N+1) × N numpy array passed directly to
+                SciPy's Nelder-Mead ``options['initial_simplex']``.  Only used
+                for find_ab / find_ag / find_bg searches.  When None the
+                default SciPy simplex is used.
 
         Returns:
             - `a` is the single scattering albedo of the slab
@@ -553,88 +668,94 @@ class Experiment:
 
         if self.search in ["find_ab", "find_ag", "find_bg"]:
 
-            # Determine grid type for this search mode.
-            # use_adaptive_grid=None (default): auto-select based on benchmark results.
-            #   find_ab/find_bg: AGrid(fine) — robust on the no-MC Stage A fixtures,
-            #     including the one-sphere cases where AGrid(medium) can miss.
-            #   find_ag: AGrid(medium) — gives good coverage without the full fine-grid cost.
-            # use_adaptive_grid=True : always AGrid with user-tunable tol/depth.
-            # use_adaptive_grid=False: always Grid(N=grid_n).
-            if self.use_adaptive_grid is None:
-                want_agrid = True
-                if self.search in ("find_ab", "find_bg"):
-                    agrid_tol       = 0.01
-                    agrid_max_depth = 8
-                    agrid_min_depth = 3
-                else:
+            if hot_start is not None:
+                # Bypass the grid: use the caller-supplied starting point
+                # directly.  The grid is not rebuilt; the raw-RT cache is
+                # still valid because lost-light values do not affect it.
+                a, b, g = hot_start
+                self._grid_evals = 0
+                self._debug(DEBUG_BEST_GUESS, f"hot start a={a:.5f} b={b:.5f} g={g:.5f}")
+            else:
+                # Determine grid type for this search mode.
+                # use_adaptive_grid=True : always AGrid with user-tunable tol/depth.
+                # use_adaptive_grid=False: always Grid(N=grid_n).
+                # use_adaptive_grid=None (default): auto-select.
+                if self.use_adaptive_grid is None:
+                    want_agrid = True
                     agrid_tol       = self.adaptive_grid_tol
                     agrid_max_depth = self.adaptive_grid_max_depth
                     agrid_min_depth = getattr(self, "adaptive_grid_min_depth", 2)
-            elif self.use_adaptive_grid:
-                want_agrid      = True
-                agrid_tol       = self.adaptive_grid_tol
-                agrid_max_depth = self.adaptive_grid_max_depth
-                agrid_min_depth = getattr(self, "adaptive_grid_min_depth", 2)
-            else:
-                want_agrid = False
-
-            # Replace grid if type changed
-            if want_agrid and not isinstance(self.grid, iad.AGrid):
-                self.grid = None
-            if not want_agrid and isinstance(self.grid, iad.AGrid):
-                self.grid = None
-            if self.grid is None:
-                if want_agrid:
-                    self.grid = iad.AGrid(tol=agrid_tol, max_depth=agrid_max_depth,
-                                          min_depth=agrid_min_depth)
+                elif self.use_adaptive_grid:
+                    want_agrid      = True
+                    agrid_tol       = self.adaptive_grid_tol
+                    agrid_max_depth = self.adaptive_grid_max_depth
+                    agrid_min_depth = getattr(self, "adaptive_grid_min_depth", 2)
                 else:
-                    self.grid = iad.Grid(N=self.grid_n)
+                    want_agrid = False
 
-            # the grids are two-dimensional, one value is held constant
-            grid_constant = None
-            if self.search == "find_ag":
-                grid_constant = self.sample.b
-            if self.search == "find_bg":
-                grid_constant = self.sample.a
-            if self.search == "find_ab":
-                grid_constant = self.sample.g
+                # Replace grid if type changed
+                if want_agrid and not isinstance(self.grid, iad.AGrid):
+                    self.grid = None
+                if not want_agrid and isinstance(self.grid, iad.AGrid):
+                    self.grid = None
+                if self.grid is None:
+                    if want_agrid:
+                        self.grid = iad.AGrid(tol=agrid_tol, max_depth=agrid_max_depth,
+                                              min_depth=agrid_min_depth)
+                    else:
+                        self.grid = iad.Grid(N=self.grid_n)
 
-            if isinstance(self.grid, iad.AGrid):
-                if self.grid.is_stale(self, grid_constant, search=self.search):
-                    self._debug(DEBUG_GRID_CALC, f"recomputing adaptive grid for {self.search}")
-                    self.grid.calc(self, default=grid_constant, search=self.search)
-            else:
-                if self.grid.is_stale(self, grid_constant, search=self.search):
-                    self._debug(DEBUG_GRID_CALC, f"recomputing grid for {self.search}")
-                    self.grid.calc(self, grid_constant)
+                # the grids are two-dimensional, one value is held constant
+                grid_constant = None
+                if self.search == "find_ag":
+                    grid_constant = self.sample.b
+                if self.search == "find_bg":
+                    grid_constant = self.sample.a
+                if self.search == "find_ab":
+                    grid_constant = self.sample.g
 
-            a, b, g = self.grid.min_abg(self.m_r, self.m_t, exp=self)
-            self._grid_evals = self.sample.rt_evals
-            if self.debug_level & DEBUG_BEST_GUESS:
-                print("grid constant %8.5f" % grid_constant)
-                print("grid start a=%8.5f" % a)
-                print("grid start b=%8.5f" % b)
-                print("grid start g=%8.5f" % g)
-            elif self.debug_level & DEBUG_GRID:
-                print(f"grid constant {grid_constant:8.5f}", file=sys.stderr)
+                if isinstance(self.grid, iad.AGrid):
+                    if self.grid.is_stale(self, grid_constant, search=self.search):
+                        self._debug(DEBUG_GRID_CALC, f"recomputing adaptive grid for {self.search}")
+                        self.grid.calc(self, default=grid_constant, search=self.search)
+                else:
+                    if self.grid.is_stale(self, grid_constant, search=self.search):
+                        self._debug(DEBUG_GRID_CALC, f"recomputing grid for {self.search}")
+                        self.grid.calc(self, grid_constant)
+
+                a, b, g = self.grid.min_abg(self.m_r, self.m_t, exp=self)
+                self._grid_evals = self.sample.rt_evals
+                if self.debug_level & DEBUG_BEST_GUESS:
+                    print("grid constant %8.5f" % grid_constant)
+                    print("grid start a=%8.5f" % a)
+                    print("grid start b=%8.5f" % b)
+                    print("grid start g=%8.5f" % g)
+                elif self.debug_level & DEBUG_GRID:
+                    print(f"grid constant {grid_constant:8.5f}", file=sys.stderr)
 
         if self.search == "find_ab":
             x = scipy.optimize.Bounds(np.array([0, 0]), np.array([1, np.inf]))
-            result = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=x, method="Nelder-Mead")
+            nm_opts = {"initial_simplex": initial_simplex} if initial_simplex is not None else {}
+            result = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=x,
+                                             method="Nelder-Mead", options=nm_opts or None)
 
         if self.search == "find_ag":
             x = scipy.optimize.Bounds(
                 np.array([0, -1 + G_BOUND_EPS]),
                 np.array([1, 1 - G_BOUND_EPS]),
             )
-            result = scipy.optimize.minimize(agfun, [a, g], args=(self), bounds=x, method="Nelder-Mead")
+            nm_opts = {"initial_simplex": initial_simplex} if initial_simplex is not None else {}
+            result = scipy.optimize.minimize(agfun, [a, g], args=(self), bounds=x,
+                                             method="Nelder-Mead", options=nm_opts or None)
 
         if self.search == "find_bg":
             x = scipy.optimize.Bounds(
                 np.array([0, -1 + G_BOUND_EPS]),
                 np.array([np.inf, 1 - G_BOUND_EPS]),
             )
-            result = scipy.optimize.minimize(bgfun, [b, g], args=(self), bounds=x, method="Nelder-Mead")
+            nm_opts = {"initial_simplex": initial_simplex} if initial_simplex is not None else {}
+            result = scipy.optimize.minimize(bgfun, [b, g], args=(self), bounds=x,
+                                             method="Nelder-Mead", options=nm_opts or None)
 
         if self.search == "find_ba":
             guess = max(self.sample.b - self.default_bs, 0.0)
@@ -816,14 +937,29 @@ class Experiment:
                 file=sys.stderr,
             )
 
+        previous_delta = None  # per-axis |Δparam| from the last MC stage; None on first pass
+
         for _ in range(self.max_mc_iterations):
             last_mu_a, last_mu_sp = self._current_optical_coefficients()
             max_diff, diff_ur1, diff_ut1, _diff_uru, _diff_utu = self._update_lost_light(a, b, g)
-            # Invalidate the grid: lost-light values changed, so measured_rt()
-            # produces different values and the grid must be recomputed.
-            self.grid = None
-            self._debug(DEBUG_GRID_CALC, "invalidating grid after lost-light update")
-            a, b, g = self.invert_scalar_rt()
+            # Build an adaptive initial simplex centred on the current solution.
+            # Step sizes shrink proportionally to the previous iteration's parameter
+            # movement, falling back to fixed defaults on the first MC stage.
+            # Only applies to 2-D Nelder-Mead searches (find_ab / find_ag / find_bg).
+            if self.search in ("find_ab", "find_ag", "find_bg"):
+                simplex = _build_adaptive_simplex(self.search, (a, b, g), previous_delta)
+            else:
+                simplex = None
+            self._debug(DEBUG_GRID_CALC, "warm-starting from previous (a,b,g) after lost-light update")
+            a_new, b_new, g_new = self.invert_scalar_rt(hot_start=(a, b, g), initial_simplex=simplex)
+            # Record the per-axis movement for the next iteration's simplex sizing.
+            if self.search == "find_ab":
+                previous_delta = np.array([abs(a_new - a), abs(b_new - b)], dtype=float)
+            elif self.search == "find_ag":
+                previous_delta = np.array([abs(a_new - a), abs(g_new - g)], dtype=float)
+            elif self.search == "find_bg":
+                previous_delta = np.array([abs(b_new - b), abs(g_new - g)], dtype=float)
+            a, b, g = a_new, b_new, g_new
             self._mc_iterations += 1
             mu_a, mu_sp = self._current_optical_coefficients()
 
