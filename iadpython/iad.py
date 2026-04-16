@@ -86,19 +86,19 @@ def _adaptive_simplex_steps(search, hot_start, previous_delta):
     are returned.  On subsequent iterations each axis step is
     ``adaptive_scale * |Δparam|`` clamped to ``[min_step, fixed_step]``.
     """
-    a, b, _g = hot_start
+    _a, b, _g = hot_start
     if search == "find_ab":
-        fixed = np.array([_SIMPLEX_A_STEP,
-                          max(_SIMPLEX_B_MIN_STEP, _SIMPLEX_B_REL_STEP * max(abs(b), 1.0))],
-                         dtype=float)
+        fixed = np.array(
+            [_SIMPLEX_A_STEP, max(_SIMPLEX_B_MIN_STEP, _SIMPLEX_B_REL_STEP * max(abs(b), 1.0))], dtype=float
+        )
         minimum = np.array([_SIMPLEX_A_MIN_STEP, _SIMPLEX_B_MIN_STEP], dtype=float)
     elif search == "find_ag":
         fixed = np.array([_SIMPLEX_A_STEP, _SIMPLEX_G_STEP], dtype=float)
         minimum = np.array([_SIMPLEX_A_MIN_STEP, _SIMPLEX_G_MIN_STEP], dtype=float)
     elif search == "find_bg":
-        fixed = np.array([max(_SIMPLEX_B_MIN_STEP, _SIMPLEX_B_REL_STEP * max(abs(b), 1.0)),
-                          _SIMPLEX_G_STEP],
-                         dtype=float)
+        fixed = np.array(
+            [max(_SIMPLEX_B_MIN_STEP, _SIMPLEX_B_REL_STEP * max(abs(b), 1.0)), _SIMPLEX_G_STEP], dtype=float
+        )
         minimum = np.array([_SIMPLEX_B_MIN_STEP, _SIMPLEX_G_MIN_STEP], dtype=float)
     else:
         raise ValueError(f"adaptive simplex not applicable to search={search!r}")
@@ -120,9 +120,8 @@ def _build_adaptive_simplex(search, hot_start, previous_delta):
     steps = _adaptive_simplex_steps(search, hot_start, previous_delta)
     x0, lower, upper = _simplex_geometry(search, hot_start)
     simplex = np.tile(x0, (len(x0) + 1, 1))
-    for axis in range(len(x0)):
-        simplex[axis + 1, axis] = _simplex_bounded_vertex(x0[axis], steps[axis],
-                                                           lower[axis], upper[axis])
+    for axis, (x0_ax, step, lo, hi) in enumerate(zip(x0, steps, lower, upper)):
+        simplex[axis + 1, axis] = _simplex_bounded_vertex(x0_ax, step, lo, hi)
     return simplex
 
 
@@ -254,6 +253,8 @@ class Experiment:
         self.search_override = None
         self.search_code = 4
         self.first_pass_abg = None
+        self._grid_evals = 0
+        self._optimizer_evals = 0
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -680,14 +681,14 @@ class Experiment:
                 # use_adaptive_grid=True : always AGrid with user-tunable tol/depth.
                 # use_adaptive_grid=False: always Grid(N=grid_n).
                 # use_adaptive_grid=None (default): auto-select.
+                agrid_tol = self.adaptive_grid_tol
+                agrid_max_depth = self.adaptive_grid_max_depth
+                agrid_min_depth = getattr(self, "adaptive_grid_min_depth", 2)
                 if self.use_adaptive_grid is None:
                     want_agrid = True
-                    agrid_tol       = self.adaptive_grid_tol
-                    agrid_max_depth = self.adaptive_grid_max_depth
-                    agrid_min_depth = getattr(self, "adaptive_grid_min_depth", 2)
                 elif self.use_adaptive_grid:
-                    want_agrid      = True
-                    agrid_tol       = self.adaptive_grid_tol
+                    want_agrid = True
+                    agrid_tol = self.adaptive_grid_tol
                     agrid_max_depth = self.adaptive_grid_max_depth
                     agrid_min_depth = getattr(self, "adaptive_grid_min_depth", 2)
                 else:
@@ -700,8 +701,7 @@ class Experiment:
                     self.grid = None
                 if self.grid is None:
                     if want_agrid:
-                        self.grid = iad.AGrid(tol=agrid_tol, max_depth=agrid_max_depth,
-                                              min_depth=agrid_min_depth)
+                        self.grid = iad.AGrid(tol=agrid_tol, max_depth=agrid_max_depth, min_depth=agrid_min_depth)
                     else:
                         self.grid = iad.Grid(N=self.grid_n)
 
@@ -736,8 +736,9 @@ class Experiment:
         if self.search == "find_ab":
             x = scipy.optimize.Bounds(np.array([0, 0]), np.array([1, np.inf]))
             nm_opts = {"initial_simplex": initial_simplex} if initial_simplex is not None else {}
-            result = scipy.optimize.minimize(abfun, [a, b], args=(self), bounds=x,
-                                             method="Nelder-Mead", options=nm_opts or None)
+            result = scipy.optimize.minimize(
+                abfun, [a, b], args=(self), bounds=x, method="Nelder-Mead", options=nm_opts or None
+            )
 
         if self.search == "find_ag":
             x = scipy.optimize.Bounds(
@@ -745,8 +746,9 @@ class Experiment:
                 np.array([1, 1 - G_BOUND_EPS]),
             )
             nm_opts = {"initial_simplex": initial_simplex} if initial_simplex is not None else {}
-            result = scipy.optimize.minimize(agfun, [a, g], args=(self), bounds=x,
-                                             method="Nelder-Mead", options=nm_opts or None)
+            result = scipy.optimize.minimize(
+                agfun, [a, g], args=(self), bounds=x, method="Nelder-Mead", options=nm_opts or None
+            )
 
         if self.search == "find_bg":
             x = scipy.optimize.Bounds(
@@ -754,8 +756,9 @@ class Experiment:
                 np.array([np.inf, 1 - G_BOUND_EPS]),
             )
             nm_opts = {"initial_simplex": initial_simplex} if initial_simplex is not None else {}
-            result = scipy.optimize.minimize(bgfun, [b, g], args=(self), bounds=x,
-                                             method="Nelder-Mead", options=nm_opts or None)
+            result = scipy.optimize.minimize(
+                bgfun, [b, g], args=(self), bounds=x, method="Nelder-Mead", options=nm_opts or None
+            )
 
         if self.search == "find_ba":
             guess = max(self.sample.b - self.default_bs, 0.0)
@@ -806,10 +809,11 @@ class Experiment:
         if result is not None:
             self.iterations = getattr(result, "nit", getattr(result, "nfev", 0))
             self.final_distance = float(getattr(result, "fun", np.nan))
-            self._debug(DEBUG_ITERATIONS, f"{self.search}: iterations={self.iterations} distance={self.final_distance:.6g}")
+            self._debug(
+                DEBUG_ITERATIONS, f"{self.search}: iterations={self.iterations} distance={self.final_distance:.6g}"
+            )
 
-        grid_evals = getattr(self, "_grid_evals", 0)
-        self._optimizer_evals = self.sample.rt_evals - grid_evals
+        self._optimizer_evals = self.sample.rt_evals - self._grid_evals
 
         return self.sample.a, self.sample.b, self.sample.g
 
@@ -1023,7 +1027,7 @@ class Experiment:
 
         for i in range(N):
             x = self.point_at(i)
-            a[i], b[i], g[i] = x._invert_scalar_with_mc()
+            a[i], b[i], g[i] = x._invert_scalar_with_mc()  # pylint: disable=protected-access
             self.print_dot()
 
         print(file=sys.stderr)
@@ -1154,8 +1158,7 @@ def abfun(x, *args):
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
-            f"calc find_ab: a={exp.sample.a:.7f} b={exp.sample.b:.7f} "
-            f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
+            f"calc find_ab: a={exp.sample.a:.7f} b={exp.sample.b:.7f} " f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
             file=sys.stderr,
         )
     return delta
@@ -1170,8 +1173,7 @@ def bgfun(x, *args):
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
-            f"calc find_bg: b={exp.sample.b:.7f} g={exp.sample.g:.7f} "
-            f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
+            f"calc find_bg: b={exp.sample.b:.7f} g={exp.sample.g:.7f} " f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
             file=sys.stderr,
         )
     return delta
@@ -1186,8 +1188,7 @@ def agfun(x, *args):
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
-            f"calc find_ag: a={exp.sample.a:.7f} g={exp.sample.g:.7f} "
-            f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
+            f"calc find_ag: a={exp.sample.a:.7f} g={exp.sample.g:.7f} " f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
             file=sys.stderr,
         )
     return delta
@@ -1197,7 +1198,7 @@ def bafun(x, *args):
     """Vary the absorption optical depth with scattering optical depth fixed."""
     exp = args[0]
     ba = float(np.atleast_1d(x)[0])
-    exp._set_sample_from_ba_bs(ba, exp.default_bs)
+    exp._set_sample_from_ba_bs(ba, exp.default_bs)  # pylint: disable=protected-access
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
     if exp.debug_level & DEBUG_EVERY_CALC:
@@ -1213,7 +1214,7 @@ def bsfun(x, *args):
     """Vary the scattering optical depth with absorption optical depth fixed."""
     exp = args[0]
     bs = float(np.atleast_1d(x)[0])
-    exp._set_sample_from_ba_bs(exp.default_ba, bs)
+    exp._set_sample_from_ba_bs(exp.default_ba, bs)  # pylint: disable=protected-access
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
     if exp.debug_level & DEBUG_EVERY_CALC:
@@ -1230,7 +1231,7 @@ def bagfun(x, *args):
     exp = args[0]
     ba = float(np.atleast_1d(x)[0])
     g = float(np.atleast_1d(x)[1])
-    exp._set_sample_from_ba_bs(ba, exp.default_bs)
+    exp._set_sample_from_ba_bs(ba, exp.default_bs)  # pylint: disable=protected-access
     exp.sample.g = g
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
@@ -1248,7 +1249,7 @@ def bsgfun(x, *args):
     exp = args[0]
     bs = float(np.atleast_1d(x)[0])
     g = float(np.atleast_1d(x)[1])
-    exp._set_sample_from_ba_bs(exp.default_ba, bs)
+    exp._set_sample_from_ba_bs(exp.default_ba, bs)  # pylint: disable=protected-access
     exp.sample.g = g
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)

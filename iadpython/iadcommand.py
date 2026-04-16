@@ -199,9 +199,7 @@ def validator_scattering_constraint(value):
 
     parts = text.split()
     if len(parts) != 4 or parts[0].lower() != "p":
-        raise argparse.ArgumentTypeError(
-            "Commandline: bad -F option. Use '-F 1.0' or \"-F 'P 500 1.0 -1.3'\""
-        )
+        raise argparse.ArgumentTypeError("Commandline: bad -F option. Use '-F 1.0' or \"-F 'P 500 1.0 -1.3'\"")
     try:
         lambda0 = float(parts[1])
         mus0 = float(parts[2])
@@ -471,9 +469,7 @@ def _filter_experiment_by_wavelength(exp, limits):
     wave_min, wave_max = limits
     mask = (np.asarray(exp.lambda0) >= wave_min) & (np.asarray(exp.lambda0) <= wave_max)
     if not np.any(mask):
-        raise argparse.ArgumentTypeError(
-            f"Commandline: no wavelengths fall within {wave_min:g} to {wave_max:g}"
-        )
+        raise argparse.ArgumentTypeError(f"Commandline: no wavelengths fall within {wave_min:g} to {wave_max:g}")
 
     filtered = copy.deepcopy(exp)
     exp_attrs = [
@@ -942,7 +938,7 @@ def print_result_row(exp, line=0, debug_lost_light=False):
     if debug_lost_light:
         print(
             f"\t{exp.ur1_lost: 8.4f}\t{exp.uru_lost: 8.4f}\t{exp.ut1_lost: 8.4f}\t{exp.utu_lost: 8.4f}"
-            f"\t{exp._mc_iterations: 3d}\t{exp.iterations: 3d}\t  {what_char(InputError.NO_ERROR)}",
+            f"\t{exp._mc_iterations: 3d}\t{exp.iterations: 3d}\t  {what_char(InputError.NO_ERROR)}",  # pylint: disable=protected-access
             end="",
         )
     print()

@@ -31,7 +31,6 @@ import numpy as np
 
 import iadpython
 
-
 TEST_DIR = pathlib.Path(__file__).resolve().parent
 DATA_DIR = TEST_DIR
 MC_SAMPLE_FILES = [
@@ -132,11 +131,7 @@ def _match_files(filters):
     for raw_filter in filters:
         token = os.path.basename(raw_filter).lower()
         stem = token[:-4] if token.endswith(".rxt") else token
-        matches = [
-            fname
-            for fname in MC_SAMPLE_FILES
-            if fname.lower() == token or fname.lower() == f"{stem}.rxt"
-        ]
+        matches = [fname for fname in MC_SAMPLE_FILES if fname.lower() == token or fname.lower() == f"{stem}.rxt"]
         if not matches:
             unmatched.append(raw_filter)
             continue
@@ -307,11 +302,7 @@ def _run_hot_start(exp, hot_start, simplex=None):
 
 def _solution_delta(base, other):
     """Return a small scalar comparing two converged solutions."""
-    return (
-        abs(base["a"] - other["a"])
-        + abs(np.log1p(base["b"]) - np.log1p(other["b"]))
-        + abs(base["g"] - other["g"])
-    )
+    return abs(base["a"] - other["a"]) + abs(np.log1p(base["b"]) - np.log1p(other["b"])) + abs(base["g"] - other["g"])
 
 
 def _compare_mc_stage(stage_exp, hot_start, previous_delta, simplex_kwargs):
@@ -432,8 +423,10 @@ def run_benchmark(mc_iterations, photons, filenames, simplex_kwargs):
                     f"{baseline['dist']:10.2e}  {fixed['dist']:10.2e}  {adaptive['dist']:10.2e}"
                 )
                 print(
-                    f"  {'Δit':8s}  {'':7s}  {comparison['fixed_nit_delta']:7d}  {comparison['adaptive_nit_delta']:7d}  "
-                    f"{'Δev':7s}  {comparison['fixed_nfev_delta']:7d}  {comparison['adaptive_nfev_delta']:7d}  "
+                    f"  {'Δit':8s}  {'':7s}  {comparison['fixed_nit_delta']:7d}"
+                    f"  {comparison['adaptive_nit_delta']:7d}  "
+                    f"{'Δev':7s}  {comparison['fixed_nfev_delta']:7d}"
+                    f"  {comparison['adaptive_nfev_delta']:7d}  "
                     f"{'Δsol':10s}  {_format_or_na(comparison['fixed_solution_delta'], '{:.2e}'):>10s}  "
                     f"{_format_or_na(comparison['adaptive_solution_delta'], '{:.2e}'):>10s}"
                 )
@@ -460,9 +453,7 @@ def run_benchmark(mc_iterations, photons, filenames, simplex_kwargs):
                 file_stats["adaptive_dist"].append(adaptive["dist"])
                 file_stats["fixed_solution_delta"].append(comparison["fixed_solution_delta"])
                 file_stats["adaptive_solution_delta"].append(comparison["adaptive_solution_delta"])
-                file_stats["adaptive_vs_fixed_solution_delta"].append(
-                    comparison["adaptive_vs_fixed_solution_delta"]
-                )
+                file_stats["adaptive_vs_fixed_solution_delta"].append(comparison["adaptive_vs_fixed_solution_delta"])
                 overall["base_nit"].append(baseline["nit"])
                 overall["fixed_nit"].append(fixed["nit"])
                 overall["adaptive_nit"].append(adaptive["nit"])
@@ -480,9 +471,7 @@ def run_benchmark(mc_iterations, photons, filenames, simplex_kwargs):
                 overall["adaptive_dist"].append(adaptive["dist"])
                 overall["fixed_solution_delta"].append(comparison["fixed_solution_delta"])
                 overall["adaptive_solution_delta"].append(comparison["adaptive_solution_delta"])
-                overall["adaptive_vs_fixed_solution_delta"].append(
-                    comparison["adaptive_vs_fixed_solution_delta"]
-                )
+                overall["adaptive_vs_fixed_solution_delta"].append(comparison["adaptive_vs_fixed_solution_delta"])
 
                 previous_delta = {
                     "a": abs(baseline["a"] - a_prev),
@@ -500,9 +489,7 @@ def run_benchmark(mc_iterations, photons, filenames, simplex_kwargs):
             adaptive_vs_fixed_nit_wins = sum(delta < 0 for delta in file_stats["adaptive_minus_fixed_nit"])
             fixed_nfev_wins = sum(delta < 0 for delta in file_stats["fixed_nfev_delta"])
             adaptive_nfev_wins = sum(delta < 0 for delta in file_stats["adaptive_nfev_delta"])
-            adaptive_vs_fixed_nfev_wins = sum(
-                delta < 0 for delta in file_stats["adaptive_minus_fixed_nfev"]
-            )
+            adaptive_vs_fixed_nfev_wins = sum(delta < 0 for delta in file_stats["adaptive_minus_fixed_nfev"])
             print(f"\n  --- Summary for {fname} ({count} MC stage solves) ---")
             print(
                 f"  nit median:  base={np.median(file_stats['base_nit']):.1f}  "
@@ -532,7 +519,8 @@ def run_benchmark(mc_iterations, photons, filenames, simplex_kwargs):
             print(
                 f"  Δsol vs base: fixed={_format_or_na(_finite_median(file_stats['fixed_solution_delta']), '{:.2e}')}  "
                 f"adaptive={_format_or_na(_finite_median(file_stats['adaptive_solution_delta']), '{:.2e}')}  "
-                f"adaptive vs fixed={_format_or_na(_finite_median(file_stats['adaptive_vs_fixed_solution_delta']), '{:.2e}')}"
+                "adaptive vs fixed="
+                f"{_format_or_na(_finite_median(file_stats['adaptive_vs_fixed_solution_delta']), '{:.2e}')}"
             )
 
     if overall["base_nit"]:

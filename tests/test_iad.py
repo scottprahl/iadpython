@@ -419,7 +419,7 @@ class InversionRTNoSphere(unittest.TestCase):
     def test_inversion_01(self):
         """Matched slab with albedo=0.5."""
         s = iad.Sample(a=0.95, b=2, g=0.0)
-        ur1, ut1, _, _ = s.rt()
+        _ur1, _ut1, _, _ = s.rt()
         exp = iad.Experiment(sample=s)
         exp.m_r, exp.m_t = exp.measured_rt()
 
@@ -470,7 +470,7 @@ class InversionRTUNoSphere(unittest.TestCase):
     def test_01(self):
         """Moderate albedo but g=0.9."""
         s = iad.Sample(a=0.5, b=2, g=0.9)
-        ur1, ut1, _, _ = s.rt()
+        _ur1, _ut1, _, _ = s.rt()
         exp = iad.Experiment(sample=s)
         exp.m_r, exp.m_t = exp.measured_rt()
         exp.sample.a = 0
@@ -485,7 +485,7 @@ class InversionRTUNoSphere(unittest.TestCase):
     def test_02(self):
         """High albedo and g=0."""
         s = iad.Sample(a=0.95, b=2, g=0.0)
-        ur1, ut1, _, _ = s.rt()
+        _ur1, _ut1, _, _ = s.rt()
         exp = iad.Experiment(sample=s)
         exp.m_r, exp.m_t = exp.measured_rt()
         exp.sample.a = 0
@@ -500,7 +500,7 @@ class InversionRTUNoSphere(unittest.TestCase):
     def test_03(self):
         """High albedo and moderate g=0.5."""
         s = iad.Sample(a=0.95, b=2, g=0.5)
-        ur1, ut1, _, _ = s.rt()
+        _ur1, _ut1, _, _ = s.rt()
         exp = iad.Experiment(sample=s)
         exp.m_r, exp.m_t = exp.measured_rt()
         exp.sample.a = 0
@@ -515,7 +515,7 @@ class InversionRTUNoSphere(unittest.TestCase):
     def test_04(self):
         """High albedo and high g."""
         s = iad.Sample(a=0.95, b=2, g=0.9)
-        ur1, ut1, _, _ = s.rt()
+        _ur1, _ut1, _, _ = s.rt()
         exp = iad.Experiment(sample=s)
         exp.m_r, exp.m_t = exp.measured_rt()
         exp.sample.a = 0

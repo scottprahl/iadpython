@@ -32,7 +32,11 @@ numpydoc_show_class_members = False
 exclude_patterns = [
     "_build",
     ".ipynb_checkpoints",
-    "iad-with-spheres.ipynb",
+    "IAD_paper",
+    "sphere_refs",
+    "option-F2-notebook",
+    "manual",
+    "docs/iad-with-spheres.ipynb",
 ]
 
 nbsphinx_execute = "never"

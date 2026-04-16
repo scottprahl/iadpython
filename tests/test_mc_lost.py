@@ -48,19 +48,25 @@ def _run(mc_lost_path, **kwargs):
 
 
 class TestReturnShape:
+    """Tests for the shape and type of mc_lost return values."""
+
     def test_returns_four_floats(self, mc_lost_path):
+        """run_mc_lost should return a 4-tuple of floats."""
         result = _run(mc_lost_path)
         assert len(result) == 4
         for v in result:
             assert isinstance(v, float)
 
     def test_all_values_in_unit_interval(self, mc_lost_path):
+        """All four lost-light fractions must lie in [0, 1]."""
         ur1_lost, ut1_lost, uru_lost, utu_lost = _run(mc_lost_path)
         for name, v in [("ur1_lost", ur1_lost), ("ut1_lost", ut1_lost), ("uru_lost", uru_lost), ("utu_lost", utu_lost)]:
             assert 0.0 <= v <= 1.0, f"{name}={v} outside [0, 1]"
 
 
 class TestPhysics:
+    """Physics-based sanity checks for mc_lost lost-light fractions."""
+
     def test_lost_increases_with_smaller_port(self, mc_lost_path):
         """Smaller port → more lost light."""
         _, _, uru_large, _ = _run(mc_lost_path, d_port_r=20.0, d_port_t=20.0)
@@ -98,6 +104,8 @@ class TestPhysics:
 
 
 class TestMCConsistency:
+    """Tests that MC output is self-consistent and agrees with adding-doubling."""
+
     def test_mc_and_ad_ur1_agree_within_noise(self, mc_lost_path):
         """MC total (col 1) ≈ AD value (col 5) for a moderately scattering slab."""
         # Run with enough photons for ~1% noise.  We access raw values via a
@@ -140,7 +148,10 @@ class TestMCConsistency:
 
 
 class TestErrorHandling:
+    """Tests for error conditions in run_mc_lost."""
+
     def test_bad_binary_path_raises_file_not_found(self):
+        """A non-existent binary path should raise FileNotFoundError."""
         with pytest.raises(FileNotFoundError, match="mc_lost binary not found"):
             run_mc_lost(
                 a=0.5,

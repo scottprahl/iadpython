@@ -1,4 +1,4 @@
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name,unused-variable
 
 """
 Tests for calculations with one integrating sphere.

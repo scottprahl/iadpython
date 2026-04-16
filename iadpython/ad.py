@@ -114,6 +114,7 @@ class Sample:
         self.twonuw = None
         self.hp = None
         self.hm = None
+        self.rt_evals = 0
 
     @property
     def n(self):
@@ -470,7 +471,7 @@ class Sample:
 
         This is extended so that arrays can be handled.
         """
-        self.rt_evals = getattr(self, "rt_evals", 0) + 1
+        self.rt_evals += 1
         len_a = 0
         len_b = 0
         len_g = 0

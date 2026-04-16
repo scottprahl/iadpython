@@ -36,7 +36,7 @@ def test_mc_iteration_waits_for_mu_stability(monkeypatch):
         ]
     )
 
-    def fake_invert_scalar_rt(hot_start=None, initial_simplex=None):
+    def fake_invert_scalar_rt(hot_start=None, initial_simplex=None):  # pylint: disable=unused-argument
         a, b, g = next(states)
         exp.sample.a = a
         exp.sample.b = b
@@ -49,9 +49,9 @@ def test_mc_iteration_waits_for_mu_stability(monkeypatch):
     monkeypatch.setattr(exp, "invert_scalar_rt", fake_invert_scalar_rt)
     monkeypatch.setattr(exp, "_update_lost_light", fake_update_lost_light)
 
-    a, b, g = exp._invert_scalar_with_mc()
+    a, b, g = exp._invert_scalar_with_mc()  # pylint: disable=protected-access
 
-    assert exp._mc_iterations == 2
+    assert exp._mc_iterations == 2  # pylint: disable=protected-access
     assert (a, b, g) == (0.2, 1.125, 0.0)
 
 
@@ -74,7 +74,7 @@ def test_mc_iteration_honors_direct_loss_guard(monkeypatch):
         ]
     )
 
-    def fake_invert_scalar_rt(hot_start=None, initial_simplex=None):
+    def fake_invert_scalar_rt(hot_start=None, initial_simplex=None):  # pylint: disable=unused-argument
         a, b, g = next(states)
         exp.sample.a = a
         exp.sample.b = b
@@ -87,7 +87,7 @@ def test_mc_iteration_honors_direct_loss_guard(monkeypatch):
     monkeypatch.setattr(exp, "invert_scalar_rt", fake_invert_scalar_rt)
     monkeypatch.setattr(exp, "_update_lost_light", fake_update_lost_light)
 
-    a, b, g = exp._invert_scalar_with_mc()
+    a, b, g = exp._invert_scalar_with_mc()  # pylint: disable=protected-access
 
-    assert exp._mc_iterations == 2
+    assert exp._mc_iterations == 2  # pylint: disable=protected-access
     assert (a, b, g) == (0.2, 1.006, 0.0)

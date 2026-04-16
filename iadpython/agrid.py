@@ -18,8 +18,8 @@ _MAX_ABS_G = 0.999999
 
 # Log-b limits mirror CWEB iad_calc.w Fill_AB_Grid / Fill_BG_Grid
 _MIN_LOG_B = -8.0
-_MAX_LOG_B_AB = 8.0    # exp(+8)  ≈ 2981  (find_ab, find_ag)
-_MAX_LOG_B_BG = 10.0   # exp(+10) ≈ 22026 (find_bg)
+_MAX_LOG_B_AB = 8.0  # exp(+8)  ≈ 2981  (find_ab, find_ag)
+_MAX_LOG_B_BG = 10.0  # exp(+10) ≈ 22026 (find_bg)
 
 
 class AGrid:
@@ -39,7 +39,7 @@ class AGrid:
     # functions used by the dense Grid warm-start.
     _ranges = {
         "a": (0.0, 1.0),
-        "b": (_MIN_LOG_B, _MAX_LOG_B_AB),   # log-b; find_bg overrides upper limit in build()
+        "b": (_MIN_LOG_B, _MAX_LOG_B_AB),  # log-b; find_bg overrides upper limit in build()
         "g": (0.0, 1.0),
     }
 
@@ -329,7 +329,7 @@ class AGrid:
                     b,
                     g,
                 )
-                if best is None or candidate[0] < best[0]:
+                if best is None or candidate[0] < best[0]:  # pylint: disable=unsubscriptable-object
                     best = candidate
 
         return best
@@ -374,7 +374,7 @@ class AGrid:
 
     def plot(self):
         """Plot the grid."""
-        import matplotlib.pyplot as plt  # lazy import — not required at module load
+        import matplotlib.pyplot as plt  # pylint: disable=import-outside-toplevel
 
         # turn the cache into a (N×7) array
         data = np.array(list(self.cache))

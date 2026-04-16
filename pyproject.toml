@@ -119,6 +119,9 @@ pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/test_iadcommand.py" = ["E402"]
+"tests/iad-problems/**" = ["D", "E", "F", "W"]
+"docs/**" = ["D", "E", "F", "W"]
+"tests_iadc/**" = ["D", "E", "F", "W"]
 
 [tool.check-manifest]
 ignore = [
@@ -134,4 +137,5 @@ ignore = [
   "release.txt",
   "tests_iadc/**",
   "todo.txt",
+  "tests/iad-problems/**",
 ]

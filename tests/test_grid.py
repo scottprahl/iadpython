@@ -27,6 +27,7 @@ class _DummyMeasuredSpaceExperiment:
     """Simple stub that makes corrected-space ranking differ from raw-space ranking."""
 
     def measurement_distance_from_raw(self, ur1, ut1, uru, utu, include_lost=True, a=None, b=None, g=None):
+        """Return corrected (m_r, m_t, delta) for ranking grid candidates."""
         del uru, utu, include_lost, a, g
         m_r = ur1 - 0.01 * b
         m_t = ut1

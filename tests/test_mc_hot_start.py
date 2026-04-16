@@ -12,12 +12,13 @@ mocked (set directly on the experiment) or left at zero so the no-MC path is
 exercised.
 """
 
+# pylint: disable=protected-access
+
 import math
 import unittest
 from unittest.mock import patch
 
 import iadpython
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -68,10 +69,8 @@ class TestHotStartBypassesGrid(unittest.TestCase):
         # Run once to establish first-pass solution and build grid
         a0, b0, g0 = exp.invert_scalar_rt()
 
-        evals_before = exp.sample.rt_evals
-
         # Second call with hot_start: should NOT rebuild the grid
-        a1, b1, g1 = exp.invert_scalar_rt(hot_start=(a0, b0, g0))
+        a1, b1, _g1 = exp.invert_scalar_rt(hot_start=(a0, b0, g0))
 
         self.assertEqual(exp._grid_evals, 0, "hot_start should produce _grid_evals == 0")
         # The result should be close to the first-pass solution
@@ -101,8 +100,10 @@ class TestHotStartBypassesGrid(unittest.TestCase):
 
 
 class TestFirstPassAbg(unittest.TestCase):
-    """B. first_pass_abg is set correctly; MC re-inversion with mocked lost light
-    still produces a finite (a, b, g)."""
+    """B. first_pass_abg is set correctly; MC re-inversion with mocked lost light.
+
+    Still produces a finite (a, b, g).
+    """
 
     def test_first_pass_abg_matches_no_mc_result(self):
         """first_pass_abg should equal the no-MC inversion result."""
@@ -117,8 +118,10 @@ class TestFirstPassAbg(unittest.TestCase):
         self.assertAlmostEqual(g0, g, delta=1e-6)
 
     def test_mocked_mc_iteration_produces_finite_result(self):
-        """With mocked _update_lost_light that returns small fixed values,
-        one MC iteration should produce a finite (a, b, g)."""
+        """With mocked _update_lost_light that returns small fixed values.
+
+        One MC iteration should produce a finite (a, b, g).
+        """
         exp = _make_exp()
 
         # Pretend mc_lost_path is set so the MC loop executes
@@ -126,7 +129,7 @@ class TestFirstPassAbg(unittest.TestCase):
         exp.max_mc_iterations = 1
         exp.num_spheres = 1
 
-        def _fake_update(a, b, g):
+        def _fake_update(_a, _b, _g):
             # Inject a tiny non-zero lost-light perturbation
             exp.ur1_lost = 0.002
             exp.ut1_lost = 0.002
@@ -151,12 +154,10 @@ class TestFirstPassAbg(unittest.TestCase):
 
 
 class TestWarmStartIsPreviousSolution(unittest.TestCase):
-    """C. After the first pass, invert_scalar_rt is called with
-    hot_start == first_pass_abg."""
+    """C. After the first pass, invert_scalar_rt is called with hot_start == first_pass_abg."""
 
     def test_mc_reversion_warm_starts_from_first_pass(self):
-        """Record calls to invert_scalar_rt; the second call must receive
-        hot_start == first_pass_abg."""
+        """Record calls to invert_scalar_rt; the second call must receive hot_start == first_pass_abg."""
         exp = _make_exp()
         exp.mc_lost_path = "/fake/mc_lost"
         exp.max_mc_iterations = 1
@@ -169,7 +170,7 @@ class TestWarmStartIsPreviousSolution(unittest.TestCase):
             recorded_hot_starts.append(hot_start)
             return original_isr(hot_start=hot_start, initial_simplex=initial_simplex)
 
-        def _fake_update(a, b, g):
+        def _fake_update(_a, _b, _g):
             exp.ur1_lost = 0.001
             exp.ut1_lost = 0.001
             exp.uru_lost = 0.0005
@@ -210,7 +211,7 @@ class TestGridPreservedAcrossMCIterations(unittest.TestCase):
         grid_states_after_update = []
         call_count = 0
 
-        def _fake_update(a, b, g):
+        def _fake_update(_a, _b, _g):
             nonlocal call_count
             call_count += 1
             exp.ur1_lost = 0.001 * call_count

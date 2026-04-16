@@ -16,8 +16,8 @@ import numpy as np
 _MAX_ABS_G = 0.999999
 
 # Log-b limits mirror CWEB iad_calc.w Fill_AB_Grid / Fill_BG_Grid
-_MIN_LOG_B = -8.0   # exp(-8)  ≈ 0.000335
-_MAX_LOG_B_AB = 8.0   # exp(+8)  ≈ 2981  (find_ab, find_ag)
+_MIN_LOG_B = -8.0  # exp(-8)  ≈ 0.000335
+_MAX_LOG_B_AB = 8.0  # exp(+8)  ≈ 2981  (find_ab, find_ag)
 _MAX_LOG_B_BG = 10.0  # exp(+10) ≈ 22026 (find_bg)
 
 

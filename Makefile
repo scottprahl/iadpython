@@ -122,7 +122,7 @@ lab: venv
 
 .PHONY: test
 test: venv
-	$(PYTEST) $(PYTEST_OPTS) --ignore=tests/test_double.py tests
+	$(PYTEST) $(PYTEST_OPTS) --ignore=tests/test_double.py --ignore=tests/test_all_notebooks.py tests
 
 .PHONY: note-test
 note-test: venv

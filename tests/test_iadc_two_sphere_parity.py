@@ -117,6 +117,7 @@ class TwoSphereCParityTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Import iadc and skip if the C extension is not built."""
         import iadpython.iadc as iadc
 
         cls.iadc = iadc

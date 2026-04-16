@@ -51,11 +51,11 @@ DATA_DIR = REPO_ROOT / "tests" / "data"
 # for MC stochastic noise — both programs use independent random seeds)
 # ---------------------------------------------------------------------------
 
-A_REL_TOL = 0.02   # 2 % relative on albedo
-B_REL_TOL = 0.02   # 2 % relative on optical thickness
-G_ABS_TOL = 0.05   # 5 % absolute on anisotropy
+A_REL_TOL = 0.02  # 2 % relative on albedo
+B_REL_TOL = 0.02  # 2 % relative on optical thickness
+G_ABS_TOL = 0.05  # 5 % absolute on anisotropy
 
-MAX_MC = 5         # mirrors ``-M 5`` passed to the C binary
+MAX_MC = 5  # mirrors ``-M 5`` passed to the C binary
 
 # Number of wavelength rows to test per file (first, evenly spaced, last)
 N_ROWS_TO_TEST = 3
@@ -64,6 +64,7 @@ N_ROWS_TO_TEST = 3
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _run_c_iad(rxt_path, max_mc):
     """Run the C iad binary on *rxt_path* and return parsed rows of (mu_a, mu_sp, g).
@@ -93,9 +94,9 @@ def _run_c_iad(rxt_path, max_mc):
                 # need at least: wave MR_m MR_f MT_m MT_f mu_a mu_sp g
                 if len(parts) < 8:
                     continue
-                mu_a  = float(parts[5])
+                mu_a = float(parts[5])
                 mu_sp = float(parts[6])
-                g_c   = float(parts[7])
+                g_c = float(parts[7])
                 rows.append((mu_a, mu_sp, g_c))
         return rows
 
@@ -127,19 +128,16 @@ def _abg_from_mu(mu_a, mu_sp, g_c, d):
 # Test class
 # ---------------------------------------------------------------------------
 
+
 class McLostAgreementTest(unittest.TestCase):
     """Python vs C iad agreement with MC lost-light iterations on .rxt files."""
 
     @classmethod
     def setUpClass(cls):
         if not IAD_BINARY.is_file():
-            raise unittest.SkipTest(
-                f"C iad binary not found at {IAD_BINARY}; build with: cd iad && make"
-            )
+            raise unittest.SkipTest(f"C iad binary not found at {IAD_BINARY}; build with: cd iad && make")
         if not MC_LOST_BINARY.is_file():
-            raise unittest.SkipTest(
-                f"mc_lost binary not found at {MC_LOST_BINARY}; build with: cd iad && make mc_lost"
-            )
+            raise unittest.SkipTest(f"mc_lost binary not found at {MC_LOST_BINARY}; build with: cd iad && make mc_lost")
         cls.mc_lost_path = str(MC_LOST_BINARY)
 
     def _scalar_experiment_at_row(self, exp, row_idx):
@@ -178,8 +176,7 @@ class McLostAgreementTest(unittest.TestCase):
         if n <= N_ROWS_TO_TEST:
             row_indices = list(range(n))
         else:
-            row_indices = [int(round(i * (n - 1) / (N_ROWS_TO_TEST - 1)))
-                           for i in range(N_ROWS_TO_TEST)]
+            row_indices = [int(round(i * (n - 1) / (N_ROWS_TO_TEST - 1))) for i in range(N_ROWS_TO_TEST)]
 
         # Python side: parse .rxt once, then test each selected row as a scalar
         exp = iadpython.read_rxt(str(rxt_path))
@@ -195,16 +192,19 @@ class McLostAgreementTest(unittest.TestCase):
             with self.subTest(rxt=rxt_name, row=row_idx):
                 if c_a > 0:
                     self.assertLessEqual(
-                        abs(py_a - c_a) / c_a, A_REL_TOL,
+                        abs(py_a - c_a) / c_a,
+                        A_REL_TOL,
                         f"albedo mismatch row {row_idx}: python={py_a:.5f}, C={c_a:.5f}",
                     )
                 if c_b > 0:
                     self.assertLessEqual(
-                        abs(py_b - c_b) / c_b, B_REL_TOL,
+                        abs(py_b - c_b) / c_b,
+                        B_REL_TOL,
                         f"optical thickness mismatch row {row_idx}: python={py_b:.5f}, C={c_b:.5f}",
                     )
                 self.assertLessEqual(
-                    abs(py_g - c_g), G_ABS_TOL,
+                    abs(py_g - c_g),
+                    G_ABS_TOL,
                     f"anisotropy mismatch row {row_idx}: python={py_g:.5f}, C={c_g:.5f}",
                 )
 

@@ -11,6 +11,7 @@ Run the grid comparison benchmark::
 
 import os
 import re
+import shutil
 import sys
 import unittest
 import numpy as np
@@ -24,6 +25,7 @@ data_dir = os.path.join(test_dir, "data")
 # ---------------------------------------------------------------------------
 # Original unit tests (unchanged)
 # ---------------------------------------------------------------------------
+
 
 class TestRXT(unittest.TestCase):
     """RXT files data."""
@@ -92,11 +94,13 @@ class TestRXT(unittest.TestCase):
 
 _GRID_CONFIGS = [
     ("Grid  N=21", False, {"grid_n": 21}),
-#    ("Grid  N=51", False, {"grid_n": 51}),
+    #    ("Grid  N=51", False, {"grid_n": 51}),
     ("AGrid coarse", True, {"adaptive_grid_tol": 0.05, "adaptive_grid_max_depth": 4, "adaptive_grid_min_depth": 2}),
-#    ("AGrid medium", True, {"adaptive_grid_tol": 0.03, "adaptive_grid_max_depth": 6, "adaptive_grid_min_depth": 2}),
-#    ("AGrid fine  ", True, {"adaptive_grid_tol": 0.01, "adaptive_grid_max_depth": 8, "adaptive_grid_min_depth": 3}),
-#    ("Auto         ", None, {}),
+    #    ("AGrid medium", True, {"adaptive_grid_tol": 0.03, "adaptive_grid_max_depth": 6,
+    #                             "adaptive_grid_min_depth": 2}),
+    #    ("AGrid fine  ", True, {"adaptive_grid_tol": 0.01, "adaptive_grid_max_depth": 8,
+    #                             "adaptive_grid_min_depth": 3}),
+    #    ("Auto         ", None, {}),
 ]
 
 _GRID_POLICY_FILES = [
@@ -160,7 +164,7 @@ def _reference_photons(rxt_name):
 
 def _reference_kind(rxt_name):
     """Classify whether the existing `.txt` is a no-MC or MC-derived reference."""
-    photons = _reference_photons(rxt_name)
+    photons = _reference_photons(rxt_name)  # pylint: disable=redefined-outer-name
     if photons is None:
         return "unknown"
     if photons == 0:
@@ -201,12 +205,12 @@ def _run_config(exp, label, use_adaptive, extra):
 
     try:
         a, b, g = exp.invert_rt()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001  # pylint: disable=broad-exception-caught
         return {"label": label, "error": str(exc)}
 
     fit_r, fit_t = exp.measured_rt()
-    grid_pts = len(exp.grid) if isinstance(exp.grid, iadpython.AGrid) else (
-        exp.grid.N ** 2 if exp.grid is not None else 0
+    grid_pts = (
+        len(exp.grid) if isinstance(exp.grid, iadpython.AGrid) else (exp.grid.N**2 if exp.grid is not None else 0)
     )
     grid_evals = getattr(exp, "_grid_evals", 0)
     opt_evals = getattr(exp, "_optimizer_evals", exp.sample.rt_evals - grid_evals)
@@ -251,13 +255,13 @@ def _row_indices_for_smoke(exp):
 
 def _axis_tail_values(grid, axis, count=8):
     """Return the largest sampled values for one varying axis in an `AGrid`."""
-    values = sorted({getattr(key, axis) for key in grid.cache._data})
+    values = sorted({getattr(key, axis) for key in grid.cache._data})  # pylint: disable=protected-access
     return values[-count:]
 
 
 def _axis_head_values(grid, axis, count=8):
     """Return the smallest sampled values for one varying axis in an `AGrid`."""
-    values = sorted({getattr(key, axis) for key in grid.cache._data})
+    values = sorted({getattr(key, axis) for key in grid.cache._data})  # pylint: disable=protected-access
     return values[:count]
 
 
@@ -399,10 +403,12 @@ def run_agrid_coarse_failure_report():
                 f"ratio={ratio:.1f}"
             )
             print(
-                f"    grid first   = ({grid_result['first_a']:.6f}, {grid_result['first_b']:.6f}, {grid_result['first_g']:.6f})"
+                f"    grid first   = ({grid_result['first_a']:.6f}, "
+                f"{grid_result['first_b']:.6f}, {grid_result['first_g']:.6f})"
             )
             print(
-                f"    coarse first = ({coarse_result['first_a']:.6f}, {coarse_result['first_b']:.6f}, {coarse_result['first_g']:.6f})"
+                f"    coarse first = ({coarse_result['first_a']:.6f}, "
+                f"{coarse_result['first_b']:.6f}, {coarse_result['first_g']:.6f})"
             )
 
             if isinstance(coarse_exp.grid, iadpython.AGrid):
@@ -490,7 +496,6 @@ class TestRXTStageA(unittest.TestCase):
 
 def _find_mc_lost_binary():
     """Return path to mc_lost binary, or None if not found."""
-    import shutil
     repo_binary = os.path.join(test_dir, "..", "iad", "mc_lost")
     if os.path.isfile(repo_binary) and os.access(repo_binary, os.X_OK):
         return os.path.abspath(repo_binary)
@@ -503,8 +508,8 @@ def _run_mc_step(exp, a0, b0, g0, mc_lost_path, n_photons):
     exp.n_photons = n_photons
 
     try:
-        exp._update_lost_light(a0, b0, g0)
-    except Exception as exc:  # noqa: BLE001
+        exp._update_lost_light(a0, b0, g0)  # pylint: disable=protected-access
+    except Exception as exc:  # noqa: BLE001  # pylint: disable=broad-exception-caught
         return {"error": str(exc)}
 
     ur1_lost = exp.ur1_lost
@@ -514,7 +519,7 @@ def _run_mc_step(exp, a0, b0, g0, mc_lost_path, n_photons):
 
     try:
         a1, b1, g1 = exp.invert_scalar_rt(hot_start=(a0, b0, g0))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001  # pylint: disable=broad-exception-caught
         return {"error": str(exc)}
 
     return {
@@ -532,7 +537,7 @@ def _run_mc_step(exp, a0, b0, g0, mc_lost_path, n_photons):
     }
 
 
-def run_mc_report(n_mc_iterations, n_photons=_FIRST_MC_PHOTONS, filenames=None):
+def run_mc_report(n_mc_iterations, n_photons=_FIRST_MC_PHOTONS, filenames=None):  # pylint: disable=redefined-outer-name
     """Print a per-wavelength table comparing no-MC and manual MC updates.
 
     For each sample file with integrating spheres the table shows the initial
@@ -569,8 +574,10 @@ def run_mc_report(n_mc_iterations, n_photons=_FIRST_MC_PHOTONS, filenames=None):
         }
 
         print(f"\n{'=' * 78}")
-        print(f"  {fname}  ({n_wl} wavelengths, reference={_reference_kind(fname)}, "
-              f"num_spheres={int(exp_base.num_spheres)}, mc_iters={n_mc_iterations}, photons={n_photons:,})")
+        print(
+            f"  {fname}  ({n_wl} wavelengths, reference={_reference_kind(fname)}, "
+            f"num_spheres={int(exp_base.num_spheres)}, mc_iters={n_mc_iterations}, photons={n_photons:,})"
+        )
         print(f"{'=' * 78}")
 
         for i in range(n_wl):
@@ -658,7 +665,7 @@ def run_mc_report(n_mc_iterations, n_photons=_FIRST_MC_PHOTONS, filenames=None):
 
 def _cli_photons(default):
     """Return the requested photon count from the ad-hoc CLI args."""
-    photons = default
+    photons = default  # pylint: disable=redefined-outer-name
     for arg in sys.argv:
         if arg.startswith("--photons="):
             photons = int(arg.split("=", 1)[1])
@@ -681,7 +688,7 @@ def _cli_mc_filters():
     """Return positional file filters for the ad-hoc `--mc` report."""
     filters = []
     skip_next = False
-    for index, arg in enumerate(sys.argv[1:], start=1):
+    for _, arg in enumerate(sys.argv[1:], start=1):
         if skip_next:
             skip_next = False
             continue
@@ -712,10 +719,7 @@ def _match_mc_files(filters):
         else:
             stem = token
 
-        matches = [
-            fname for fname in _MC_SAMPLE_FILES
-            if fname.lower() == token or fname.lower() == f"{stem}.rxt"
-        ]
+        matches = [fname for fname in _MC_SAMPLE_FILES if fname.lower() == token or fname.lower() == f"{stem}.rxt"]
         if not matches:
             unmatched.append(raw_filter)
             continue

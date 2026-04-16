@@ -1,7 +1,6 @@
 # pylint: disable=invalid-name
 
-"""Round-trip tests for forward and inverse R,T with double integrating spheres
-and MC-estimated lost light.
+"""Round-trip tests for forward and inverse R,T with double integrating spheres and MC-estimated lost light.
 
 Mirrors test_roundtrip_1_sphere_mc_lost.py but uses num_spheres=2 and the
 DoubleSphere forward model.  The self-consistent round-trip structure is the
@@ -18,8 +17,6 @@ Skip condition: mc_lost binary absent (build with: cd iad && make mc_lost).
 """
 
 import itertools
-
-import pytest
 
 import iadpython
 from iadpython.mc_lost import run_mc_lost

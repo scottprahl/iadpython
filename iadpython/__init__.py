@@ -56,4 +56,4 @@ from .rxt import *
 from .txt import *
 from .port import *
 from .double import *
-from . import mc_lost
+from . import mc_lost as mc_lost  # pylint: disable=useless-import-alias

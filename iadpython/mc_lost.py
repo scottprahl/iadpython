@@ -95,12 +95,12 @@ def run_mc_lost(
         Path to the mc_lost binary.  If only a name is given the system PATH
         is searched.
 
-    Returns
+    Returns:
     -------
     tuple[float, float, float, float]
         ``(ur1_lost, ut1_lost, uru_lost, utu_lost)``
 
-    Raises
+    Raises:
     ------
     FileNotFoundError
         If the binary cannot be found.
