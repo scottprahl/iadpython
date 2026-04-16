@@ -1,0 +1,554 @@
+#!/usr/bin/env python3
+
+# pylint: disable=invalid-name
+# pylint: disable=too-many-locals
+# pylint: disable=consider-using-f-string
+
+"""Jupyter notebook generator for IAD analysis using iadpython.
+
+Replaces the old ``iadplus`` wrapper that called the compiled C ``iad``
+binary.  All inversion is done by ``iadp`` (``iadcommand.py``), which
+supports the full set of command-line options.
+
+Usage::
+
+    python iadpython/iadplus file.rxt [file2.rxt ...]
+    python iadpython/iadplus --fit file.rxt
+    python iadpython/iadplus --force file1.rxt file2.rxt
+    python iadpython/iadplus --options="-q 16 -c 0" file.rxt
+"""
+
+import argparse
+import os
+import shlex
+import shutil
+import subprocess
+import sys
+import urllib.parse
+from datetime import datetime
+
+import numpy as np
+import matplotlib.pyplot as plt
+import nbformat
+from nbformat.v4 import new_notebook, new_code_cell, new_markdown_cell
+from scipy.optimize import curve_fit
+
+import iadpython
+
+skyblue = '#00bfff'
+azure = '#1520a6'
+
+
+# ---------------------------------------------------------------------------
+# Inversion via iadp subprocess
+# ---------------------------------------------------------------------------
+
+def run_iadp(rxt_path, txt_path, options_str):
+    """Run ``iadp`` on *rxt_path*, writing results to *txt_path*.
+
+    *options_str* is a string of extra flags forwarded verbatim to ``iadp``
+    (e.g. ``"-q 16 -c 0"``).  Returns True on success.
+    """
+    cmd = ['iadp']
+    if options_str:
+        cmd += shlex.split(options_str)
+    cmd += ['-o', txt_path, rxt_path]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        msg = (result.stderr or result.stdout).strip()
+        print('iadp failed: %s' % msg)
+        return False
+    return True
+
+
+def parse_iadp_txt(txt_path):
+    """Read an ``iadp`` ``.txt`` output file and return arrays.
+
+    The ``iadp`` format has three ``#``-prefixed header lines followed by
+    tab-separated data columns::
+
+        lam  mr  cr  mt  ct  mua  musp  g
+
+    Returns ``(lam, mr, cr, mt, ct, mua, musp, g, success)`` as numpy arrays.
+    ``success`` is True for rows where *mua* and *musp* are finite and ≥ 0.
+    """
+    arr = np.atleast_2d(np.loadtxt(txt_path, comments='#', delimiter='\t'))
+    cols = arr.T
+    lam  = cols[0]
+    mr   = cols[1]
+    cr   = cols[2]
+    mt   = cols[3]
+    ct   = cols[4]
+    mua  = cols[5]
+    musp = cols[6]
+    g    = cols[7]
+    success = np.isfinite(mua) & np.isfinite(musp) & (mua >= 0) & (musp >= 0)
+    return lam, mr, cr, mt, ct, mua, musp, g, success
+
+
+def load_txt_data(txt_path, rxt_path=None):
+    """Read ``iadp`` output and return a results dict.
+
+    *rxt_path* is used to look up the sample thickness *d* (needed to
+    compute optical thickness *b*).  If omitted or unreadable, ``d = 1.0``
+    is used as a fallback.
+
+    Returns a dict with keys: lam, mr, cr, mt, ct, mua, musp, g, mus, b, a,
+    success, d.
+    """
+    lam, mr, cr, mt, ct, mua, musp, g, success = parse_iadp_txt(txt_path)
+
+    d = 1.0
+    if rxt_path and os.path.exists(rxt_path):
+        try:
+            rxt_exp = iadpython.read_rxt(rxt_path)
+            d_val = rxt_exp.sample.d
+            d = float(d_val) if np.isscalar(d_val) else float(np.atleast_1d(d_val).flat[0])
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+    with np.errstate(invalid='ignore', divide='ignore'):
+        mus = np.where(g < 1, musp / (1.0 - g), np.nan)
+        denom = mua + mus
+        a = np.where(denom > 0, mus / denom, np.nan)
+        b = denom * d
+
+    return {
+        'lam': lam, 'mr': mr, 'cr': cr,
+        'mt': mt,   'ct': ct,
+        'mua': mua, 'musp': musp, 'g': g,
+        'mus': mus, 'b': b, 'a': a,
+        'success': success, 'd': d,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Plot helpers
+# ---------------------------------------------------------------------------
+
+def add_x_label(lambda0):
+    """Add an appropriate x-axis label based on the wavelength range."""
+    if lambda0[0] > 300:
+        plt.xlabel('Wavelength (nm)', fontsize=12)
+    else:
+        plt.xlabel('Measurement Number', fontsize=12)
+
+
+def plot_good(x, y, success, big_points=False):
+    """Plot only the successful points."""
+    size, fc = (7, 'none') if big_points else (2, 'blue')
+    if any(success):
+        plt.plot(x[success], y[success], marker='o', markersize=size,
+                 markerfacecolor=fc, markeredgecolor='blue', linestyle='None',
+                 label='fit')
+    plt.grid(True)
+
+
+def plot_good_and_bad(x, y, success, big_points=False):
+    """Plot successful points in blue and failures as red crosses."""
+    size, fc = (7, 'none') if big_points else (2, 'blue')
+    if any(success):
+        plt.plot(x[success], y[success], marker='o', markersize=size,
+                 markerfacecolor=fc, markeredgecolor='blue', linestyle='None',
+                 label='fit')
+    if any(~success):
+        plt.plot(x[~success], y[~success], 'xr', label='failed')
+        plt.legend()
+    plt.grid(True)
+
+
+def plot_grid(mr, cr, mt, ct, success, filename_base):
+    """Plot measured vs. calculated M_R and M_T in the valid solution triangle."""
+    out_filename = filename_base + '-grid.svg'
+    plt.figure(figsize=(8, 8))
+    plt.gca().set_aspect(1)
+    plt.xlim(-0.05, 1.05)
+    plt.ylim(-0.05, 1.05)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plot_good(cr, ct, success, True)
+    if any(success):
+        plt.plot(mr[success], mt[success], 'o', markersize=2, color=azure, label='measured')
+    if any(~success):
+        plt.plot(mr[~success], mt[~success], 'x', markersize=5, color='red', label='failed')
+    poly = plt.Polygon([[0, 0], [0, 1], [1, 0]], closed=True, facecolor=skyblue, edgecolor='none', alpha=1)
+    plt.gca().add_patch(poly)
+    plt.xlabel('$M_R$ (Normalized Reflectance)', fontsize=12)
+    plt.ylabel('$M_T$ (Normalized Transmittance)', fontsize=12)
+    plt.legend()
+    plt.savefig(out_filename, dpi=300)
+    plt.close()
+    return os.path.basename(out_filename)
+
+
+def plot_rt(lam, mr, mt, filename_base):
+    """Plot measured R, T, and their sum vs. wavelength."""
+    out_filename = filename_base + '-RTU.svg'
+    plt.figure(figsize=(8, 4.5))
+    plt.plot(lam, mr, 'ob', markersize=2, label='$M_R$')
+    plt.plot(lam, mt, 'or', markersize=2, label='$M_T$')
+    plt.plot(lam, mr + mt, 'ok', markersize=2, label='$M_R + M_T$')
+    plt.ylabel('Measurement')
+    add_x_label(lam)
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(out_filename, dpi=300)
+    plt.close()
+    return os.path.basename(out_filename)
+
+
+def plot_r(lam, mr, cr, success, filename_base):
+    """Plot measured and fitted reflectance vs. wavelength."""
+    out_filename = filename_base + '-R.svg'
+    plt.figure(figsize=(8, 4.5))
+    plot_good_and_bad(lam, cr, success, True)
+    plt.plot(lam, mr, 'ok', markersize=2, label='measured')
+    add_x_label(lam)
+    plt.ylabel('$M_R$ (Normalized Reflectance)', fontsize=12)
+    plt.legend()
+    plt.savefig(out_filename, dpi=300)
+    plt.close()
+    return os.path.basename(out_filename)
+
+
+def plot_t(lam, mt, ct, success, filename_base):
+    """Plot measured and fitted transmittance vs. wavelength."""
+    out_filename = filename_base + '-T.svg'
+    plt.figure(figsize=(8, 4.5))
+    plot_good_and_bad(lam, ct, success, True)
+    plt.plot(lam, mt, 'ok', markersize=2, label='measured')
+    add_x_label(lam)
+    plt.ylabel('$M_T$ (Normalized Transmittance)', fontsize=12)
+    plt.legend()
+    plt.savefig(out_filename, dpi=300)
+    plt.close()
+    return os.path.basename(out_filename)
+
+
+def plot_mua(lam, mua, success, filename_base):
+    """Plot absorption coefficient vs. wavelength."""
+    out_filename = filename_base + '-mua.svg'
+    plt.figure(figsize=(8, 4.5))
+    plot_good_and_bad(lam, mua, success)
+    add_x_label(lam)
+    plt.ylabel('Absorption Coefficient (mm\u207b\xb9)')
+    plt.savefig(out_filename, dpi=300)
+    plt.close()
+    return os.path.basename(out_filename)
+
+
+def scattering_model(x, a, b):
+    """Power-law scattering model: a * (x/1000)^(-b)."""
+    return a * (x / 1000) ** (-b)
+
+
+def _fit_and_plot_scattering(lam, values, success, label):
+    """Overlay a power-law fit on the current axes when wavelength data is present."""
+    if lam[0] > 300 and any(success):
+        popt, _ = curve_fit(scattering_model, lam[success], values[success])
+        a_opt, b_opt = popt
+        lamb = np.linspace(min(lam), max(lam))
+        fn_str = '%s=%g * (lam_nm/1000)**(-%g)' % (label, a_opt, b_opt)
+        plt.plot(lamb, scattering_model(lamb, a_opt, b_opt), label=fn_str)
+        plt.legend()
+
+
+def plot_musp(lam, musp, success, filename_base, fit=False):
+    """Plot reduced scattering coefficient vs. wavelength."""
+    out_filename = filename_base + '-musp.svg'
+    plt.figure(figsize=(8, 4.5))
+    plot_good_and_bad(lam, musp, success)
+    if fit:
+        _fit_and_plot_scattering(lam, musp, success, 'musp')
+    plt.ylabel('Reduced Scattering Coefficient (mm\u207b\xb9)')
+    add_x_label(lam)
+    plt.savefig(out_filename, dpi=300)
+    plt.close()
+    return os.path.basename(out_filename)
+
+
+def plot_mus(lam, mus, success, filename_base, fit=False):
+    """Plot scattering coefficient vs. wavelength."""
+    out_filename = filename_base + '-mus.svg'
+    plt.figure(figsize=(8, 4.5))
+    plot_good_and_bad(lam, mus, success)
+    if fit:
+        _fit_and_plot_scattering(lam, mus, success, 'mus')
+    plt.ylabel('Scattering Coefficient (mm\u207b\xb9)')
+    add_x_label(lam)
+    plt.savefig(out_filename, dpi=300)
+    plt.close()
+    return os.path.basename(out_filename)
+
+
+def plot_g(lam, g, success, filename_base):
+    """Plot scattering anisotropy vs. wavelength."""
+    out_filename = filename_base + '-g.svg'
+    plt.figure(figsize=(8, 4.5))
+    plot_good_and_bad(lam, g, success)
+    add_x_label(lam)
+    plt.ylabel('Scattering Anisotropy')
+    plt.savefig(out_filename, dpi=300)
+    plt.close()
+    return os.path.basename(out_filename)
+
+
+def plot_a(lam, a, success, filename_base):
+    """Plot single-scattering albedo vs. wavelength."""
+    out_filename = filename_base + '-a.svg'
+    plt.figure(figsize=(8, 4.5))
+    plot_good_and_bad(lam, a, success)
+    add_x_label(lam)
+    plt.ylabel(r'Single Scattering Albedo $\mu_s/(\mu_a+\mu_s)$')
+    plt.savefig(out_filename, dpi=300)
+    plt.close()
+    return os.path.basename(out_filename)
+
+
+def plot_b(lam, b, success, filename_base):
+    """Plot optical thickness vs. wavelength."""
+    out_filename = filename_base + '-b.svg'
+    plt.figure(figsize=(8, 4.5))
+    plot_good_and_bad(lam, b, success)
+    add_x_label(lam)
+    plt.ylabel(r'Optical Thickness $(\mu_a+\mu_s)d$')
+    plt.savefig(out_filename, dpi=300)
+    plt.close()
+    return os.path.basename(out_filename)
+
+
+# ---------------------------------------------------------------------------
+# Notebook helpers
+# ---------------------------------------------------------------------------
+
+def append_graph_cell(nb, header, graph):
+    """Append a markdown cell embedding *graph* as a centred image."""
+    url = urllib.parse.quote(graph)
+    cell_text = '%s\n<center>\n    <img src="%s" width="80%%" />\n</center>\n' % (header, url)
+    nb.cells.append(new_markdown_cell(cell_text))
+
+
+def append_file_cell(nb, header, file):
+    """Append a code cell that prints the contents of *file*."""
+    base = os.path.basename(file)
+    cell_text = (
+        '%s\n'
+        'with open("%s", "r", encoding="utf-8") as file:\n'
+        '    file_contents = file.read()\n'
+        '\n'
+        'print(file_contents)\n'
+    ) % (header, base)
+    nb.cells.append(new_code_cell(cell_text))
+
+
+def append_header(nb, rxt_path):
+    """Append the analysis header markdown cell to *nb*."""
+    today = datetime.today().strftime('%d %b %Y')
+    cell_text = (
+        '# Inverse Adding-Doubling Analysis\n\n'
+        'iadpython version %s\n\n'
+        'This analysis was done on %s\n\n'
+        'Input file: `%s`\n'
+    ) % (iadpython.__version__, today, os.path.basename(rxt_path))
+    nb.cells.append(new_markdown_cell(cell_text))
+
+
+# ---------------------------------------------------------------------------
+# Directory helpers
+# ---------------------------------------------------------------------------
+
+def create_notebook_directory(input_name, directory, subdirectory):
+    """Create a notebook directory and copy the .rxt file into it.
+
+    Returns (base, base_path) or ('', '') on failure.
+    """
+    if not os.path.exists(input_name):
+        if not input_name.endswith('.rxt'):
+            input_name += '.rxt'
+        if not os.path.exists(input_name):
+            print('input file "%s" not found' % input_name)
+            return '', ''
+
+    local_dir = os.path.dirname(input_name)
+    base = os.path.splitext(os.path.basename(input_name))[0]
+
+    if subdirectory is None:
+        if directory is None:
+            notebook_dir = os.path.join(local_dir, base + '-notebook')
+        else:
+            notebook_dir = os.path.join(local_dir, directory)
+            if os.path.exists(notebook_dir) and os.path.isfile(notebook_dir):
+                print("Sorry, but '%s' is an existing file!" % notebook_dir)
+                print('Use a new or existing directory with --dir option.')
+                sys.exit(1)
+    else:
+        notebook_dir = os.path.join(subdirectory, base)
+
+    os.makedirs(notebook_dir, exist_ok=True)
+    shutil.copy(input_name, notebook_dir)
+
+    return base, os.path.join(notebook_dir, base)
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main():
+    """Entry point."""
+    desc = (
+        'Invert one or more IAD experiment files (.rxt) using iadpython and '
+        'produce a self-contained Jupyter notebook for each one.  The notebook '
+        'contains SVG plots of the measured and fitted reflectance/transmittance, '
+        'the derived optical properties (mua, mus\', g, mus, a, b), and a grid '
+        'diagram showing where the solution sits in the M_R-M_T plane.'
+    )
+    epilog = (
+        'Output layout (default, one file):\n'
+        '  sample-notebook/\n'
+        '    sample.rxt        copy of the input\n'
+        '    sample.txt        cached inversion results (written by iadp)\n'
+        '    sample-R.svg      reflectance plot\n'
+        '    sample-T.svg      transmittance plot\n'
+        '    sample-mua.svg    absorption coefficient\n'
+        '    sample-musp.svg   reduced scattering coefficient\n'
+        '    sample-grid.svg   M_R vs M_T solution grid\n'
+        '    sample.ipynb      Jupyter notebook\n'
+        '\n'
+        'Examples:\n'
+        '  iadplus tissue.rxt\n'
+        '  iadplus --force --fit *.rxt\n'
+        '  iadplus --options="-q 16" tissue.rxt\n'
+        '  iadplus --sdir results/ sample1.rxt sample2.rxt\n'
+        '    -> results/sample1/sample1.ipynb\n'
+        '    -> results/sample2/sample2.ipynb\n'
+        '  iadsum results/   # summarise all of the above\n'
+    )
+    parser = argparse.ArgumentParser(
+        description=desc,
+        epilog=epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        'input_files', nargs='+', metavar='FILE.rxt',
+        help='IAD experiment file(s) to invert; the .rxt extension may be omitted',
+    )
+    parser.add_argument(
+        '--dir', metavar='DIR', default=None,
+        help=(
+            'store all output for a single input file in DIR (relative to the '
+            '.rxt file location); cannot be used with more than one input file '
+            'unless each file shares the same directory'
+        ),
+    )
+    parser.add_argument(
+        '--sdir', metavar='SDIR', default=None,
+        help=(
+            'batch mode: place each sample in its own SDIR/<base>/ subdirectory '
+            '(useful when processing many files to keep outputs organised and '
+            'compatible with iadsum)'
+        ),
+    )
+    parser.add_argument(
+        '--force', action='store_true',
+        help='re-run the inversion even if a cached .txt already exists',
+    )
+    parser.add_argument(
+        '--fit', action='store_true',
+        help=(
+            'overlay a power-law fit  a*(lam_nm/1000)^(-b)  on the scattering '
+            'coefficient plots (requires wavelength data above 300 nm)'
+        ),
+    )
+    parser.add_argument(
+        '--options', metavar='OPTIONS', default=None,
+        help=(
+            'extra options passed verbatim to iadp, e.g. --options="-q 16 -c 0"; '
+            'see iadp --help for the full list of supported flags'
+        ),
+    )
+    args = parser.parse_args()
+
+    created = []
+    for file_name in args.input_files:
+        base, base_path = create_notebook_directory(file_name, args.dir, args.sdir)
+        if not base_path:
+            continue
+
+        txt_path = base_path + '.txt'
+        rxt_path = base_path + '.rxt'
+
+        cache_valid = os.path.exists(txt_path) and os.path.getsize(txt_path) > 0
+        if args.force or not cache_valid:
+            print('inverting: %s' % rxt_path)
+            if not run_iadp(rxt_path, txt_path, args.options):
+                print('Sorry, inversion failed for %s' % rxt_path)
+                continue
+        else:
+            print('Using cached results (--force to redo): %s' % txt_path)
+
+        try:
+            data = load_txt_data(txt_path, rxt_path)
+        except Exception as exc:  # pylint: disable=broad-except
+            print('Error reading results for %s: %s' % (rxt_path, exc))
+            continue
+
+        lam     = data['lam']
+        mr      = data['mr']
+        cr      = data['cr']
+        mt      = data['mt']
+        ct      = data['ct']
+        mua     = data['mua']
+        musp    = data['musp']
+        g       = data['g']
+        mus     = data['mus']
+        b       = data['b']
+        a       = data['a']
+        success = data['success']
+
+        rt_graph   = plot_rt(lam, mr, mt, base_path)
+        r_graph    = plot_r(lam, mr, cr, success, base_path)
+        t_graph    = plot_t(lam, mt, ct, success, base_path)
+        mua_graph  = plot_mua(lam, mua, success, base_path)
+        musp_graph = plot_musp(lam, musp, success, base_path, fit=args.fit)
+        mus_graph  = plot_mus(lam, mus, success, base_path, fit=args.fit)
+        a_graph    = plot_a(lam, a, success, base_path)
+        b_graph    = plot_b(lam, b, success, base_path)
+        g_graph    = plot_g(lam, g, success, base_path)
+        grid_graph = plot_grid(mr, cr, mt, ct, success, base_path)
+
+        nb = new_notebook()
+        nb.metadata['kernelspec'] = {
+            'display_name': 'Python 3',
+            'language': 'python',
+            'name': 'python3',
+        }
+
+        append_header(nb, rxt_path)
+        append_graph_cell(nb, '## Reflection', r_graph)
+        append_graph_cell(nb, '## Transmission', t_graph)
+        append_graph_cell(nb, '## Absorption Coefficient', mua_graph)
+        append_graph_cell(nb, '## Reduced Scattering Coefficient', musp_graph)
+        append_graph_cell(nb, '## Single Scattering Albedo', a_graph)
+        append_graph_cell(nb, '## Optical Thickness', b_graph)
+        append_graph_cell(nb, '## Scattering Anisotropy', g_graph)
+        append_graph_cell(nb, '## Scattering Coefficient', mus_graph)
+        append_graph_cell(nb, '## Original Measurements', rt_graph)
+        append_graph_cell(nb, '## Grid Graph', grid_graph)
+
+        nb.cells.append(new_markdown_cell('## Input file\n'))
+        append_file_cell(nb, '# input file', base + '.rxt')
+
+        ipynb_path = base_path + '.ipynb'
+        with open(ipynb_path, 'w', encoding='utf-8') as f:
+            nbformat.write(nb, f)
+
+        created.append(ipynb_path)
+        print('Created: %s' % ipynb_path)
+
+    if len(created) > 1:
+        print('\n%d notebooks created.' % len(created))
+
+
+if __name__ == '__main__':
+    main()

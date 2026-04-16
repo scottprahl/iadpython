@@ -1,0 +1,332 @@
+#!/usr/bin/env python3
+
+# pylint: disable=invalid-name
+# pylint: disable=too-many-locals
+# pylint: disable=consider-using-f-string
+
+"""Summary notebook generator for multiple IAD analyses using iadpython.
+
+Replaces the old ``iadsum`` wrapper that read ``.txt`` files produced by the
+compiled C ``iad`` binary.  This version reads the ``.txt`` files written by
+the Python ``iadp`` / ``iadplus`` scripts.
+
+Usage::
+
+    python iadpython/iadsum DIRECTORY
+"""
+
+import argparse
+import os
+import urllib.parse
+from datetime import datetime
+from enum import Enum
+
+import numpy as np
+import matplotlib.pyplot as plt
+import nbformat
+from nbformat.v4 import new_notebook, new_markdown_cell
+
+import iadpython
+
+
+class Column(Enum):
+    """Column positions in the results list returned by read_txt_as_list."""
+
+    LAM     = (0,  "")
+    MR      = (1,  "-mr.svg")
+    CR      = (2,  "-cr.svg")
+    MT      = (3,  "-mt.svg")
+    CT      = (4,  "-ct.svg")
+    MUA     = (5,  "-mua.svg")
+    MUSP    = (6,  "-musp.svg")
+    G       = (7,  "-g.svg")
+    MUS     = (8,  "-mus.svg")
+    B       = (9,  "-b.svg")
+    A       = (10, "-a.svg")
+    SUCCESS = (11, "")
+
+    def __new__(cls, position, suffix):
+        """Create enum member with integer *position* and filename *suffix*."""
+        obj = object.__new__(cls)
+        obj._value_ = suffix
+        obj.position = position
+        return obj
+
+
+# ---------------------------------------------------------------------------
+# .txt reader  (reads files written by iadp / iadplus)
+# ---------------------------------------------------------------------------
+
+def read_txt_as_list(txt_path):
+    """Read a .txt written by iadp and return a 12-element list.
+
+    The list is indexed by ``Column.*.position``::
+
+        [lam, mr, cr, mt, ct, mua, musp, g, mus, b, a, success]
+
+    The sample thickness *d* is read from the paired ``.rxt`` file (same
+    directory, same base name) to compute optical thickness *b*.  If no
+    ``.rxt`` is found, ``d = 1.0`` is used as a fallback.
+    """
+    arr = np.atleast_2d(np.loadtxt(txt_path, comments='#', delimiter='\t'))
+    cols = arr.T
+    lam  = cols[0]
+    mr   = cols[1]
+    cr   = cols[2]
+    mt   = cols[3]
+    ct   = cols[4]
+    mua  = cols[5]
+    musp = cols[6]
+    g    = cols[7]
+    success = np.isfinite(mua) & np.isfinite(musp) & (mua >= 0) & (musp >= 0)
+
+    # Try to get d from the paired .rxt file in the same directory.
+    base = os.path.splitext(txt_path)[0]
+    rxt_path = base + '.rxt'
+    d = 1.0
+    if os.path.exists(rxt_path):
+        try:
+            rxt_exp = iadpython.read_rxt(rxt_path)
+            d_val = rxt_exp.sample.d
+            d = float(d_val) if np.isscalar(d_val) else float(np.atleast_1d(d_val).flat[0])
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+    with np.errstate(invalid='ignore', divide='ignore'):
+        mus = np.where(g < 1, musp / (1.0 - g), np.nan)
+        denom = mua + mus
+        a = np.where(denom > 0, mus / denom, np.nan)
+        b = denom * d
+
+    return [
+        lam,      # LAM
+        mr,       # MR
+        cr,       # CR
+        mt,       # MT
+        ct,       # CT
+        mua,      # MUA
+        musp,     # MUSP
+        g,        # G
+        mus,      # MUS
+        b,        # B
+        a,        # A
+        success,  # SUCCESS
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Plot helpers
+# ---------------------------------------------------------------------------
+
+def add_x_label(lambda0):
+    """Add an appropriate x-axis label based on the wavelength range."""
+    if lambda0[0] > 300:
+        plt.xlabel('Wavelength (nm)')
+    else:
+        plt.xlabel('Measurement Number')
+
+
+def plot_results(results, item, bp, ylabel):
+    """Plot one quantity across all samples in *results*.
+
+    *results* maps sample key → 12-element list (see :func:`read_txt_as_list`).
+    Successful points only are shown for derived quantities; raw M_R and M_T
+    are plotted in full.
+    """
+    plt.figure(figsize=(8, 4.5))
+    the_column = item.position
+    out_filename = bp + item.value
+    raw_columns = {Column.MR.position, Column.MT.position}
+
+    lam = None
+    for key in sorted(results.keys()):
+        r = results[key]
+        success = r[Column.SUCCESS.position]
+        lam = r[Column.LAM.position]
+        y = r[the_column]
+        if the_column in raw_columns:
+            plt.plot(lam, y, label=key)
+        elif any(success):
+            plt.plot(lam[success], y[success], label=key)
+
+    if lam is not None:
+        add_x_label(lam)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.savefig(out_filename)
+    plt.close()
+    return os.path.basename(out_filename)
+
+
+# ---------------------------------------------------------------------------
+# Notebook helpers
+# ---------------------------------------------------------------------------
+
+def append_graph_cell(nb, header, graph):
+    """Append a markdown cell embedding *graph* as a centred image."""
+    url = urllib.parse.quote(graph)
+    cell_text = '%s\n<center>\n    <img src="%s" width="80%%" />\n</center>\n' % (header, url)
+    nb.cells.append(new_markdown_cell(cell_text))
+
+
+def append_header(nb, rel_txt_paths):
+    """Append the summary header markdown cell to *nb*.
+
+    *rel_txt_paths* are paths relative to the summary notebook used to build
+    links to each individual notebook.
+    """
+    today = datetime.today().strftime('%d %b %Y')
+
+    links = []
+    for txt in rel_txt_paths:
+        url_ipynb = txt.replace('.txt', '.ipynb')
+        links.append('[%s](%s)' % (url_ipynb, urllib.parse.quote(url_ipynb)))
+
+    cell_text = (
+        '# Summary of Inverse Adding-Doubling Analysis\n\n'
+        'iadpython version %s\n\n'
+        'This summary was created on %s\n\n'
+        'Links to individual notebooks:\n'
+    ) % (iadpython.__version__, today)
+    for link in links:
+        cell_text += '\n* ' + link + '\n'
+
+    nb.cells.append(new_markdown_cell(cell_text))
+
+
+# ---------------------------------------------------------------------------
+# Directory helpers
+# ---------------------------------------------------------------------------
+
+def create_summary_directory(directory):
+    """Create the ``summary/`` subdirectory and return its base path."""
+    notebook_dir = os.path.join(directory, 'summary')
+    os.makedirs(notebook_dir, exist_ok=True)
+    return os.path.join(notebook_dir, 'summary')
+
+
+def find_txt_files_in_dir(directory):
+    """Return all .txt files written by iadp found recursively in *directory*."""
+    txt_paths = []
+    for root, dirs, files in os.walk(directory):
+        dirs[:] = [d for d in dirs if d not in {'.ipynb_checkpoints', 'summary'}]
+        for file in files:
+            if file.endswith('.txt'):
+                txt_paths.append(os.path.join(root, file))
+    return txt_paths
+
+
+def _relative_to(base_dir, paths):
+    """Return *paths* expressed relative to *base_dir*."""
+    return [os.path.relpath(p, base_dir) for p in paths]
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main():
+    """Entry point."""
+    desc = (
+        'Collect the inversion results from multiple iadplus runs and produce '
+        'a single summary Jupyter notebook that overlays all samples on the '
+        'same axes.  The summary is written to DIRECTORY/summary/summary.ipynb.'
+    )
+    epilog = (
+        'Typical workflow:\n'
+        '  iadplus --sdir results/ sample1.rxt sample2.rxt sample3.rxt\n'
+        '  iadsum  results/\n'
+        '\n'
+        'iadsum searches DIRECTORY recursively for .txt files written by\n'
+        'iadplus, skipping the summary/ and .ipynb_checkpoints/ subdirectories.\n'
+        'Each sample appears in the legend labelled by its parent folder name.\n'
+        '\n'
+        'Plots produced (in DIRECTORY/summary/):\n'
+        '  summary-mr.svg    measured reflectance M_R\n'
+        '  summary-mt.svg    measured transmittance M_T\n'
+        '  summary-mua.svg   absorption coefficient\n'
+        '  summary-musp.svg  reduced scattering coefficient\n'
+        '  summary-mus.svg   scattering coefficient\n'
+        '  summary-g.svg     scattering anisotropy\n'
+        '  summary-a.svg     single-scattering albedo\n'
+        '  summary-b.svg     optical thickness\n'
+        '  summary.ipynb     Jupyter notebook linking all of the above\n'
+    )
+    parser = argparse.ArgumentParser(
+        description=desc,
+        epilog=epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        'directory', metavar='DIRECTORY',
+        help=(
+            'root directory to search for .txt files produced by iadplus; '
+            'the summary notebook is written to DIRECTORY/summary/'
+        ),
+    )
+    args = parser.parse_args()
+
+    abs_dir  = os.path.abspath(args.directory)
+    abs_txts = find_txt_files_in_dir(abs_dir)
+
+    print('looking in "%s" for .txt files' % args.directory)
+    if not abs_txts:
+        print('No .txt files found.  Run iadplus first.')
+        return
+
+    bp = create_summary_directory(args.directory)
+    summary_dir = os.path.dirname(os.path.abspath(bp))
+
+    # Paths relative to the summary notebook directory for notebook links
+    txts_relative_to_summary = _relative_to(summary_dir, abs_txts)
+
+    results = {}
+    for txt_path, rel_path in zip(abs_txts, txts_relative_to_summary):
+        if os.path.exists(txt_path) and os.path.getsize(txt_path) > 0:
+            print('reading %s' % rel_path)
+            # Use the immediate parent directory name as the sample label
+            key = os.path.basename(os.path.dirname(txt_path))
+            try:
+                results[key] = read_txt_as_list(txt_path)
+            except Exception as exc:  # pylint: disable=broad-except
+                print('  skipping %s: %s' % (rel_path, exc))
+
+    if not results:
+        print('No readable .txt files found.')
+        return
+
+    r_graph    = plot_results(results, Column.MR,   bp, 'M_R')
+    t_graph    = plot_results(results, Column.MT,   bp, 'M_T')
+    mua_graph  = plot_results(results, Column.MUA,  bp, 'Absorption Coefficient (mm\u207b\xb9)')
+    musp_graph = plot_results(results, Column.MUSP, bp, 'Reduced Scattering Coefficient (mm\u207b\xb9)')
+    g_graph    = plot_results(results, Column.G,    bp, 'Scattering Anisotropy')
+    mus_graph  = plot_results(results, Column.MUS,  bp, 'Scattering Coefficient (mm\u207b\xb9)')
+    a_graph    = plot_results(results, Column.A,    bp, r'Single Scattering Albedo $\mu_s/(\mu_a+\mu_s)$')
+    b_graph    = plot_results(results, Column.B,    bp, r'Optical Thickness $(\mu_a+\mu_s)d$')
+
+    nb = new_notebook()
+    nb.metadata['kernelspec'] = {
+        'display_name': 'Python 3',
+        'language': 'python',
+        'name': 'python3',
+    }
+
+    append_header(nb, txts_relative_to_summary)
+    append_graph_cell(nb, '## Reflection', r_graph)
+    append_graph_cell(nb, '## Transmission', t_graph)
+    append_graph_cell(nb, '## Absorption Coefficient', mua_graph)
+    append_graph_cell(nb, '## Reduced Scattering Coefficient', musp_graph)
+    append_graph_cell(nb, '## Single Scattering Albedo', a_graph)
+    append_graph_cell(nb, '## Optical Thickness', b_graph)
+    append_graph_cell(nb, '## Scattering Anisotropy', g_graph)
+    append_graph_cell(nb, '## Scattering Coefficient', mus_graph)
+
+    ipynb_path = bp + '.ipynb'
+    with open(ipynb_path, 'w', encoding='utf-8') as f:
+        nbformat.write(nb, f)
+
+    print('Summary notebook written to %s' % ipynb_path)
+
+
+if __name__ == '__main__':
+    main()
