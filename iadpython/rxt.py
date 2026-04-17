@@ -117,7 +117,7 @@ def fill_in_data_variable(exp, data_in_columns, column_letters_str):
         elif letter == "S":
             exp.num_spheres = data_in_columns[:, col]
         elif letter == "T":
-            exp.t_sphere.r_rstd = data_in_columns[:, col]
+            exp.t_sphere.r_std = data_in_columns[:, col]
         elif letter == "u":
             exp.m_u = data_in_columns[:, col]
         elif letter == "w":
@@ -147,7 +147,7 @@ def read_rxt(filename):
 
     x = np.array([float(item) for item in x])
 
-    sample = iadpython.Sample(a=None, b=None, g=None)
+    sample = iadpython.Sample(a=None, b=None, g=None, quad_pts=8)
     sample.n = x[0]
     sample.n_above = x[1]
     sample.d = x[2]
@@ -173,11 +173,11 @@ def read_rxt(filename):
     if exp.num_spheres > 0:
         # rxt format: d_sphere, d_sample, d_third(entrance), d_detector, r_wall
         # baffle=True mirrors CWEB Initialize_Measure default (baffle_r=1, baffle_t=1)
-        exp.r_sphere = iadpython.Sphere(x[7], x[8], x[9], 0, x[10], 0, r_wall=x[11])
+        exp.r_sphere = iadpython.Sphere(x[7], x[8], x[9], 0, x[10], 0, r_std=exp.rstd_r, r_wall=x[11])
         exp.r_sphere.baffle = True
 
     if exp.num_spheres > 0:
-        exp.t_sphere = iadpython.Sphere(x[12], x[13], x[14], 0, x[15], 0, r_wall=x[16])
+        exp.t_sphere = iadpython.Sphere(x[12], x[13], x[14], 0, x[15], 0, r_std=1.0, r_wall=x[16])
         exp.t_sphere.baffle = True
 
     # Read data

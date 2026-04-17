@@ -48,8 +48,9 @@ class Column(Enum):
     def __new__(cls, position, suffix):
         """Create enum member with integer *position* and filename *suffix*."""
         obj = object.__new__(cls)
-        obj._value_ = suffix
+        obj._value_ = position
         obj.position = position
+        obj.suffix = suffix
         return obj
 
 
@@ -135,7 +136,7 @@ def plot_results(results, item, bp, ylabel):
     """
     plt.figure(figsize=(8, 4.5))
     the_column = item.position
-    out_filename = bp + item.value
+    out_filename = bp + item.suffix
     raw_columns = {Column.MR.position, Column.MT.position}
 
     lam = None

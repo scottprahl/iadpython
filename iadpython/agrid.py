@@ -295,6 +295,23 @@ class AGrid:
                 break
         return values
 
+    def _enriched_axis_values(self, ranked, axis):
+        """Return top axis values plus in-between values for basin closure."""
+        values = self._candidate_axis_values(ranked, axis)
+        if len(values) < 2:
+            return values
+
+        enriched = list(values)
+        sorted_values = sorted(values)
+        for lower, upper in zip(sorted_values, sorted_values[1:]):
+            if axis == "b" and lower > 0 and upper > 0:
+                midpoint = np.sqrt(lower * upper)
+            else:
+                midpoint = 0.5 * (lower + upper)
+            if midpoint not in enriched:
+                enriched.append(midpoint)
+        return enriched
+
     def _abg_from_axis_values(self, axis0, value0, axis1, value1):
         """Build `(a, b, g)` from physical values for the two varying axes."""
         values = {axis0: value0, axis1: value1, self.fixed_axis: self.default}
@@ -312,8 +329,8 @@ class AGrid:
             return None
 
         axis0, axis1 = self.vary_axes
-        values0 = self._candidate_axis_values(ranked, axis0)
-        values1 = self._candidate_axis_values(ranked, axis1)
+        values0 = self._enriched_axis_values(ranked, axis0)
+        values1 = self._enriched_axis_values(ranked, axis1)
         if len(values0) < 2 or len(values1) < 2:
             return None
 

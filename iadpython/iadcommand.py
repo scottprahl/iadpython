@@ -520,6 +520,11 @@ def _point_value(value, index=None):
     """Return a scalar value for a single row."""
     if value is None or np.isscalar(value) or np.ndim(value) == 0:
         return value
+    if index is None:
+        arr = np.asarray(value)
+        if arr.size == 1:
+            return arr.reshape(-1)[0]
+        return value
     return value[index]
 
 
@@ -591,6 +596,7 @@ def add_experiment_constraints(exp, args):
             sample_d,
             d_third=entrance_d,
             d_detector=detector_d,
+            r_std=1.0,
             r_wall=wall_r,
             refl=refl,
         )
@@ -801,6 +807,27 @@ def print_results_header(debug_lost_light=False):
     print()
 
 
+def print_debug_data_point(exp):
+    """Emit the CWEB-style data-point banner used by debug modes."""
+    if not getattr(exp, "debug_level", 0):
+        return
+
+    print("\n-------------------NEXT DATA POINT---------------------", file=sys.stderr)
+    if exp.lambda0 not in (None, 0):
+        print(f"lambda={float(exp.lambda0):6.1f} ", end="", file=sys.stderr)
+    m_r = 0.0 if exp.m_r is None else float(exp.m_r)
+    m_t = 0.0 if exp.m_t is None else float(exp.m_t)
+    print(f"MR={m_r:8.5f} MT={m_t:8.5f}\n", file=sys.stderr)
+
+
+def print_debug_search_status(exp):
+    """Emit a CWEB-style long search status for debug modes."""
+    if getattr(exp, "found", False):
+        print("Successful Search\n", file=sys.stderr)
+    else:
+        print("Failed Search, too many iterations\n", file=sys.stderr)
+
+
 def _row_count(exp):
     """Return the number of scalar inversions represented by an experiment."""
     for value in [exp.lambda0, exp.m_r, exp.m_t, exp.m_u]:
@@ -960,16 +987,20 @@ def invert_file(exp, args):
     last_point = None
 
     with open(args.out_fname, "w", encoding="utf-8") as output_stream, redirect_stdout(output_stream):
-        if exp.verbosity > 0:
+        if exp.verbosity > 0 and not exp.debug_level:
             print_results_header(debug_lost_light=debug_lost_light)
 
         for i in range(n_rows):
-            point = _point_experiment(exp, None if n_rows == 1 else i)
+            point = _point_experiment(exp, i)
+            print_debug_data_point(point)
             a, b, g = point.invert_rt()
             point.sample.a = a
             point.sample.b = b
             point.sample.g = g
-            print_result_row(point, line=i, debug_lost_light=debug_lost_light)
+            if not point.debug_level:
+                print_result_row(point, line=i, debug_lost_light=debug_lost_light)
+            else:
+                print_debug_search_status(point)
             last_point = point
 
         if getattr(args, "J", False) and last_point is not None:
@@ -1026,14 +1057,18 @@ def main():
             raise argparse.ArgumentTypeError("Commandline: One measurement needed or use '-z' for forward calc.")
 
         point = _point_experiment(_filter_experiment_by_wavelength(exp, getattr(args, "l", None)))
+        print_debug_data_point(point)
         a, b, g = point.invert_rt()
         point.sample.a = a
         point.sample.b = b
         point.sample.g = g
         debug_lost_light = bool(point.debug_level & iadpython.DEBUG_LOST_LIGHT)
-        if point.verbosity > 0:
+        if point.verbosity > 0 and not point.debug_level:
             print_results_header(debug_lost_light=debug_lost_light)
-        print_result_row(point, debug_lost_light=debug_lost_light)
+        if point.debug_level:
+            print_debug_search_status(point)
+        else:
+            print_result_row(point, debug_lost_light=debug_lost_light)
         if getattr(args, "J", False):
             _write_grid_file(point, args)
         sys.exit(0)

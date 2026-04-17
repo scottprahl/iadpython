@@ -38,6 +38,22 @@ _SIMPLEX_ADAPTIVE_SCALE = 1.0
 _SIMPLEX_A_MIN_STEP = 1e-5
 _SIMPLEX_B_MIN_STEP = 1e-4
 _SIMPLEX_G_MIN_STEP = 1e-5
+_MINIMIZER_BOUNDARY_NUDGE = 1e-4
+
+
+def _nudge_bounded_start(search, a, b, g):
+    """Move free bounded parameters just inside bounds before Nelder-Mead."""
+    if search in ("find_ab", "find_ag"):
+        a = float(np.clip(a, _MINIMIZER_BOUNDARY_NUDGE, 1.0 - _MINIMIZER_BOUNDARY_NUDGE))
+    if search in ("find_ag", "find_bg"):
+        g = float(
+            np.clip(
+                g,
+                -1.0 + G_BOUND_EPS + _MINIMIZER_BOUNDARY_NUDGE,
+                1.0 - G_BOUND_EPS - _MINIMIZER_BOUNDARY_NUDGE,
+            )
+        )
+    return a, b, g
 
 
 def _simplex_bounded_vertex(center, step, lower, upper):
@@ -57,7 +73,7 @@ def _simplex_bounded_vertex(center, step, lower, upper):
 
 def _simplex_geometry(search, hot_start):
     """Return (x0, lower, upper) for the 2-D Nelder-Mead search."""
-    a, b, g = hot_start
+    a, b, g = _nudge_bounded_start(search, *hot_start)
     if search == "find_ab":
         return (
             np.array([a, b], dtype=float),
@@ -135,6 +151,7 @@ DEBUG_GRID_CALC = 64
 DEBUG_SPHERE_GAIN = 128
 DEBUG_EVERY_CALC = 256
 DEBUG_MC = 512
+DEBUG_ANY = 0xFFFFFFFF
 
 SEARCH_CODE_TO_NAME = {
     0: "find_a",
@@ -232,6 +249,7 @@ class Experiment:
         self.MC_tolerance = 0.01
         self.final_distance = 1
         self.iterations = 1
+        self.found = False
         self.error = 1
         self.num_measurements = 0
         self.grid = None
@@ -255,6 +273,7 @@ class Experiment:
         self.first_pass_abg = None
         self._grid_evals = 0
         self._optimizer_evals = 0
+        self._last_invert_status_valid = False
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -409,6 +428,87 @@ class Experiment:
         """Emit debug output matching the enabled bitmask."""
         if self.debug_level & mask:
             print(message, file=sys.stderr)
+
+    def _debug_search_header(self):
+        """Emit the CWEB-style inverse-search header for ``-x 4``."""
+        if not (self.debug_level & DEBUG_ITERATIONS):
+            return
+        distance_name = "relative distance" if self.metric == 0 else "absolute distance"
+        print("---------------- Beginning New Search -----------------", file=sys.stderr)
+        print(
+            "                a         b          g   |"
+            "     M_R        calc   |     M_T        calc   | "
+            f"{distance_name}",
+            file=sys.stderr,
+        )
+
+    def _debug_iteration_row(self, m_r_calc=None, m_t_calc=None, distance=None):
+        """Emit one CWEB-style objective row for ``-x 4``."""
+        if not (self.debug_level & DEBUG_ITERATIONS):
+            return
+
+        if m_r_calc is None or m_t_calc is None or distance is None:
+            m_r_calc, m_t_calc = self.measured_rt()
+            distance = 0.0
+            if self.m_r is not None:
+                distance += abs(float(m_r_calc) - float(self.m_r))
+            if self.m_t is not None:
+                distance += abs(float(m_t_calc) - float(self.m_t))
+
+        measured_r = 0.0 if self.m_r is None else float(self.m_r)
+        measured_t = 0.0 if self.m_t is None else float(self.m_t)
+        print(
+            f"        {float(self.sample.a):10.5f} {float(self.sample.b):10.4f}"
+            f" {float(self.sample.g):10.5f} |"
+            f" {measured_r:10.5f} {float(m_r_calc):10.5f} |"
+            f" {measured_t:10.5f} {float(m_t_calc):10.5f} |"
+            f"{float(distance):10.3f}",
+            file=sys.stderr,
+        )
+
+    def _debug_lost_light_header(self):
+        """Emit the CWEB-style lost-light table header for ``-x 8``."""
+        if not (self.debug_level & DEBUG_LOST_LIGHT):
+            return
+        print(
+            "#      | Meas      M_R  | Meas      M_T  |  calc   calc   calc  |"
+            "  Lost   Lost   Lost   Lost  | MC   IAD  Error",
+            file=sys.stderr,
+        )
+        print(
+            "# wave |  M_R      fit  |  M_T      fit  |  mu_a   mu_s'   g    |  "
+            " UR1    URU    UT1    UTU  |  #    #   Type",
+            file=sys.stderr,
+        )
+        print(
+            "#  nm  |  ---      ---  |  ---      ---  |  1/mm   1/mm    ---  |"
+            "   ---    ---    ---    ---  | ---  ---  ---",
+            file=sys.stderr,
+        )
+        print("#" + "-" * 113, file=sys.stderr)
+
+    def _debug_lost_light_row(self, line=0):
+        """Emit one CWEB-style lost-light result row for ``-x 8``."""
+        if not (self.debug_level & DEBUG_LOST_LIGHT):
+            return
+
+        m_r_fit, m_t_fit = self.measured_rt()
+        wavelength = self.lambda0
+        label = f"{float(wavelength):6.1f}" if wavelength not in (None, 0) else f"{int(line):6d}"
+        mu_a = min(float(self.sample.mu_a()), 199.9999)
+        mu_sp = min(float(self.sample.mu_sp()), 999.9999)
+        m_r = 0.0 if self.m_r is None else float(self.m_r)
+        m_t = 0.0 if self.m_t is None else float(self.m_t)
+        status = "*" if self.found else "+"
+        print(
+            f"{label}   {m_r:6.4f} {float(m_r_fit): 6.4f} | "
+            f"{m_t:6.4f} {float(m_t_fit): 6.4f} | "
+            f"{mu_a:6.3f} {mu_sp:6.3f} {float(self.sample.g):6.3f} |"
+            f" {self.ur1_lost:6.4f} {self.uru_lost:6.4f} "
+            f"{self.ut1_lost:6.4f} {self.utu_lost:6.4f} | "
+            f"{self._mc_iterations:2d}  {self.iterations:3d}    {status} ",
+            file=sys.stderr,
+        )
 
     def _set_sample_from_ba_bs(self, ba, bs):
         """Set `(a, b)` from absorption/scattering optical depths."""
@@ -633,6 +733,7 @@ class Experiment:
             return None, None, None
 
         self.sample.rt_evals = 0
+        self._last_invert_status_valid = False
 
         # assign default values
         self.sample.a = 0 if self.default_a is None else self.default_a
@@ -651,6 +752,9 @@ class Experiment:
         #        print('     a = ', self.sample.a)
         #        print('     b = ', self.sample.b)
         #        print('     g = ', self.sample.g)
+
+        self._debug_search_header()
+        self._debug_iteration_row()
 
         result = None
         if self.search == "find_a":
@@ -733,6 +837,8 @@ class Experiment:
                 elif self.debug_level & DEBUG_GRID:
                     print(f"grid constant {grid_constant:8.5f}", file=sys.stderr)
 
+            a, b, g = _nudge_bounded_start(self.search, a, b, g)
+
         if self.search == "find_ab":
             x = scipy.optimize.Bounds(np.array([0, 0]), np.array([1, np.inf]))
             nm_opts = {"initial_simplex": initial_simplex} if initial_simplex is not None else {}
@@ -809,9 +915,11 @@ class Experiment:
         if result is not None:
             self.iterations = getattr(result, "nit", getattr(result, "nfev", 0))
             self.final_distance = float(getattr(result, "fun", np.nan))
-            self._debug(
-                DEBUG_ITERATIONS, f"{self.search}: iterations={self.iterations} distance={self.final_distance:.6g}"
-            )
+            self.found = bool(np.isfinite(self.final_distance) and self.final_distance < self.tolerance)
+            self._last_invert_status_valid = True
+            if self.debug_level & DEBUG_ITERATIONS:
+                print(f"Final amoeba/brent result after {self.iterations} iterations", file=sys.stderr)
+                self._debug_iteration_row()
 
         self._optimizer_evals = self.sample.rt_evals - self._grid_evals
 
@@ -882,7 +990,7 @@ class Experiment:
                 file=sys.stderr,
             )
 
-        if self.debug_level & DEBUG_LOST_LIGHT:
+        if self.debug_level & DEBUG_MC:
             print(
                 f"  MC iter {self._mc_iterations + 1}: "
                 f"a={a:.5f} b={b:.5f} g={g:.5f} | "
@@ -932,19 +1040,23 @@ class Experiment:
         a, b, g = self.invert_scalar_rt()
         self.first_pass_abg = (a, b, g)
 
+        if self.num_spheres > 0 and self.debug_level & DEBUG_LOST_LIGHT:
+            self._debug_lost_light_header()
+            self._debug_lost_light_row()
+
         if self.mc_lost_path is None or self.num_spheres == 0:
             return a, b, g
-
-        if self.debug_level & DEBUG_LOST_LIGHT:
-            print(
-                f"\nMC lost light iteration (max {self.max_mc_iterations}, " f"tol {self.MC_tolerance})",
-                file=sys.stderr,
-            )
 
         previous_delta = None  # per-axis |Δparam| from the last MC stage; None on first pass
 
         for _ in range(self.max_mc_iterations):
             last_mu_a, last_mu_sp = self._current_optical_coefficients()
+            last_final_distance = self.final_distance
+            if self.debug_level & (DEBUG_ITERATIONS | DEBUG_A_LITTLE):
+                print(
+                    f"\n------------- Monte Carlo Iteration {self._mc_iterations + 1} -----------------",
+                    file=sys.stderr,
+                )
             max_diff, diff_ur1, diff_ut1, _diff_uru, _diff_utu = self._update_lost_light(a, b, g)
             # Build an adaptive initial simplex centred on the current solution.
             # Step sizes shrink proportionally to the previous iteration's parameter
@@ -966,30 +1078,38 @@ class Experiment:
             a, b, g = a_new, b_new, g_new
             self._mc_iterations += 1
             mu_a, mu_sp = self._current_optical_coefficients()
+            self._debug_lost_light_row()
 
             # Match the CWEB iad_main.w convergence gate:
             # 1. wait for optical properties to stabilize
             # 2. keep iterating while direct lost-light terms are still moving
+            if self._last_invert_status_valid and not self.found:
+                if last_final_distance - self.final_distance < self.MC_tolerance:
+                    self._debug(DEBUG_ITERATIONS, "MC does not make things better")
+                    break
+                self._debug(DEBUG_ITERATIONS, "Repeat MC because distance is reduced")
+                continue
+
             if mu_a is None or mu_sp is None or last_mu_a is None or last_mu_sp is None:
                 if max_diff < self.MC_tolerance:
-                    self._debug(DEBUG_ITERATIONS, "MC convergence: lost fractions stable without optical coefficients")
+                    self._debug(DEBUG_ITERATIONS, "found!")
                     break
                 continue
 
             if abs(last_mu_a - mu_a) > self.MC_tolerance:
-                self._debug(DEBUG_ITERATIONS, "MC keep going: mu_a still changing")
+                self._debug(DEBUG_ITERATIONS, "Repeat MC because mua is still changing")
                 continue
 
             if abs(last_mu_sp - mu_sp) > self.MC_tolerance:
-                self._debug(DEBUG_ITERATIONS, "MC keep going: mu_s' still changing")
+                self._debug(DEBUG_ITERATIONS, "Repeat MC because musp is still changing")
                 continue
 
             too_much_lost = diff_ur1 > 0.001 or diff_ut1 > 0.001
             if too_much_lost:
-                self._debug(DEBUG_ITERATIONS, "MC keep going: direct-loss guard still active")
+                self._debug(DEBUG_ITERATIONS, "Repeat MC because mua and musp are still changing")
                 continue
 
-            self._debug(DEBUG_ITERATIONS, "MC convergence: optical properties stabilized")
+            self._debug(DEBUG_ITERATIONS, "found!")
             break
 
         return a, b, g
@@ -1112,6 +1232,7 @@ def afun(x, *args):
         result += np.abs(m_r - exp.m_r)
     if exp.m_t is not None:
         result += np.abs(m_t - exp.m_t)
+    exp._debug_iteration_row(m_r, m_t, result)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(f"calc find_a: a={x:.7f} mr={m_r:.7f} mt={m_t:.7f} delta={result:.7g}", file=sys.stderr)
     return result
@@ -1128,6 +1249,7 @@ def bfun(x, *args):
         result += np.abs(m_r - exp.m_r)
     if exp.m_t is not None:
         result += np.abs(m_t - exp.m_t)
+    exp._debug_iteration_row(m_r, m_t, result)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(f"calc find_b: b={x:.7f} mr={m_r:.7f} mt={m_t:.7f} delta={result:.7g}", file=sys.stderr)
     return result
@@ -1144,6 +1266,7 @@ def gfun(x, *args):
         result += np.abs(m_r - exp.m_r)
     if exp.m_t is not None:
         result += np.abs(m_t - exp.m_t)
+    exp._debug_iteration_row(m_r, m_t, result)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(f"calc find_g: g={x:.7f} mr={m_r:.7f} mt={m_t:.7f} delta={result:.7g}", file=sys.stderr)
     return result
@@ -1156,6 +1279,7 @@ def abfun(x, *args):
     exp.sample.b = x[1]
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
             f"calc find_ab: a={exp.sample.a:.7f} b={exp.sample.b:.7f} " f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
@@ -1171,6 +1295,7 @@ def bgfun(x, *args):
     exp.sample.g = x[1]
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
             f"calc find_bg: b={exp.sample.b:.7f} g={exp.sample.g:.7f} " f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
@@ -1186,6 +1311,7 @@ def agfun(x, *args):
     exp.sample.g = x[1]
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
             f"calc find_ag: a={exp.sample.a:.7f} g={exp.sample.g:.7f} " f"mr={m_r:.7f} mt={m_t:.7f} delta={delta:.7g}",
@@ -1201,6 +1327,7 @@ def bafun(x, *args):
     exp._set_sample_from_ba_bs(ba, exp.default_bs)  # pylint: disable=protected-access
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
             f"calc find_ba: ba={ba:.7f} a={exp.sample.a:.7f} b={exp.sample.b:.7f} "
@@ -1217,6 +1344,7 @@ def bsfun(x, *args):
     exp._set_sample_from_ba_bs(exp.default_ba, bs)  # pylint: disable=protected-access
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
             f"calc find_bs: bs={bs:.7f} a={exp.sample.a:.7f} b={exp.sample.b:.7f} "
@@ -1235,6 +1363,7 @@ def bagfun(x, *args):
     exp.sample.g = g
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
             f"calc find_bag: ba={ba:.7f} g={g:.7f} a={exp.sample.a:.7f} b={exp.sample.b:.7f} "
@@ -1253,6 +1382,7 @@ def bsgfun(x, *args):
     exp.sample.g = g
     m_r, m_t = exp.measured_rt()
     delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
             f"calc find_bsg: bs={bs:.7f} g={g:.7f} a={exp.sample.a:.7f} b={exp.sample.b:.7f} "

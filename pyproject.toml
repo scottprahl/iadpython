@@ -7,7 +7,7 @@ packages = ["iadpython"]
 include-package-data = false
 
 [tool.setuptools.package-data]
-iadpython = ["data/*.csv"]
+iadpython = ["data/*.csv", "iadplus", "iadsum"]
 
 [tool.setuptools.dynamic]
 version = { attr = "iadpython.__version__" }
@@ -49,6 +49,8 @@ dependencies = [
 
 [project.scripts]
 iadp = "iadpython.iadcommand:main"
+iadplus = "iadpython.iadplus_entry:main"
+iadsum = "iadpython.iadsum_entry:main"
 
 [project.optional-dependencies]
 docs = [

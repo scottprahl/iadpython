@@ -128,12 +128,12 @@ def run_mc_lost(
             f"{float(d_beam):.8g}",
             "-t",
             f"{float(t_sample):.8g}",
+            "-T",
+            f"{float(t_slide):.8g}",
             "-p",
             str(int(n_photons)),
             "-m",
         ]
-        if n_slide != 1.0 and t_slide > 0.0:
-            cmd += ["-T", f"{float(t_slide):.8g}"]
         if collimated_only:
             cmd += ["-C"]
 

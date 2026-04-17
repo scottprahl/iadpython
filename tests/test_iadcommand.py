@@ -19,6 +19,37 @@ sys.path.append(iadpython_package_dir)
 import iadcommand
 
 
+SINGLE_ROW_VARIABLE_RXT = """IAD1  # Must be first four characters
+1.38   # Index of refraction of the sample
+1.00   # Index of refraction of the top and bottom slides
+1.62   # [mm] Thickness of sample
+0.00   # [mm] Thickness of slides
+2.00   # [mm] Diameter of illumination beam
+0.99   # Reflectivity of the reflectance calibration standard
+
+1      # Number of spheres used for the measurement
+
+# Properties of sphere used for reflectance measurements
+101.6  # [mm] Sphere Diameter
+12.7   # [mm] Sample Port Diameter
+12.7   # [mm] Entrance Port Diameter
+0.6    # [mm] Detector Port Diameter
+0.94   # Reflectivity of the sphere wall
+
+# Properties of sphere for transmittance measurements
+101.6  # [mm] Sphere Diameter
+12.7   # [mm] Sample Port Diameter
+12.7   # [mm] Third Port Diameter
+0.6    # [mm] Detector Port Diameter
+0.94   # Reflectivity of the sphere wall
+
+    L         r       t        g
+851.930000 0.315087 0.606721   0.9
+"""
+
+BIOPIX_851_RXT = SINGLE_ROW_VARIABLE_RXT.replace("0.9\n", "-0.5\n")
+
+
 class TestCommandLineArgs(unittest.TestCase):
     """Tests for validator functions."""
 
@@ -85,6 +116,81 @@ class TestIadFile(unittest.TestCase):
         finally:
             if os.path.exists(out_file):
                 os.remove(out_file)
+
+    def test_single_row_variable_file_uses_scalar_values(self):
+        """Single-row variable files should not pass length-1 arrays to scalar inversion."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(SINGLE_ROW_VARIABLE_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-c", "0", "-M", "0", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with self.assertRaises(SystemExit) as cm:
+                    iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            with open(out_file, encoding="utf-8") as fh:
+                output = fh.read()
+            self.assertIn(" 851.9", output)
+
+    def test_rxt_reflectance_standard_does_not_override_transmission_standard(self):
+        """The .rxt header standard is reflection-only; CWEB leaves T standard at 1."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(BIOPIX_851_RXT)
+
+            exp = iadcommand.iadpython.read_rxt(sample_file)
+
+            self.assertEqual(exp.sample.quad_pts, 8)
+            self.assertAlmostEqual(exp.r_sphere.r_std, 0.99, delta=1e-12)
+            self.assertAlmostEqual(exp.t_sphere.r_std, 1.0, delta=1e-12)
+
+    def test_biopix_single_row_no_mc_uses_cweb_quadrature_and_agrid_basin(self):
+        """The `-c 0` no-MC path should find the same basin as CWEB iad."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(BIOPIX_851_RXT)
+
+            args = iadcommand.build_parser().parse_args(["-c", "0", "-M", "0", sample_file])
+            exp = iadcommand.iadpython.read_rxt(args.filename)
+            iadcommand.add_sample_constraints(exp, args)
+            iadcommand.add_experiment_constraints(exp, args)
+            iadcommand.add_analysis_constraints(exp, args)
+            point = iadcommand._point_experiment(exp, 0)  # pylint: disable=protected-access
+
+            point.invert_rt()
+
+            self.assertEqual(point.sample.quad_pts, 8)
+            self.assertTrue(point.found)
+            self.assertAlmostEqual(point.sample.mu_sp(), 0.764, delta=0.01)
+            self.assertLess(point.final_distance, point.tolerance)
+
+    def test_debug_iterations_use_cweb_trace_shape(self):
+        """`-x 4` should emit the CWEB-style trace and suppress normal table output."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(SINGLE_ROW_VARIABLE_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-c", "0", "-M", "0", "-x", "4", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                    with self.assertRaises(SystemExit) as cm:
+                        iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            debug_output = fake_stderr.getvalue()
+            self.assertIn("-------------------NEXT DATA POINT---------------------", debug_output)
+            self.assertIn("---------------- Beginning New Search -----------------", debug_output)
+            self.assertIn("Final amoeba/brent result after", debug_output)
+            self.assertIn("Failed Search, too many iterations", debug_output)
+            with open(out_file, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), "")
 
     def test_bad_output_path_exits_cleanly(self):
         """Invalid output path should report an error, not crash on closed stdout."""
