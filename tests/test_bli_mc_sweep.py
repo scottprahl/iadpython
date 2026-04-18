@@ -127,11 +127,11 @@ _FAST_FILES, _SLOW_FILES = _collect_sphere_rxt_files()
 @requires_mc_lost
 @pytest.mark.parametrize("rxt_path", _FAST_FILES)
 def test_bli_mc_fast(rxt_path):
-    """MC inversion of small sphere files: no exception, finite results, fit ≤ 10%.
+    """MC inversion of small sphere files: no exception, finite results, fit ≤ 10%, found=True.
 
     Uses 10k photons and 8 MC iterations (fast but less accurate than default).
-    The ``found`` flag is NOT checked — Python MC still produces physically
-    correct results even when found=False (see module docstring).
+    The ``found`` flag IS checked on first and last row — the Bug A/B fixes
+    ensure the MC fixed point is correctly detected even at low photon counts.
     """
     exp = iadpython.read_rxt(rxt_path)
     _enable_mc(exp, n_photons=10_000, max_iters=8)
@@ -146,11 +146,12 @@ def test_bli_mc_fast(rxt_path):
     assert np.all(np.isfinite(b_arr)), f"non-finite optical thickness: {b_arr}"
     assert np.all(np.isfinite(g_arr)), f"non-finite anisotropy: {g_arr}"
 
-    # Fit-residual check on first and last row (skip for inconsistent files)
+    # found=True and fit-residual check on first and last row
     if os.path.basename(rxt_path) in _SKIP_FIT_CHECK:
         return
     n = _row_count(exp)
     for i in [0] if n == 1 else [0, n - 1]:
+        _check_row_found(exp, i)
         _check_row_fit(exp, a_arr, b_arr, g_arr, i, tol=0.10)
 
 
@@ -162,7 +163,7 @@ def test_bli_mc_fast(rxt_path):
 @pytest.mark.slow
 @pytest.mark.parametrize("rxt_path", _SLOW_FILES)
 def test_bli_mc_slow(rxt_path):
-    """MC inversion of large sphere files: no exception, finite results, fit ≤ 10%.
+    """MC inversion of large sphere files: no exception, finite results, fit ≤ 10%, found=True.
 
     Marked ``slow`` — excluded from the default test run.
     Uses 10k photons for speed; default is 100k.
@@ -184,12 +185,24 @@ def test_bli_mc_slow(rxt_path):
         return
     n = _row_count(exp)
     for i in [0] if n == 1 else [0, n - 1]:
+        _check_row_found(exp, i)
         _check_row_fit(exp, a_arr, b_arr, g_arr, i, tol=0.10)
 
 
 # ---------------------------------------------------------------------------
-# Helper
+# Helpers
 # ---------------------------------------------------------------------------
+
+def _check_row_found(exp_base, index):
+    """Assert that MC inversion reports found=True for one row."""
+    point = exp_base.point_at(index)
+    _enable_mc(point, n_photons=10_000, max_iters=8)
+    point._invert_scalar_with_mc()  # pylint: disable=protected-access
+    assert point.found, (
+        f"row {index}: found=False after MC inversion "
+        f"(final_distance={point.final_distance:.6f}, tolerance={point.tolerance:.6f})"
+    )
+
 
 def _check_row_fit(exp_base, a_arr, b_arr, g_arr, index, tol=0.10):
     """Assert that the MC fit for one row is within tol of the measurement."""

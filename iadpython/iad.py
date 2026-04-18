@@ -1823,6 +1823,14 @@ class Experiment:
                     # Corrections are still moving — not yet at the fixed point.
                     self._debug(DEBUG_ITERATIONS, "Repeat MC because lost-light corrections are still moving")
                     continue
+                # Corrections are stable (too_much_lost=False). Check whether mu_a
+                # and mu_sp are also stable — if so the MC fixed point is reached and
+                # the AD optimizer's near-miss of its tight tolerance is just noise.
+                if (mu_a is not None and last_mu_a is not None and mu_sp is not None and last_mu_sp is not None):
+                    if abs(last_mu_a - mu_a) <= self.MC_tolerance and abs(last_mu_sp - mu_sp) <= self.MC_tolerance:
+                        self.found = True
+                        self._debug(DEBUG_ITERATIONS, "found! (MC fixed point: corrections and properties stable)")
+                        break
                 if last_final_distance - self.final_distance < self.MC_tolerance:
                     self._debug(DEBUG_ITERATIONS, "MC does not make things better")
                     break
