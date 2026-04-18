@@ -432,6 +432,41 @@ class TestIadFile(unittest.TestCase):
             with open(out_file, encoding="utf-8") as fh:
                 self.assertEqual(fh.read(), "")
 
+    def test_debug_sphere_gain_uses_cweb_blocks(self):
+        """`-x 128` should emit the legacy sphere-gain algebra blocks."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(BIOPIX_851_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "0", "-x", "128", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                    with self.assertRaises(SystemExit) as cm:
+                        iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            debug_output = fake_stderr.getvalue()
+            self.assertIn("SPHERE: REFLECTION", debug_output)
+            self.assertIn("SPHERE: TRANSMISSION", debug_output)
+            self.assertIn("SPHERE:       baffle = 1", debug_output)
+            self.assertIn("SPHERE:       R_u collected = 100.0%", debug_output)
+            self.assertIn("SPHERE:       hits sphere wall first =   0.0%", debug_output)
+            self.assertIn("SPHERE:       UR1 =   0.025   UR1_calc =   0.000", debug_output)
+            self.assertIn("SPHERE:       URU =   0.068   URU_calc =   0.068", debug_output)
+            self.assertIn("SPHERE:       G_0 =  14.847        P_0 =   0.000", debug_output)
+            self.assertIn("SPHERE:       T_u collected = 100.0%", debug_output)
+            self.assertIn("SPHERE:       UT1 =   0.000   UT1_calc =   0.000", debug_output)
+            self.assertIn("SPHERE:       Psu =   0.000        Pss =   0.000", debug_output)
+            self.assertEqual(debug_output.count("SPHERE: REFLECTION"), 46)
+            self.assertEqual(debug_output.count("SPHERE: TRANSMISSION"), 46)
+            self.assertNotIn("reflectance sphere MR=", debug_output)
+            self.assertNotIn("transmission sphere MT=", debug_output)
+            self.assertNotIn("double sphere:", debug_output)
+            with open(out_file, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), "")
+
     def test_debug_a_little_uses_cweb_summary_shape(self):
         """`-x 1` should emit the compact CWEB final summary."""
         with tempfile.TemporaryDirectory() as tmpdir:

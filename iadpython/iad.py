@@ -315,6 +315,7 @@ def _distance_for_abg(exp, a, b, g):
             a=a,
             b=b,
             g=g,
+            debug_sphere=False,
         )
         return float(distance)
     finally:
@@ -335,6 +336,7 @@ def _grid_guess(grid, exp, i, j):
         a=grid.a[i, j],
         b=grid.b[i, j],
         g=grid.g[i, j],
+        debug_sphere=False,
     )
     return {
         "a": float(grid.a[i, j]),
@@ -1095,10 +1097,14 @@ class Experiment:
             stream = sys.stderr
 
         sphere = self.r_sphere
+        ur1 = _as_scalar_float(ur1, "UR1")
+        uru = _as_scalar_float(uru, "URU")
+        ru = _as_scalar_float(ru, "Ru")
+        m_r = _as_scalar_float(m_r, "M_R")
         ur1_lost = self.ur1_lost if include_lost else 0.0
         uru_lost = self.uru_lost if include_lost else 0.0
-        ur1_calc = max(_as_scalar_float(ur1, "UR1") - _as_scalar_float(ru, "Ru") - ur1_lost, 0.0)
-        uru_calc = max(_as_scalar_float(uru, "URU") - uru_lost, 0.0)
+        ur1_calc = max(ur1 - ru - ur1_lost, 0.0)
+        uru_calc = max(uru - uru_lost, 0.0)
 
         r_first = 1.0
         if sphere.baffle:
@@ -1135,18 +1141,24 @@ class Experiment:
             print("SPHERE: M_no_lost = %7.3f" % m_none, file=stream)
         print("SPHERE:       M_R = %7.3f" % m_r, file=stream)
 
-    def _debug_single_sphere_transmission(self, ur1, ut1, uru, tu, m_t, include_lost, stream=None):
+    def _debug_single_sphere_transmission(self, ur1, ut1, uru, ru, tu, m_t, include_lost, stream=None):
         """Emit CWEB DEBUG_SPHERE_GAIN output for a transmission sphere."""
         if stream is None:
             stream = sys.stderr
 
         sphere = self.t_sphere
+        ur1 = _as_scalar_float(ur1, "UR1")
+        ut1 = _as_scalar_float(ut1, "UT1")
+        uru = _as_scalar_float(uru, "URU")
+        ru = _as_scalar_float(ru, "Ru")
+        tu = _as_scalar_float(tu, "Tu")
+        m_t = _as_scalar_float(m_t, "M_T")
         ur1_lost = self.ur1_lost if include_lost else 0.0
         uru_lost = self.uru_lost if include_lost else 0.0
         ut1_lost = self.ut1_lost if include_lost else 0.0
-        ur1_calc = max(_as_scalar_float(ur1, "UR1") - ur1_lost, 0.0)
-        uru_calc = max(_as_scalar_float(uru, "URU") - uru_lost, 0.0)
-        ut1_calc = max(_as_scalar_float(ut1, "UT1") - _as_scalar_float(tu, "Tu") - ut1_lost, 0.0)
+        ur1_calc = max(ur1 - ru - ur1_lost, 0.0)
+        uru_calc = max(uru - uru_lost, 0.0)
+        ut1_calc = max(ut1 - tu - ut1_lost, 0.0)
 
         if sphere.third.a == 0:
             r_cal = sphere.r_wall
@@ -1263,7 +1275,7 @@ class Experiment:
                 if self.t_sphere is not None:
                     m_t = self.t_sphere.MT(ut1_actual, uru_actual, T_u=t_u, f_u=self.fraction_of_tc_in_mt)
                     if debug_sphere and self.debug_level & DEBUG_SPHERE_GAIN:
-                        self._debug_single_sphere_transmission(ur1, ut1, uru, t_u, m_t, include_lost)
+                        self._debug_single_sphere_transmission(ur1, ut1, uru, r_u, t_u, m_t, include_lost)
 
             return m_r, m_t
         finally:
@@ -1430,6 +1442,10 @@ class Experiment:
         #        print('     b = ', self.sample.b)
         #        print('     g = ', self.sample.g)
 
+        if self.debug_level & DEBUG_SPHERE_GAIN and not (self.debug_level & DEBUG_ITERATIONS):
+            self.measured_rt()
+            self.measured_rt()
+
         self._debug_search_header()
         self._debug_iteration_row()
 
@@ -1451,8 +1467,10 @@ class Experiment:
         if self.search in ["find_ab", "find_ag", "find_bg"]:
             debug_best_guess = bool(self.debug_level & DEBUG_BEST_GUESS)
             debug_grid_calc = bool(self.debug_level & DEBUG_GRID_CALC)
+            debug_sphere_gain = bool(self.debug_level & DEBUG_SPHERE_GAIN)
+            use_legacy_debug_grid = debug_best_guess or debug_grid_calc or debug_sphere_gain
 
-            if hot_start is not None and not (debug_best_guess or debug_grid_calc):
+            if hot_start is not None and not use_legacy_debug_grid:
                 # Bypass the grid: use the caller-supplied starting point
                 # directly.  The grid is not rebuilt; the raw-RT cache is
                 # still valid because lost-light values do not affect it.
@@ -1469,8 +1487,8 @@ class Experiment:
                 agrid_tol = self.adaptive_grid_tol
                 agrid_max_depth = self.adaptive_grid_max_depth
                 agrid_min_depth = getattr(self, "adaptive_grid_min_depth", 2)
-                grid_n = _LEGACY_DEBUG_GRID_SIZE if debug_best_guess or debug_grid_calc else self.grid_n
-                if debug_best_guess or debug_grid_calc:
+                grid_n = _LEGACY_DEBUG_GRID_SIZE if use_legacy_debug_grid else self.grid_n
+                if use_legacy_debug_grid:
                     want_agrid = False
                 elif self.use_adaptive_grid is None:
                     want_agrid = True
@@ -1793,10 +1811,18 @@ class Experiment:
             mu_a, mu_sp = self._current_optical_coefficients()
             self._debug_lost_light_row()
 
+            # Determine whether the direct lost-light terms are still moving.
+            # Must be computed before the convergence gate so both branches can use it.
+            too_much_lost = diff_ur1 > 0.001 or diff_ut1 > 0.001
+
             # Match the CWEB iad_main.w convergence gate:
             # 1. wait for optical properties to stabilize
             # 2. keep iterating while direct lost-light terms are still moving
             if self._last_invert_status_valid and not self.found:
+                if too_much_lost:
+                    # Corrections are still moving — not yet at the fixed point.
+                    self._debug(DEBUG_ITERATIONS, "Repeat MC because lost-light corrections are still moving")
+                    continue
                 if last_final_distance - self.final_distance < self.MC_tolerance:
                     self._debug(DEBUG_ITERATIONS, "MC does not make things better")
                     break
@@ -1817,7 +1843,6 @@ class Experiment:
                 self._debug(DEBUG_ITERATIONS, "Repeat MC because musp is still changing")
                 continue
 
-            too_much_lost = diff_ur1 > 0.001 or diff_ut1 > 0.001
             if too_much_lost:
                 self._debug(DEBUG_ITERATIONS, "Repeat MC because mua and musp are still changing")
                 continue

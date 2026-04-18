@@ -204,15 +204,20 @@ class Grid:
         if exp is None:
             return abs(mr - self.ur1[i, j]) + abs(mt - self.ut1[i, j])
 
+        kwargs = {
+            "include_lost": False,
+            "a": self.a[i, j],
+            "b": self.b[i, j],
+            "g": self.g[i, j],
+        }
+        if hasattr(exp, "debug_level"):
+            kwargs["debug_sphere"] = False
         _fit_r, _fit_t, delta = exp.measurement_distance_from_raw(
             self.ur1[i, j],
             self.ut1[i, j],
             self.uru[i, j],
             self.utu[i, j],
-            include_lost=False,
-            a=self.a[i, j],
-            b=self.b[i, j],
-            g=self.g[i, j],
+            **kwargs,
         )
         return delta
 

@@ -149,16 +149,15 @@ class AGrid:
         if self.exp is None:
             return ur1, ut1
 
-        m_r, m_t, _delta = self.exp.measurement_distance_from_raw(
-            ur1,
-            ut1,
-            uru,
-            utu,
-            include_lost=False,
-            a=a,
-            b=b,
-            g=g,
-        )
+        kwargs = {
+            "include_lost": False,
+            "a": a,
+            "b": b,
+            "g": g,
+        }
+        if hasattr(self.exp, "debug_level"):
+            kwargs["debug_sphere"] = False
+        m_r, m_t, _delta = self.exp.measurement_distance_from_raw(ur1, ut1, uru, utu, **kwargs)
         return float(m_r), float(m_t)
 
     def _subdivide(self, x0, x1, y0, y1, depth, collect):
@@ -272,16 +271,15 @@ class AGrid:
         if exp is None:
             return np.abs(mr - ur1) + np.abs(mt - ut1)
 
-        _fit_r, _fit_t, delta = exp.measurement_distance_from_raw(
-            ur1,
-            ut1,
-            uru,
-            utu,
-            include_lost=False,
-            a=a,
-            b=b,
-            g=g,
-        )
+        kwargs = {
+            "include_lost": False,
+            "a": a,
+            "b": b,
+            "g": g,
+        }
+        if hasattr(exp, "debug_level"):
+            kwargs["debug_sphere"] = False
+        _fit_r, _fit_t, delta = exp.measurement_distance_from_raw(ur1, ut1, uru, utu, **kwargs)
         return delta
 
     def _candidate_axis_values(self, ranked, axis):
