@@ -175,16 +175,17 @@ def read_rxt(filename):
     exp.rstd_r = x[5]
     exp.num_spheres = x[6]
     exp.method = "substitution"
+    exp.input_column_labels = column_letters_str
 
-    if exp.num_spheres > 0:
-        # rxt format: d_sphere, d_sample, d_third(entrance), d_detector, r_wall
-        # baffle=True mirrors CWEB Initialize_Measure default (baffle_r=1, baffle_t=1)
-        exp.r_sphere = iadpython.Sphere(x[7], x[8], x[9], 0, x[10], 0, r_std=exp.rstd_r, r_wall=x[11])
-        exp.r_sphere.baffle = True
+    # rxt format: d_sphere, d_sample, d_third(entrance), d_detector, r_wall.
+    # These values are part of the file header even when num_spheres is zero.
+    # Keeping them lets iadp reproduce iad's output header and enables CLI
+    # overrides such as `-S 1` to reuse the file's sphere geometry.
+    exp.r_sphere = iadpython.Sphere(x[7], x[8], x[9], 0, x[10], 0, r_std=exp.rstd_r, r_wall=x[11])
+    exp.r_sphere.baffle = True
 
-    if exp.num_spheres > 0:
-        exp.t_sphere = iadpython.Sphere(x[12], x[13], x[14], 0, x[15], 0, r_std=1.0, r_wall=x[16])
-        exp.t_sphere.baffle = True
+    exp.t_sphere = iadpython.Sphere(x[12], x[13], x[14], 0, x[15], 0, r_std=1.0, r_wall=x[16], refl=False)
+    exp.t_sphere.baffle = True
 
     # Read data
     if column_letters_str == "":
@@ -194,6 +195,7 @@ def read_rxt(filename):
         columns = int(exp.num_measures)
         if data[0] > 1:
             columns += 1
+        exp.input_column_count = columns
         data_in_columns = data.reshape(-1, columns)
         fill_in_data_fixed(exp, data_in_columns)
     else:
@@ -207,6 +209,7 @@ def read_rxt(filename):
             exp.num_measures += 1
         data = x[17:]
         columns = len(column_letters_str)
+        exp.input_column_count = columns
         data_in_columns = data.reshape(-1, columns)
         fill_in_data_variable(exp, data_in_columns, column_letters_str)
 

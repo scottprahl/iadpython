@@ -772,6 +772,201 @@ def forward_calculation(exp):
     sys.exit(0)
 
 
+def _header_scalar(value, default=0.0):
+    """Return a scalar value suitable for one-line output headers."""
+    if value is None:
+        return default
+    array = np.asarray(value)
+    if array.ndim == 0:
+        return array.item()
+    return array.flat[0].item()
+
+
+def _input_column_labels(exp):
+    """Return compact `.rxt` input column labels, when available."""
+    return getattr(exp, "input_column_labels", "") or ""
+
+
+def _format_header_value(exp, label, fmt, value):
+    """Format a header value or mark it as row-varying like CWEB iad."""
+    if label and label in _input_column_labels(exp):
+        return " (varies with input row)"
+    return fmt % _header_scalar(value)
+
+
+def _method_phrase(exp):
+    """Return the CWEB wording for the measurement method."""
+    method = getattr(exp, "method", "unknown")
+    if method in ("substitution", 2):
+        return " using the substitution (single-beam) method."
+    if method in ("comparison", 1):
+        return " using the comparison (dual-beam) method."
+    return " using an unknown method."
+
+
+def _sphere_attr(sphere, dotted_attr, default=0.0):
+    """Return a possibly nested sphere attribute for header printing."""
+    if sphere is None:
+        return default
+    value = sphere
+    for attr in dotted_attr.split("."):
+        value = getattr(value, attr)
+    return value
+
+
+def _print_sphere_header(exp, sphere_name, title, third_label):
+    """Print one integrating-sphere block in the legacy output header."""
+    sphere = getattr(exp, sphere_name)
+    baffle = bool(_sphere_attr(sphere, "baffle", default=False))
+    baffle_text = "has a baffle" if baffle else "has no baffle"
+    ignored = " (ignored since no spheres used)" if int(_header_scalar(exp.num_spheres)) == 0 else ""
+    print(f"# {title} sphere {baffle_text} between sample and detector{ignored}")
+    print(f"#                      sphere diameter = {_header_scalar(_sphere_attr(sphere, 'd')):7.1f} mm")
+    print(f"#                 sample port diameter = {_header_scalar(_sphere_attr(sphere, 'sample.d')):7.1f} mm")
+    third_port_d = _header_scalar(_sphere_attr(sphere, "third.d"))
+    if third_label == "entrance port diameter":
+        print(f"#               entrance port diameter = {third_port_d:7.1f} mm")
+    else:
+        print(f"#                  third port diameter = {third_port_d:7.1f} mm")
+    print(f"#               detector port diameter = {_header_scalar(_sphere_attr(sphere, 'detector.d')):7.1f} mm")
+    detector_reflectance = _header_scalar(_sphere_attr(sphere, "detector.uru")) * 100
+    wall_reflectance = _format_header_value(exp, "w", "%7.1f %%", _sphere_attr(sphere, "r_wall") * 100)
+    print(f"#                 detector reflectance = {detector_reflectance:7.1f} %")
+    print(f"#                     wall reflectance = {wall_reflectance}")
+    if sphere_name == "r_sphere":
+        standard = _format_header_value(exp, "R", "%7.1f %%", _sphere_attr(sphere, "r_std") * 100)
+    else:
+        standard = "%7.1f %%" % (_header_scalar(_sphere_attr(sphere, "r_std")) * 100)
+    print(f"#                 calibration standard = {standard}")
+    print("#")
+
+
+def _fixed_input_description(exp):
+    """Return the CWEB wording for fixed-column input files."""
+    params = int(_header_scalar(getattr(exp, "num_measures", 0)))
+    descriptions = {
+        -1: "No M_R or M_T -- forward calculation",
+        1: "Just M_R was measured",
+        2: "M_R and M_T were measured",
+        3: "M_R, M_T, and M_U were measured",
+        4: "M_R, M_T, M_U, and r_w were measured",
+        5: "M_R, M_T, M_U, r_w, and t_w were measured",
+        6: "M_R, M_T, M_U, r_w, t_w, and r_std were measured",
+        7: "M_R, M_T, M_U, r_w, t_w, r_std and t_std were measured",
+    }
+    return descriptions.get(params, "Something went wrong ... measures should be 1 to 7!")
+
+
+def _print_input_description(exp):
+    """Print the legacy input-column and measurement-method line."""
+    labels = _input_column_labels(exp)
+    if labels:
+        label_text = "".join(f" {label} " for label in labels)
+        print(f"# {len(labels)} input columns with LABELS:{label_text}{_method_phrase(exp)}")
+    else:
+        print(f"# {_fixed_input_description(exp)}{_method_phrase(exp)}")
+
+
+def _print_sphere_correction_description(exp):
+    """Print the legacy sphere-correction and incidence-angle line."""
+    num_spheres = int(_header_scalar(exp.num_spheres))
+    method = getattr(exp, "method", "unknown")
+    if num_spheres == 0:
+        description = "No sphere corrections were used"
+    elif num_spheres == 1 and method in ("comparison", 1):
+        description = "No sphere corrections were needed"
+    elif num_spheres == 1:
+        description = "Single sphere corrections were used"
+    else:
+        description = "Double sphere corrections were used"
+
+    nu_0 = float(_header_scalar(getattr(exp.sample, "nu_0", 1.0), default=1.0))
+    angle = int(np.degrees(np.arccos(np.clip(nu_0, -1.0, 1.0))))
+    print(f"# {description} and light was incident at {angle} degrees from the normal.")
+
+
+def _print_search_description(exp):
+    """Print the active inverse-search description for the legacy header."""
+    search = getattr(exp, "search_override", None)
+    if search in (None, "auto"):
+        search = getattr(exp, "search", "unknown")
+
+    if search == "find_ab":
+        print("# The inverse routine varied the albedo and optical depth.")
+        print("# ")
+        default_g = _header_scalar(exp.default_g, default=0.0)
+        print(f"# Default single scattering anisotropy = {default_g:7.3f} ")
+    elif search == "find_ag":
+        print("# The inverse routine varied the albedo and anisotropy.")
+        print("# ")
+        if exp.default_b is not None:
+            print(f"#                     Default (mu_t*d) = {_header_scalar(exp.default_b):7.3g}")
+        else:
+            print("# ")
+    elif search == "find_a":
+        print("# The inverse routine varied only the albedo.")
+        print("# ")
+        default_g = _header_scalar(exp.default_g, default=0.0)
+        default_b = _header_scalar(exp.default_b, default=np.inf)
+        print(f"# Default single scattering anisotropy is {default_g:7.3f}  and (mu_t*d) = {default_b:7.3g}")
+    elif search in ("find_b", "find_b_no_absorption", "find_b_no_scattering"):
+        print("# The inverse routine varied only the optical depth.")
+        print("# ")
+        default_g = _header_scalar(exp.default_g, default=0.0)
+        if exp.default_a is not None:
+            default_a = _header_scalar(exp.default_a)
+            print(f"# Default single scattering anisotropy is {default_g:7.3f} and default albedo = {default_a:7.3g}")
+        else:
+            print(f"# Default single scattering anisotropy is {default_g:7.3f} ")
+    elif search == "find_ba":
+        print("# The inverse routine varied only the absorption.")
+        print("# ")
+        print(f"#                     Default (mu_s*d) = {_header_scalar(exp.default_bs, default=0.0):7.3g}")
+    elif search == "find_bs":
+        print("# The inverse routine varied only the scattering.")
+        print("# ")
+        print(f"#                     Default (mu_a*d) = {_header_scalar(exp.default_ba, default=0.0):7.3g}")
+    else:
+        print("# The inverse routine adapted to the input data.")
+        print("# ")
+        print("# ")
+
+
+def print_file_header(exp, command_line=None):
+    """Print the CWEB-style metadata header for result files."""
+    command_line = command_line or " ".join(sys.argv)
+    print(f"# Inverse Adding-Doubling {iadpython.__version__} ")
+    print(f"# {command_line} ")
+    print(f"#                        Beam diameter = {_format_header_value(exp, 'B', '%7.1f mm', exp.d_beam)}")
+    print(f"#                     Sample thickness = {_format_header_value(exp, 'd', '%7.3f mm', exp.sample.d)}")
+    print(f"#                  Top slide thickness = {_format_header_value(exp, 'D', '%7.3f mm', exp.sample.d_above)}")
+    print(f"#               Bottom slide thickness = {_format_header_value(exp, 'D', '%7.3f mm', exp.sample.d_below)}")
+    print(f"#           Sample index of refraction = {_format_header_value(exp, 'n', '%7.4f mm', exp.sample.n)}")
+    print(f"#        Top slide index of refraction = {_format_header_value(exp, 'N', '%7.4f mm', exp.sample.n_above)}")
+    print(f"#     Bottom slide index of refraction = {_format_header_value(exp, 'N', '%7.4f mm', exp.sample.n_below)}")
+    print("# ")
+    print(
+        "#  Percentage unscattered refl. in M_R = "
+        f"{_format_header_value(exp, 'c', '%7.1f %%', exp.fraction_of_rc_in_mr * 100)}"
+    )
+    print(
+        "# Percentage unscattered trans. in M_T = "
+        f"{_format_header_value(exp, 'C', '%7.1f %%', exp.fraction_of_tc_in_mt * 100)}"
+    )
+    print("# ")
+    _print_sphere_header(exp, "r_sphere", "Reflection", "entrance port diameter")
+    _print_sphere_header(exp, "t_sphere", "Transmission", "third port diameter")
+    _print_input_description(exp)
+    _print_sphere_correction_description(exp)
+    _print_search_description(exp)
+    print(f"#                 AD quadrature points = {int(_header_scalar(exp.sample.quad_pts)):3d}")
+    print(f"#             AD tolerance for success = {float(_header_scalar(exp.tolerance)):9.5f}")
+    print(f"#      MC tolerance for mu_a and mu_s' = {float(_header_scalar(exp.MC_tolerance)):7.3f} %")
+    photons = int(_header_scalar(exp.n_photons)) if int(_header_scalar(exp.max_mc_iterations)) > 0 else 0
+    print(f"#  Photons used to estimate lost light =   {photons:d}")
+    print("#")
+
+
 def print_results_header(debug_lost_light=False):
     """Print the header for results to stdout."""
     print(
@@ -898,12 +1093,18 @@ def _print_long_error(err):
 
 def print_debug_search_status(exp):
     """Emit a CWEB-style long search status for debug modes."""
-    if getattr(exp, "debug_level", 0) & iadpython.DEBUG_A_LITTLE:
-        err = _debug_input_error(exp)
-    else:
-        err = InputError.NO_ERROR if getattr(exp, "found", False) else InputError.TOO_MANY_ITERATIONS
-    exp.error = err.value
+    err = _result_input_error(exp)
     _print_long_error(err)
+
+
+def _result_input_error(exp):
+    """Return and store the one-character result status for an inversion."""
+    if getattr(exp, "debug_level", 0) and not (exp.debug_level & iadpython.DEBUG_A_LITTLE):
+        err = InputError.NO_ERROR if getattr(exp, "found", False) else InputError.TOO_MANY_ITERATIONS
+    else:
+        err = _debug_input_error(exp)
+    exp.error = err.value
+    return err
 
 
 def _row_count(exp):
@@ -1024,9 +1225,16 @@ def _write_grid_file(exp, args):
                 )
 
 
-def print_result_row(exp, line=0, debug_lost_light=False):
+def print_result_row(exp, line=0, debug_lost_light=False, err=None):
     """Print one scalar result row."""
-    m_r_fit, m_t_fit = exp.measured_rt()
+    if err is None:
+        err = _result_input_error(exp)
+    original_debug = getattr(exp, "debug_level", 0)
+    try:
+        exp.debug_level = 0
+        m_r_fit, m_t_fit = exp.measured_rt()
+    finally:
+        exp.debug_level = original_debug
     wavelength = exp.lambda0
     mu_a = min(float(exp.sample.mu_a()), 199.9999)
     mu_sp = min(float(exp.sample.mu_sp()), 999.9999)
@@ -1044,9 +1252,11 @@ def print_result_row(exp, line=0, debug_lost_light=False):
     if debug_lost_light:
         print(
             f"\t{exp.ur1_lost: 8.4f}\t{exp.uru_lost: 8.4f}\t{exp.ut1_lost: 8.4f}\t{exp.utu_lost: 8.4f}"
-            f"\t{exp._mc_iterations: 3d}\t{exp.iterations: 3d}\t  {what_char(InputError.NO_ERROR)}",  # pylint: disable=protected-access
+            f"\t{exp._mc_iterations: 3d}\t{exp.iterations: 3d}\t  {what_char(err)}",  # pylint: disable=protected-access
             end="",
         )
+    else:
+        print(f"\t {what_char(err)} ", end="")
     print()
 
 
@@ -1066,7 +1276,8 @@ def invert_file(exp, args):
     last_point = None
 
     with open(args.out_fname, "w", encoding="utf-8") as output_stream, redirect_stdout(output_stream):
-        if exp.verbosity > 0 and not exp.debug_level:
+        if exp.verbosity > 0:
+            print_file_header(exp)
             print_results_header(debug_lost_light=debug_lost_light)
 
         for i in range(n_rows):
@@ -1077,9 +1288,9 @@ def invert_file(exp, args):
             point.sample.a = a
             point.sample.b = b
             point.sample.g = g
-            if not point.debug_level:
-                print_result_row(point, line=i, debug_lost_light=debug_lost_light)
-            else:
+            err = _result_input_error(point)
+            print_result_row(point, line=i + 1, debug_lost_light=debug_lost_light, err=err)
+            if point.debug_level:
                 print_debug_search_status(point)
             last_point = point
 
@@ -1143,12 +1354,12 @@ def main():
         point.sample.b = b
         point.sample.g = g
         debug_lost_light = bool(point.debug_level & iadpython.DEBUG_LOST_LIGHT)
-        if point.verbosity > 0 and not point.debug_level:
+        if point.verbosity > 0:
             print_results_header(debug_lost_light=debug_lost_light)
+        err = _result_input_error(point)
+        print_result_row(point, debug_lost_light=debug_lost_light, err=err)
         if point.debug_level:
             print_debug_search_status(point)
-        else:
-            print_result_row(point, debug_lost_light=debug_lost_light)
         if getattr(args, "J", False):
             _write_grid_file(point, args)
         sys.exit(0)

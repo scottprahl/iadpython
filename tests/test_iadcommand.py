@@ -127,6 +127,19 @@ class TestIadFile(unittest.TestCase):
             with open(out_file, encoding="utf-8") as fh:
                 return fh.read()
 
+    def _assert_result_file_has_header_and_rows(self, out_file, rows=1):
+        """Assert iad-compatible result-file output and return the file contents."""
+        with open(out_file, encoding="utf-8") as fh:
+            output = fh.read()
+
+        self.assertTrue(output.startswith("# Inverse Adding-Doubling "))
+        self.assertIn("##wave", output)
+        data_lines = [line for line in output.splitlines() if line.strip() and not line.startswith("#")]
+        self.assertEqual(len(data_lines), rows)
+        for line in data_lines:
+            self.assertGreaterEqual(len(line.split()), 9)
+        return output
+
     def test_valid_arguments(self):
         """Simple test."""
         test_args = ["iadcommand.py", "data/basic-A.rxt"]
@@ -181,6 +194,21 @@ class TestIadFile(unittest.TestCase):
         self.assertIn(" 851.9", output)
         self.assertIn("   0.0000", output)
 
+    def test_file_output_includes_legacy_header_and_status_column(self):
+        """Result files should include the iad metadata header and row status."""
+        output = self._run_single_row_rxt(BIOPIX_851_RXT)
+
+        self.assertTrue(output.startswith("# Inverse Adding-Doubling "))
+        self.assertIn("#                        Beam diameter =     2.0 mm", output)
+        self.assertIn("# Reflection sphere has a baffle between sample and detector", output)
+        self.assertIn("# 4 input columns with LABELS: L  r  t  g  using the substitution (single-beam) method.", output)
+        self.assertIn("#  Photons used to estimate lost light =   0", output)
+
+        data_lines = [line for line in output.splitlines() if line.strip() and not line.startswith("#")]
+        self.assertEqual(len(data_lines), 1)
+        self.assertEqual(len(data_lines[0].split()), 9)
+        self.assertRegex(data_lines[0], r"\s\*\s*$")
+
     def test_rxt_reflectance_standard_does_not_override_transmission_standard(self):
         """The .rxt header standard is reflection-only; CWEB leaves T standard at 1."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -191,6 +219,7 @@ class TestIadFile(unittest.TestCase):
             exp = iadcommand.iadpython.read_rxt(sample_file)
 
             self.assertEqual(exp.sample.quad_pts, 8)
+            self.assertEqual(exp.input_column_labels, "Lrtg")
             self.assertAlmostEqual(exp.r_sphere.r_std, 0.99, delta=1e-12)
             self.assertAlmostEqual(exp.t_sphere.r_std, 1.0, delta=1e-12)
 
@@ -216,7 +245,7 @@ class TestIadFile(unittest.TestCase):
             self.assertLess(point.final_distance, point.tolerance)
 
     def test_debug_iterations_use_cweb_trace_shape(self):
-        """`-x 4` should emit the CWEB-style trace and suppress normal table output."""
+        """`-x 4` should emit the CWEB-style trace and keep result-file output."""
         with tempfile.TemporaryDirectory() as tmpdir:
             sample_file = os.path.join(tmpdir, "single-row.rxt")
             out_file = os.path.join(tmpdir, "single-row.txt")
@@ -235,8 +264,7 @@ class TestIadFile(unittest.TestCase):
             self.assertIn("---------------- Beginning New Search -----------------", debug_output)
             self.assertIn("Final amoeba/brent result after", debug_output)
             self.assertIn("Failed Search, too many iterations", debug_output)
-            with open(out_file, encoding="utf-8") as fh:
-                self.assertEqual(fh.read(), "")
+            self._assert_result_file_has_header_and_rows(out_file)
 
     def test_debug_grid_uses_cweb_decision_text(self):
         """`-x 2` should emit CWEB-style grid decisions and reuse the grid."""
@@ -260,8 +288,7 @@ class TestIadFile(unittest.TestCase):
             self.assertEqual(debug_output.count("GRID: Filling AB grid"), 1)
             self.assertEqual(debug_output.count("GRID: Finding best grid points"), 2)
             self.assertNotIn("grid constant", debug_output)
-            with open(out_file, encoding="utf-8") as fh:
-                self.assertEqual(fh.read(), "")
+            self._assert_result_file_has_header_and_rows(out_file, rows=2)
 
     def test_debug_best_guess_uses_cweb_table(self):
         """`-x 16` should emit the legacy best-grid simplex table."""
@@ -288,8 +315,7 @@ class TestIadFile(unittest.TestCase):
             self.assertIn("Successful Search", debug_output)
             self.assertNotIn("grid constant", debug_output)
             self.assertNotIn("GRID: Fill", debug_output)
-            with open(out_file, encoding="utf-8") as fh:
-                self.assertEqual(fh.read(), "")
+            self._assert_result_file_has_header_and_rows(out_file)
 
     def test_debug_best_guess_repeats_for_mc_iterations(self):
         """`-x 16` should emit simplex points for every MC re-inversion."""
@@ -322,8 +348,7 @@ class TestIadFile(unittest.TestCase):
             self.assertEqual(debug_output.count("BEST: <2>"), 3)
             self.assertEqual(debug_output.count("BEST: <3>"), 3)
             self.assertNotIn("hot start", debug_output)
-            with open(out_file, encoding="utf-8") as fh:
-                self.assertEqual(fh.read(), "")
+            self._assert_result_file_has_header_and_rows(out_file)
 
     def test_debug_search_uses_cweb_decision_trace(self):
         """`-x 32` should emit the CWEB search-selection trace."""
@@ -353,8 +378,7 @@ class TestIadFile(unittest.TestCase):
             self.assertIn("SEARCH: Using U_Find_AB() mu=1.00, g=   -0.500 (constrained g)", debug_output)
             self.assertNotIn("automatic search ->", debug_output)
             self.assertNotIn("search override ->", debug_output)
-            with open(out_file, encoding="utf-8") as fh:
-                self.assertEqual(fh.read(), "")
+            self._assert_result_file_has_header_and_rows(out_file)
 
     def test_debug_search_repeats_routine_for_mc_iterations(self):
         """`-x 32 -M 2` should print one decision trace and three routine lines."""
@@ -386,8 +410,7 @@ class TestIadFile(unittest.TestCase):
             self.assertEqual(debug_output.count("SEARCH: final choice for search = FIND_AB"), 1)
             self.assertEqual(debug_output.count("SEARCH: Using U_Find_AB()"), 3)
             self.assertNotIn("automatic search ->", debug_output)
-            with open(out_file, encoding="utf-8") as fh:
-                self.assertEqual(fh.read(), "")
+            self._assert_result_file_has_header_and_rows(out_file)
 
     def test_debug_grid_calc_uses_cweb_grid_dump(self):
         """`-x 64` should emit the legacy dense grid calculation table."""
@@ -429,8 +452,7 @@ class TestIadFile(unittest.TestCase):
             self.assertEqual(len(grid_rows), 10210)
             self.assertNotIn("recomputing grid", debug_output)
             self.assertNotIn("recomputing adaptive grid", debug_output)
-            with open(out_file, encoding="utf-8") as fh:
-                self.assertEqual(fh.read(), "")
+            self._assert_result_file_has_header_and_rows(out_file)
 
     def test_debug_sphere_gain_uses_cweb_blocks(self):
         """`-x 128` should emit the legacy sphere-gain algebra blocks."""
@@ -464,8 +486,7 @@ class TestIadFile(unittest.TestCase):
             self.assertNotIn("reflectance sphere MR=", debug_output)
             self.assertNotIn("transmission sphere MT=", debug_output)
             self.assertNotIn("double sphere:", debug_output)
-            with open(out_file, encoding="utf-8") as fh:
-                self.assertEqual(fh.read(), "")
+            self._assert_result_file_has_header_and_rows(out_file)
 
     def test_debug_a_little_uses_cweb_summary_shape(self):
         """`-x 1` should emit the compact CWEB final summary."""
@@ -493,8 +514,7 @@ class TestIadFile(unittest.TestCase):
             self.assertIn("Final distance", debug_output)
             self.assertIn("Failed Search, M_R is too small", debug_output)
             self.assertNotIn("measured_rt corrections", debug_output)
-            with open(out_file, encoding="utf-8") as fh:
-                self.assertEqual(fh.read(), "")
+            self._assert_result_file_has_header_and_rows(out_file)
 
     def test_debug_a_little_shows_mc_iteration_zero_before_mc_loop(self):
         """`-x 1 -M 1` should show the initial CWEB-style MC iteration 0 summary."""
@@ -527,8 +547,7 @@ class TestIadFile(unittest.TestCase):
             iteration_one = debug_output.index("MC iterations=  1")
             self.assertLess(iteration_zero, mc_header)
             self.assertLess(mc_header, iteration_one)
-            with open(out_file, encoding="utf-8") as fh:
-                self.assertEqual(fh.read(), "")
+            self._assert_result_file_has_header_and_rows(out_file)
 
     def test_bad_output_path_exits_cleanly(self):
         """Invalid output path should report an error, not crash on closed stdout."""
