@@ -77,7 +77,10 @@ def fill_in_data_fixed(exp, data_in_columns):
 def fill_in_data_variable(exp, data_in_columns, column_letters_str):
     """Read data and interpret according to column_letters_str."""
     for col, letter in enumerate(column_letters_str):
-        if letter == "a":
+        if letter == "A":
+            exp.default_mua = data_in_columns[:, col]
+            exp.default_ba = exp.default_mua * exp.sample.d
+        elif letter == "a":
             exp.default_a = data_in_columns[:, col]
         elif letter == "b":
             exp.default_b = data_in_columns[:, col]
@@ -105,6 +108,9 @@ def fill_in_data_variable(exp, data_in_columns, column_letters_str):
             exp.m_t = data_in_columns[:, col]
         elif letter == "L":
             exp.lambda0 = data_in_columns[:, col]
+        elif letter == "M":
+            exp.default_mus = data_in_columns[:, col]
+            exp.default_bs = exp.default_mus * exp.sample.d
         elif letter == "n":
             exp.n = data_in_columns[:, col]
         elif letter == "N":

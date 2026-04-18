@@ -487,6 +487,7 @@ def _filter_experiment_by_wavelength(exp, limits):
         "default_mus",
         "default_ba",
         "default_bs",
+        "num_spheres",
     ]
     for attr in exp_attrs:
         setattr(filtered, attr, _slice_if_matching_length(getattr(filtered, attr), mask))
@@ -820,12 +821,89 @@ def print_debug_data_point(exp):
     print(f"MR={m_r:8.5f} MT={m_t:8.5f}\n", file=sys.stderr)
 
 
+def _minimum_mr_mt(exp):
+    """Return the CWEB minimum possible `M_R/M_T` estimate for a point."""
+    original_abg = (exp.sample.a, exp.sample.b, exp.sample.g)
+    original_debug = exp.debug_level
+    try:
+        exp.sample.a = 0.0
+        if exp.default_b is not None:
+            exp.sample.b = exp.default_b
+        elif exp.m_u is not None and exp.m_u > 0:
+            exp.sample.b = exp.what_is_b()
+        else:
+            exp.sample.b = np.inf
+        exp.sample.g = 0.0 if exp.default_g is None else exp.default_g
+        exp.debug_level &= ~iadpython.DEBUG_EVERY_CALC
+        ur1, ut1, uru, utu = exp.sample.rt()
+        return exp.measured_rt_from_raw(ur1, ut1, uru, utu, include_lost=False)
+    finally:
+        exp.sample.a, exp.sample.b, exp.sample.g = original_abg
+        exp.debug_level = original_debug
+
+
+def _debug_input_error(exp):
+    """Approximate CWEB `measure_OK()` for long debug status output."""
+    m_r = 0.0 if exp.m_r is None else float(exp.m_r)
+    m_t = 0.0 if exp.m_t is None else float(exp.m_t)
+    m_u = 0.0 if exp.m_u is None else float(exp.m_u)
+
+    if m_t < 0:
+        return InputError.MT_TOO_SMALL
+    if m_t > 1:
+        return InputError.MT_TOO_BIG
+    if m_r < 0:
+        return InputError.MR_TOO_SMALL
+    if m_r > 1:
+        return InputError.MR_TOO_BIG
+
+    try:
+        min_mr, _min_mt = _minimum_mr_mt(exp)
+    except (ValueError, FloatingPointError, OverflowError):
+        min_mr = None
+    if min_mr is not None and m_r < float(min_mr) - 1e-8:
+        return InputError.MR_TOO_SMALL
+
+    if m_u < 0:
+        return InputError.MU_TOO_SMALL
+    if m_t > 0 and m_u > m_t:
+        return InputError.MU_TOO_BIG
+    if not getattr(exp, "found", False):
+        return InputError.TOO_MANY_ITERATIONS
+    return InputError.NO_ERROR
+
+
+def _print_long_error(err):
+    """Emit CWEB-style long search status text."""
+    if err == InputError.TOO_MANY_ITERATIONS:
+        print("Failed Search, too many iterations", file=sys.stderr)
+    if err == InputError.MR_TOO_BIG:
+        print("Failed Search, M_R is too big", file=sys.stderr)
+    if err == InputError.MR_TOO_SMALL:
+        print("Failed Search, M_R is too small", file=sys.stderr)
+    if err == InputError.MT_TOO_BIG:
+        print("Failed Search, M_T is too big", file=sys.stderr)
+    if err == InputError.MT_TOO_SMALL:
+        print("Failed Search, M_T is too small", file=sys.stderr)
+    if err == InputError.MU_TOO_BIG:
+        print("Failed Search, M_U is too big", file=sys.stderr)
+    if err == InputError.MU_TOO_SMALL:
+        print("Failed Search, M_U is too snall", file=sys.stderr)
+    if err == InputError.TOO_MUCH_LIGHT:
+        print("Failed Search, Total light bigger than 1", file=sys.stderr)
+    if err == InputError.NO_ERROR:
+        print("Successful Search", file=sys.stderr)
+    print(file=sys.stderr)
+
+
 def print_debug_search_status(exp):
     """Emit a CWEB-style long search status for debug modes."""
-    if getattr(exp, "found", False):
-        print("Successful Search\n", file=sys.stderr)
+    if getattr(exp, "debug_level", 0) & iadpython.DEBUG_A_LITTLE:
+        err = _debug_input_error(exp)
     else:
-        print("Failed Search, too many iterations\n", file=sys.stderr)
+        err = InputError.NO_ERROR if getattr(exp, "found", False) else InputError.TOO_MANY_ITERATIONS
+    exp.error = err.value
+    _print_long_error(err)
 
 
 def _row_count(exp):
@@ -854,6 +932,7 @@ def _point_experiment(exp, index=None):
         "default_mus",
         "default_ba",
         "default_bs",
+        "num_spheres",
     ]
     for attr in exp_attrs:
         setattr(point, attr, _point_value(getattr(exp, attr), index))
@@ -870,7 +949,7 @@ def _point_experiment(exp, index=None):
         sphere.r_wall = _point_value(source.r_wall, index)
         sphere.r_std = _point_value(source.r_std, index)
 
-    point.grid = None
+    point.grid = exp.grid
     point.include_measurements = False
     return point
 
@@ -994,6 +1073,7 @@ def invert_file(exp, args):
             point = _point_experiment(exp, i)
             print_debug_data_point(point)
             a, b, g = point.invert_rt()
+            exp.grid = point.grid
             point.sample.a = a
             point.sample.b = b
             point.sample.g = g

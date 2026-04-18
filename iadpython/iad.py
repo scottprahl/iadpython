@@ -26,6 +26,15 @@ import iadpython as iad
 from iadpython.mc_lost import run_mc_lost
 
 G_BOUND_EPS = 1e-6
+_TWO_PARAMETER_SEARCHES = {
+    "find_ab",
+    "find_ag",
+    "find_bg",
+    "find_ba",
+    "find_bs",
+    "find_bag",
+    "find_bsg",
+}
 
 # ---------------------------------------------------------------------------
 # Adaptive simplex helpers for MC re-inversion (used by _invert_scalar_with_mc)
@@ -152,6 +161,31 @@ DEBUG_SPHERE_GAIN = 128
 DEBUG_EVERY_CALC = 256
 DEBUG_MC = 512
 DEBUG_ANY = 0xFFFFFFFF
+_LEGACY_DEBUG_GRID_SIZE = 101
+
+_GRID_FILL_NAMES = {
+    "find_ab": "AB",
+    "find_ag": "AG",
+    "find_bg": "BG",
+    "find_bag": "BaG",
+    "find_bsg": "BsG",
+}
+
+_SEARCH_DEBUG_NAMES = {
+    "find_a": "FIND_A",
+    "find_b": "FIND_B",
+    "find_ab": "FIND_AB",
+    "find_ag": "FIND_AG",
+    "auto": "FIND_AUTO",
+    "find_bg": "FIND_BG",
+    "find_bag": "FIND_BaG",
+    "find_bsg": "FIND_BsG",
+    "find_ba": "FIND_Ba",
+    "find_bs": "FIND_Bs",
+    "find_g": "FIND_G",
+    "find_b_no_absorption": "FIND_B_WITH_NO_ABSORPTION",
+    "find_b_no_scattering": "FIND_B_WITH_NO_SCATTERING",
+}
 
 SEARCH_CODE_TO_NAME = {
     0: "find_a",
@@ -188,6 +222,287 @@ def _as_scalar_float(value, label):
     if arr.size == 1:
         return float(arr.reshape(()))
     raise ValueError(f"{label} must be scalar, got shape {arr.shape}")
+
+
+def _debug_values_differ(left, right):
+    """Return True if two scalar-ish debug context values differ."""
+    try:
+        return bool(left != right)
+    except ValueError:
+        return bool(np.any(np.asarray(left) != np.asarray(right)))
+
+
+def _grid_stale_debug_reason(grid, exp, search, default):
+    """Return CWEB-style DEBUG_GRID reason text when a grid is stale."""
+    if grid is None:
+        return "GRID: Fill because NULL"
+
+    context = getattr(grid, "_stale_context", None)
+    if getattr(grid, "default", None) is None or context is None:
+        return "GRID: Fill because not initialized"
+
+    if context["search"] != search:
+        return "GRID: Fill because search type changed"
+
+    if getattr(exp, "num_measurements", 0) == 3 and _debug_values_differ(exp.m_u, context["m_u"]):
+        return "GRID: Fill because unscattered light changed"
+
+    sample = exp.sample
+    if _debug_values_differ(sample.n, context["slab_index"]):
+        return "GRID: Fill because slab refractive index changed"
+    if _debug_values_differ(sample.nu_0, context["slab_cos_angle"]):
+        return "GRID: Fill because light angle changed"
+    if _debug_values_differ(sample.n_above, context["top_slide_index"]):
+        return "GRID: Fill because top slide index changed"
+    if _debug_values_differ(sample.n_below, context["bottom_slide_index"]):
+        return "GRID: Fill because bottom slide index changed"
+
+    if search == "find_ab" and _debug_values_differ(sample.g, context["fixed_g"]):
+        return "GRID: Fill because anisotropy changed"
+    if search == "find_ag" and _debug_values_differ(sample.b, context["fixed_b"]):
+        return "GRID: Fill because optical depth changed"
+    if search == "find_bsg" and _debug_values_differ(exp.default_ba, context["default_ba"]):
+        return "GRID: Fill because mu_a changed"
+    if search == "find_bag" and _debug_values_differ(exp.default_bs, context["default_bs"]):
+        return "GRID: Fill because mu_s changed"
+    if _debug_values_differ(context["default"], default):
+        return "GRID: Fill because search type changed"
+
+    return None
+
+
+def _print_grid_fill_debug(search, default):
+    """Emit CWEB-style DEBUG_GRID fill text for the current search."""
+    name = _GRID_FILL_NAMES.get(search)
+    if name is None:
+        return
+
+    if search == "find_ab":
+        print(f"GRID: Filling AB grid (g={float(default):.5f})", file=sys.stderr)
+        return
+
+    print(f"GRID: Filling {name} grid", file=sys.stderr)
+    if search == "find_ag":
+        print("GRID: a        = %9.7f to %9.7f " % (0.0, 1.0), file=sys.stderr)
+        print("GRID: b        = %9.5f " % float(default), file=sys.stderr)
+        print("GRID: g  range = %9.6f to %9.6f " % (-0.999999, 0.999999), file=sys.stderr)
+    elif search == "find_bg":
+        print("GRID: a        = %9.7f " % float(default), file=sys.stderr)
+        print("GRID: b  range = %9.5f to %9.3f " % (np.exp(-8), np.exp(10)), file=sys.stderr)
+        print("GRID: g  range = %9.6f to %9.6f " % (-0.999999, 0.999999), file=sys.stderr)
+    elif search == "find_bag":
+        print("GRID:       bs = %9.5f" % float(default), file=sys.stderr)
+        print("GRID: ba range = %9.6f to %9.3f " % (np.exp(-8), np.exp(10)), file=sys.stderr)
+    elif search == "find_bsg":
+        print("GRID:       ba = %9.5f" % float(default), file=sys.stderr)
+        print("GRID: bs range = %9.6f to %9.3f " % (np.exp(-8), np.exp(10)), file=sys.stderr)
+
+
+def _distance_for_abg(exp, a, b, g):
+    """Return a CWEB-style corrected distance for one `(a,b,g)` guess."""
+    original = (exp.sample.a, exp.sample.b, exp.sample.g)
+    try:
+        exp.sample.a = a
+        exp.sample.b = b
+        exp.sample.g = g
+        ur1, ut1, uru, utu = exp.sample.rt()
+        _m_r, _m_t, distance = exp.measurement_distance_from_raw(
+            ur1,
+            ut1,
+            uru,
+            utu,
+            include_lost=True,
+            a=a,
+            b=b,
+            g=g,
+        )
+        return float(distance)
+    finally:
+        exp.sample.a, exp.sample.b, exp.sample.g = original
+
+
+def _grid_guess(grid, exp, i, j):
+    """Return one CWEB `Grid_ABG` candidate."""
+    if i < 0 or i >= grid.N or j < 0 or j >= grid.N:
+        return {"a": 0.5, "b": 0.5, "g": 0.5, "distance": 999.0}
+
+    _m_r, _m_t, distance = exp.measurement_distance_from_raw(
+        grid.ur1[i, j],
+        grid.ut1[i, j],
+        grid.uru[i, j],
+        grid.utu[i, j],
+        include_lost=True,
+        a=grid.a[i, j],
+        b=grid.b[i, j],
+        g=grid.g[i, j],
+    )
+    return {
+        "a": float(grid.a[i, j]),
+        "b": float(grid.b[i, j]),
+        "g": float(grid.g[i, j]),
+        "distance": float(distance),
+    }
+
+
+def _nearest_grid_index(grid, exp):
+    """Return the nearest grid index using CWEB's corrected distance."""
+    distances = np.zeros((grid.N, grid.N))
+    for i in range(grid.N):
+        for j in range(grid.N):
+            distances[i, j] = _grid_guess(grid, exp, i, j)["distance"]
+    flat_index = int(distances.argmin())
+    return flat_index // distances.shape[1], flat_index % distances.shape[1]
+
+
+def _ranked_grid_guesses(grid, exp, initial_abg):
+    """Return sorted CWEB-style best-guess candidates."""
+    a0, b0, g0 = initial_abg
+    guesses = [
+        {
+            "a": float(a0),
+            "b": float(b0),
+            "g": float(g0),
+            "distance": _distance_for_abg(exp, a0, b0, g0),
+        }
+    ]
+    i_best, j_best = _nearest_grid_index(grid, exp)
+    for di, dj in [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]:
+        guesses.append(_grid_guess(grid, exp, i_best + di, j_best + dj))
+    return sorted(guesses, key=lambda guess: guess["distance"])
+
+
+def _first_different_guess(guesses, axis, skip=None):
+    """Return the first top guess whose axis differs from the best guess."""
+    if skip is None:
+        skip = set()
+    for index in range(1, min(7, len(guesses))):
+        if index in skip:
+            continue
+        if guesses[0][axis] != guesses[index][axis]:
+            return index
+    return min(7, len(guesses) - 1)
+
+
+def _third_simplex_guess(guesses, second_index, axis):
+    """Return the third CWEB simplex guess index for the secondary axis."""
+    for index in range(1, min(7, len(guesses))):
+        if index == second_index:
+            continue
+        if guesses[0][axis] != guesses[index][axis] or guesses[second_index][axis] != guesses[index][axis]:
+            return index
+    return min(7, len(guesses) - 1)
+
+
+def _simplex_debug_guesses(search, guesses):
+    """Return the three guesses CWEB prints as simplex start nodes."""
+    if search == "find_ab":
+        second = _first_different_guess(guesses, "a")
+        third = _third_simplex_guess(guesses, second, "b")
+    elif search == "find_ag":
+        second = _first_different_guess(guesses, "a")
+        third = _third_simplex_guess(guesses, second, "g")
+    elif search == "find_bg":
+        second = _first_different_guess(guesses, "b")
+        third = _third_simplex_guess(guesses, second, "g")
+    else:
+        return []
+    return [guesses[0], guesses[second], guesses[third]]
+
+
+def _print_best_guess_debug(search, guesses):
+    """Emit CWEB-style `-x 16` best grid point output."""
+    print("BEST: GRID GUESSES", file=sys.stderr)
+    print("BEST:  k      albedo          b          g   distance", file=sys.stderr)
+    for index, guess in enumerate(guesses[:7]):
+        print(
+            "BEST:%3d  %10.5f %10.5f %10.5f %10.5f"
+            % (index, guess["a"], guess["b"], guess["g"], guess["distance"]),
+            file=sys.stderr,
+        )
+
+    simplex_guesses = _simplex_debug_guesses(search, guesses)
+    if not simplex_guesses:
+        return
+
+    print("-----------------------------------------------------", file=sys.stderr)
+    for index, guess in enumerate(simplex_guesses, start=1):
+        print(
+            "BEST: <%d> %10.5f %10.5f %10.5f %10.5f"
+            % (index, guess["a"], guess["b"], guess["g"], guess["distance"]),
+            file=sys.stderr,
+        )
+    print(file=sys.stderr)
+
+
+def _print_grid_calc_fill_header():
+    """Emit CWEB DEBUG_GRID_CALC grid-fill header."""
+    print("+   i   j       a         b          g     |     M_R        grid  |     M_T        grid", file=sys.stderr)
+
+
+def _grid_calc_distance(grid, exp, i, j, print_row=False):
+    """Return a corrected grid distance and optionally emit its CWEB debug row."""
+    fit_r, fit_t, distance = exp.measurement_distance_from_raw(
+        grid.ur1[i, j],
+        grid.ut1[i, j],
+        grid.uru[i, j],
+        grid.utu[i, j],
+        include_lost=True,
+        a=grid.a[i, j],
+        b=grid.b[i, j],
+        g=grid.g[i, j],
+        debug_sphere=False,
+    )
+    if print_row:
+        print(
+            "g %3d %3d %10.5f %10.4f %10.5f | %10.5f %10.5f | %10.5f %10.5f |%10.3f"
+            % (
+                i,
+                j,
+                grid.a[i, j],
+                grid.b[i, j],
+                grid.g[i, j],
+                exp._debug_measurement_value(exp.m_r),  # pylint: disable=protected-access
+                fit_r,
+                exp._debug_measurement_value(exp.m_t),  # pylint: disable=protected-access
+                fit_t,
+                distance,
+            ),
+            file=sys.stderr,
+        )
+    return float(distance)
+
+
+def _debug_grid_calc_min_abg(grid, exp):
+    """Find the nearest grid point while emitting CWEB `-x 64` rows."""
+    print(
+        "+   i   j       a         b          g     |     M_R        grid   |     M_T        grid   |  distance",
+        file=sys.stderr,
+    )
+    distances = np.zeros((grid.N, grid.N))
+    for i in range(grid.N):
+        for j in range(grid.N):
+            distances[i, j] = _grid_calc_distance(grid, exp, i, j, print_row=True)
+
+    flat_index = int(distances.argmin())
+    i_best = flat_index // distances.shape[1]
+    j_best = flat_index % distances.shape[1]
+
+    best_dist = float("inf")
+    a_best = grid.a[i_best, j_best]
+    b_best = grid.b[i_best, j_best]
+    g_best = grid.g[i_best, j_best]
+    for di, dj in [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]:
+        ni = i_best + di
+        nj = j_best + dj
+        if 0 <= ni < grid.N and 0 <= nj < grid.N:
+            distance = _grid_calc_distance(grid, exp, ni, nj, print_row=True)
+            if distance < best_dist:
+                best_dist = distance
+                a_best = grid.a[ni, nj]
+                b_best = grid.b[ni, nj]
+                g_best = grid.g[ni, nj]
+
+    return a_best, b_best, g_best
 
 
 class Experiment:
@@ -274,6 +589,7 @@ class Experiment:
         self._grid_evals = 0
         self._optimizer_evals = 0
         self._last_invert_status_valid = False
+        self._debug_search_reported = False
 
     def __str__(self):
         """Return basic details as a string for printing."""
@@ -365,6 +681,184 @@ class Experiment:
         else:
             self.search = "find_b_no_absorption"
 
+    @staticmethod
+    def _debug_measurement_value(value):
+        """Return CWEB's zero-filled scalar measurement value."""
+        return 0.0 if value is None else float(value)
+
+    def _debug_search_counts(self):
+        """Return CWEB DEBUG_SEARCH measurement and constraint counts."""
+        independent = 0
+        if self._debug_measurement_value(self.m_r) > 0:
+            independent += 1
+        if self._debug_measurement_value(self.m_t) > 0:
+            independent += 1
+        if self._debug_measurement_value(self.m_u) > 0:
+            independent += 1
+
+        constraints = 0
+        for value in (self.default_a, self.default_b, self.default_g, self.default_mua, self.default_mus):
+            if value is not None:
+                constraints += 1
+        return independent, constraints
+
+    def _debug_minimum_mr_mt(self):
+        """Return CWEB-style minimum measured R/T estimate for DEBUG_SEARCH."""
+        original_abg = (self.sample.a, self.sample.b, self.sample.g)
+        try:
+            self.sample.a = 0.0
+            if self.default_b is not None:
+                self.sample.b = self.default_b
+            elif self._debug_measurement_value(self.m_u) > 0:
+                self.sample.b = self.what_is_b()
+            else:
+                self.sample.b = np.inf
+            self.sample.g = 0.0 if self.default_g is None else self.default_g
+            ur1, ut1, uru, utu = self.sample.rt()
+            return self.measured_rt_from_raw(ur1, ut1, uru, utu, include_lost=False)
+        finally:
+            self.sample.a, self.sample.b, self.sample.g = original_abg
+
+    def _debug_estimate_rt(self):
+        """Return CWEB `Estimate_RT` values for the search trace."""
+        m_r = self._debug_measurement_value(self.m_r)
+        m_t = self._debug_measurement_value(self.m_t)
+        m_u = self._debug_measurement_value(self.m_u)
+        rc, tc = self._debug_minimum_mr_mt()
+
+        if self.fraction_of_rc_in_mr:
+            rt = m_r
+            rd = rt - self.fraction_of_rc_in_mr * rc
+            if rd < 0:
+                rd = 0.0
+                rc = rt
+        else:
+            rd = m_r
+            rt = rd + rc
+
+        if m_u > 0:
+            tc = m_u
+        td = m_t - self.fraction_of_tc_in_mt * tc
+        tt = td + tc
+        return rt, tt, rd, rc, td, tc
+
+    def _debug_search_decision_header(self):
+        """Emit CWEB DEBUG_SEARCH input and estimate trace."""
+        if not (self.debug_level & DEBUG_SEARCH) or self._debug_search_reported:
+            return None
+
+        independent, constraints = self._debug_search_counts()
+        rt, tt, rd, rc, td, tc = self._debug_estimate_rt()
+        print(f"SEARCH: starting with {independent:d} measurement(s)", file=sys.stderr)
+        print(f"SEARCH:      and with {constraints:d} constraint(s)", file=sys.stderr)
+        if self.default_a is not None:
+            print("            albedo constrained", file=sys.stderr)
+        if self.default_b is not None:
+            print("            optical thickness constrained", file=sys.stderr)
+        if self.default_g is not None:
+            print("            anisotropy constrained", file=sys.stderr)
+        if self.default_mua is not None:
+            print("          mua constrained", file=sys.stderr)
+        if self.default_mus is not None:
+            print("          mus constrained", file=sys.stderr)
+        print(
+            "SEARCH: m_r = %8.5f m_t = %8.5f m_u = %8.5f"
+            % (
+                self._debug_measurement_value(self.m_r),
+                self._debug_measurement_value(self.m_t),
+                self._debug_measurement_value(self.m_u),
+            ),
+            file=sys.stderr,
+        )
+        print("SEARCH:  rt = %8.5f  rd = %8.5f  ru = %8.5f" % (rt, rd, rc), file=sys.stderr)
+        print("SEARCH:  tt = %8.5f  td = %8.5f  tu = %8.5f" % (tt, td, tc), file=sys.stderr)
+
+        if rd == 0 and independent >= 2:
+            print("SEARCH: no information in rd", file=sys.stderr)
+            independent -= 1
+        if td == 0 and independent >= 2:
+            print("SEARCH: no information in td", file=sys.stderr)
+            independent -= 1
+        return independent, constraints
+
+    def _debug_search_decision_footer(self, context):
+        """Emit CWEB DEBUG_SEARCH final search choice."""
+        if context is None:
+            return
+
+        independent, constraints = context
+        print(f"SEARCH: ending with {independent:d} measurement(s)", file=sys.stderr)
+        print(f"SEARCH:    and with {constraints:d} constraint(s)", file=sys.stderr)
+        search_name = _SEARCH_DEBUG_NAMES.get(self.search, self.search.upper())
+        print(f"SEARCH: final choice for search = {search_name}", file=sys.stderr)
+        self._debug_search_reported = True
+
+    def _debug_search_using(self):
+        """Emit the CWEB DEBUG_SEARCH line for the selected inverse routine."""
+        if not (self.debug_level & DEBUG_SEARCH):
+            return
+
+        mu = float(self.sample.nu_0)
+        if self.search == "find_ab":
+            if self.default_g is not None:
+                suffix = "  %7.3f (constrained g)" % float(self.default_g)
+            else:
+                suffix = "  %7.3f (default)" % 0.0
+            print(f"SEARCH: Using U_Find_AB() mu={mu:4.2f}, g={suffix}", file=sys.stderr)
+        elif self.search == "find_ag":
+            if self._debug_measurement_value(self.m_u) > 0:
+                suffix = " b= %6.3f  (M_U)" % float(self.what_is_b())
+            elif self.default_b is not None:
+                suffix = " b = %6.3f (constrained)" % float(self.default_b)
+            else:
+                suffix = " b = %6.3f (default)" % 1.0
+            print(f"SEARCH: Using U_Find_AG() mu={mu:4.2f}, {suffix}", file=sys.stderr)
+        elif self.search == "find_bg":
+            message = "SEARCH: Using U_Find_BG() (mu=%6.4f)" % mu
+            if self.default_a is not None:
+                message += "  default_a = %8.5f" % float(self.default_a)
+            print(message, file=sys.stderr)
+        elif self.search == "find_a":
+            message = "SEARCH: Using U_Find_A() (mu=%6.4f)" % mu
+            if self.default_b is not None:
+                message += "  default_b = %8.5f" % float(self.default_b)
+            if self.default_g is not None:
+                message += "  default_g = %8.5f" % float(self.default_g)
+            print(message, file=sys.stderr)
+        elif self.search in ("find_b", "find_b_no_absorption", "find_b_no_scattering"):
+            message = "SEARCH: Using U_Find_B() (mu=%6.4f)" % mu
+            if self.default_a is not None:
+                message += "  default_a = %8.5f" % float(self.default_a)
+            if self.default_g is not None:
+                message += "  default_g = %8.5f" % float(self.default_g)
+            print(message, file=sys.stderr)
+        elif self.search == "find_g":
+            message = "SEARCH: Using U_Find_G() (mu=%6.4f)" % mu
+            if self.default_a is not None:
+                message += "  default_a = %8.5f" % float(self.default_a)
+            if self.default_b is not None:
+                message += "  default_b = %8.5f" % float(self.default_b)
+            print(message, file=sys.stderr)
+        elif self.search == "find_bs":
+            message = "SEARCH: Using U_Find_Bs() (mu=%6.4f)" % mu
+            if self.default_ba is not None:
+                message += "  default_ba = %8.5f" % float(self.default_ba)
+            if self.default_g is not None:
+                message += "  default_g = %8.5f" % float(self.default_g)
+            print(message, file=sys.stderr)
+        elif self.search == "find_ba":
+            message = "SEARCH: Using U_Find_Bs() (mu=%6.4f)" % mu
+            if self.default_bs is not None:
+                message += "  default_bs = %8.5f" % float(self.default_bs)
+            if self.default_g is not None:
+                message += "  default_g = %8.5f" % float(self.default_g)
+            print(message, file=sys.stderr)
+        elif self.search == "find_bsg":
+            message = "SEARCH: Using U_Find_BsG() (mu=%6.4f)" % mu
+            if self.default_ba is not None:
+                message += "  default_ba = %8.5f" % float(self.default_ba)
+            print(message, file=sys.stderr)
+
     def determine_two_parameter_search(self):
         """Establish proper search when 2 or 3 measurements are available."""
         if self.default_a is not None:
@@ -391,11 +885,13 @@ class Experiment:
                 self.search = "find_ba"
             else:
                 self.search = "find_bag"
+        elif self.m_r is None and self.m_t is not None and self.m_t > 0:
+            self.search = "find_b_no_scattering"
         else:
-            if self.m_u is None or self.m_u <= 0:
-                self.search = "find_ab"
-            else:
+            if self.m_r is not None and self.m_t is not None and self.m_u is not None and self.m_u > 0:
                 self.search = "find_ag"
+            else:
+                self.search = "find_ab"
 
     def determine_search(self):
         """Determine type of search to do."""
@@ -405,7 +901,6 @@ class Experiment:
                 (code for code, name in SEARCH_CODE_TO_NAME.items() if name == self.search),
                 4,
             )
-            self._debug(DEBUG_SEARCH, f"search override -> {self.search} ({self.search_code})")
             return
 
         if self.num_measurements == 0:
@@ -413,6 +908,7 @@ class Experiment:
             self.search_code = -1
             return
 
+        debug_context = self._debug_search_decision_header()
         if self.num_measurements == 1:
             self.determine_one_parameter_search()
         else:
@@ -422,7 +918,7 @@ class Experiment:
             (code for code, name in SEARCH_CODE_TO_NAME.items() if name == self.search),
             4,
         )
-        self._debug(DEBUG_SEARCH, f"automatic search -> {self.search} ({self.search_code})")
+        self._debug_search_decision_footer(debug_context)
 
     def _debug(self, mask, message):
         """Emit debug output matching the enabled bitmask."""
@@ -590,9 +1086,113 @@ class Experiment:
         point.grid = None
         point.include_measurements = False
         point.first_pass_abg = None
+        point._debug_search_reported = False
         return point
 
-    def measured_rt_from_raw(self, ur1, ut1, uru, utu, include_lost=True, a=None, b=None, g=None):
+    def _debug_single_sphere_reflection(self, ur1, uru, ru, m_r, include_lost, stream=None):
+        """Emit CWEB DEBUG_SPHERE_GAIN output for a reflectance sphere."""
+        if stream is None:
+            stream = sys.stderr
+
+        sphere = self.r_sphere
+        ur1_lost = self.ur1_lost if include_lost else 0.0
+        uru_lost = self.uru_lost if include_lost else 0.0
+        ur1_calc = max(_as_scalar_float(ur1, "UR1") - _as_scalar_float(ru, "Ru") - ur1_lost, 0.0)
+        uru_calc = max(_as_scalar_float(uru, "URU") - uru_lost, 0.0)
+
+        r_first = 1.0
+        if sphere.baffle:
+            r_first = sphere.r_wall * (1 - sphere.third.a)
+
+        gain_0 = _as_scalar_float(sphere.gain(0.0, 0.0), "G_0")
+        gain = _as_scalar_float(sphere.gain(uru_calc, 0.0), "G")
+        gain_cal = _as_scalar_float(sphere.gain(sphere.r_std, 0.0), "G_cal")
+        p_cal = gain_cal * (sphere.r_std * (1 - self.f_r) + self.f_r * sphere.r_wall)
+        p_0 = gain_0 * (self.f_r * sphere.r_wall)
+        p_ss = r_first * (ur1_calc * (1 - self.f_r) + self.f_r * sphere.r_wall)
+        p_su = sphere.r_wall * (1 - self.f_r) * self.fraction_of_rc_in_mr * ru
+        p = gain * (p_ss + p_su)
+
+        show_no_lost = include_lost and self.uru_lost > 0
+        if show_no_lost:
+            gain_none = _as_scalar_float(sphere.gain(uru, 0.0), "G_no_lost")
+            p_none = gain_none * (p_ss + p_su)
+            m_none = sphere.r_std * (p_none - p_0) / (p_cal - p_0)
+
+        print("SPHERE: REFLECTION", file=stream)
+        print("SPHERE:       baffle = %d" % int(bool(sphere.baffle)), file=stream)
+        print("SPHERE:       R_u collected = %5.1f%%" % (self.fraction_of_rc_in_mr * 100), file=stream)
+        print("SPHERE:       hits sphere wall first = %5.1f%%" % (self.f_r * 100), file=stream)
+        print("SPHERE:       UR1 = %7.3f   UR1_calc = %7.3f" % (ur1, ur1_calc), file=stream)
+        print("SPHERE:       URU = %7.3f   URU_calc = %7.3f" % (uru, uru_calc), file=stream)
+        print("SPHERE:       R_u = %7.3f" % ru, file=stream)
+        print("SPHERE:       G_0 = %7.3f        P_0 = %7.3f" % (gain_0, p_0), file=stream)
+        print("SPHERE:         G = %7.3f          P = %7.3f" % (gain, p), file=stream)
+        if show_no_lost:
+            print("SPHERE: G_no_lost = %7.3f  P_no_lost = %7.3f" % (gain_none, p_none), file=stream)
+        print("SPHERE:     G_cal = %7.3f      P_cal = %7.3f" % (gain_cal, p_cal), file=stream)
+        if show_no_lost:
+            print("SPHERE: M_no_lost = %7.3f" % m_none, file=stream)
+        print("SPHERE:       M_R = %7.3f" % m_r, file=stream)
+
+    def _debug_single_sphere_transmission(self, ur1, ut1, uru, tu, m_t, include_lost, stream=None):
+        """Emit CWEB DEBUG_SPHERE_GAIN output for a transmission sphere."""
+        if stream is None:
+            stream = sys.stderr
+
+        sphere = self.t_sphere
+        ur1_lost = self.ur1_lost if include_lost else 0.0
+        uru_lost = self.uru_lost if include_lost else 0.0
+        ut1_lost = self.ut1_lost if include_lost else 0.0
+        ur1_calc = max(_as_scalar_float(ur1, "UR1") - ur1_lost, 0.0)
+        uru_calc = max(_as_scalar_float(uru, "URU") - uru_lost, 0.0)
+        ut1_calc = max(_as_scalar_float(ut1, "UT1") - _as_scalar_float(tu, "Tu") - ut1_lost, 0.0)
+
+        if sphere.third.a == 0:
+            r_cal = sphere.r_wall
+            r_third = sphere.r_wall
+        elif self.fraction_of_tc_in_mt > 0:
+            r_cal = sphere.r_std
+            r_third = sphere.r_std
+        else:
+            r_cal = sphere.r_std
+            r_third = 0.0
+
+        r_first = 1.0
+        if sphere.baffle:
+            r_first = sphere.r_wall * (1 - sphere.third.a) + r_third * sphere.third.a
+
+        gain = _as_scalar_float(sphere.gain(uru_calc, r_third), "G")
+        gain_cal = _as_scalar_float(sphere.gain(0.0, r_cal), "G_cal")
+        p_su = r_third * tu * self.fraction_of_tc_in_mt
+        p_ss = r_first * ut1_calc
+
+        show_no_lost = include_lost and self.uru_lost > 0
+        if show_no_lost:
+            gain_none = _as_scalar_float(sphere.gain(uru, 0.0), "G_no_lost")
+            p_none = p_ss + p_su
+            m_none = (p_su + p_ss) * gain_none / gain_cal
+
+        print("SPHERE: TRANSMISSION", file=stream)
+        print("SPHERE:       baffle = %d" % int(bool(sphere.baffle)), file=stream)
+        print("SPHERE:       T_u collected = %5.1f%%" % (self.fraction_of_tc_in_mt * 100), file=stream)
+        print("SPHERE:       UR1 = %7.3f   UR1_calc = %7.3f" % (ur1, ur1_calc), file=stream)
+        print("SPHERE:       URU = %7.3f   URU_calc = %7.3f" % (uru, uru_calc), file=stream)
+        print("SPHERE:       UT1 = %7.3f   UT1_calc = %7.3f" % (ut1, ut1_calc), file=stream)
+        print("SPHERE:       T_u = %7.3f" % tu, file=stream)
+        print("SPHERE:         G = %7.3f          P = %7.3f" % (gain, p_su + p_ss), file=stream)
+        if show_no_lost:
+            print("SPHERE: G_no_lost = %7.3f  P_no_lost = %7.3f" % (gain_none, p_none), file=stream)
+        print("SPHERE:     G_cal = %7.3f      P_cal = %7.3f" % (gain_cal, 1.0), file=stream)
+        print("SPHERE:   r_third = %7.3f      r_cal = %7.3f" % (r_third, r_cal), file=stream)
+        print("SPHERE:   r_first = %7.3f" % r_first, file=stream)
+        print("SPHERE:       Psu = %7.3f        Pss = %7.3f" % (p_su, p_ss), file=stream)
+        if show_no_lost:
+            print("SPHERE: M_no_lost = %7.3f" % m_none, file=stream)
+        print("SPHERE:       M_T = %7.3f" % m_t, file=stream)
+        print(file=stream)
+
+    def measured_rt_from_raw(self, ur1, ut1, uru, utu, include_lost=True, a=None, b=None, g=None, debug_sphere=True):
         """Convert raw RT values into the measured `M_R/M_T` for this experiment."""
         s = self.sample
         original = None
@@ -621,7 +1221,7 @@ class Experiment:
                 uru_actual = uru - self.uru_lost
                 utu_actual = utu - self.utu_lost
 
-            if self.debug_level & DEBUG_A_LITTLE:
+            if self.debug_level & DEBUG_EVERY_CALC:
                 print(
                     "measured_rt corrections: "
                     f"ur1={ur1:.5f}->{ur1_actual:.5f} "
@@ -648,14 +1248,6 @@ class Experiment:
                 d_spheres = iad.DoubleSphere(self.r_sphere, self.t_sphere)
                 d_spheres.f_r = self.f_r
                 m_r, m_t = d_spheres.measured_rt(ur1_calc, uru_calc, ut1_calc, utu_calc)
-                if self.debug_level & DEBUG_SPHERE_GAIN:
-                    print(
-                        "double sphere: "
-                        f"ur1={ur1_calc:.5f} uru={uru_calc:.5f} "
-                        f"ut1={ut1_calc:.5f} utu={utu_calc:.5f} -> "
-                        f"MR={m_r:.5f} MT={m_t:.5f}",
-                        file=sys.stderr,
-                    )
                 return m_r, m_t
 
             if self.num_spheres == 1:
@@ -665,26 +1257,112 @@ class Experiment:
                 if self.r_sphere is not None:
                     f_u = self.fraction_of_rc_in_mr
                     m_r = self.r_sphere.MR(ur1_actual, uru_actual, R_u=r_u, f_u=f_u, f_w=self.f_r)
-                    if self.debug_level & DEBUG_SPHERE_GAIN:
-                        print(
-                            f"reflectance sphere MR={m_r:.5f} from ur1={ur1_actual:.5f} uru={uru_actual:.5f}",
-                            file=sys.stderr,
-                        )
+                    if debug_sphere and self.debug_level & DEBUG_SPHERE_GAIN:
+                        self._debug_single_sphere_reflection(ur1, uru, r_u, m_r, include_lost)
 
                 if self.t_sphere is not None:
                     m_t = self.t_sphere.MT(ut1_actual, uru_actual, T_u=t_u, f_u=self.fraction_of_tc_in_mt)
-                    if self.debug_level & DEBUG_SPHERE_GAIN:
-                        print(
-                            f"transmission sphere MT={m_t:.5f} from ut1={ut1_actual:.5f} uru={uru_actual:.5f}",
-                            file=sys.stderr,
-                        )
+                    if debug_sphere and self.debug_level & DEBUG_SPHERE_GAIN:
+                        self._debug_single_sphere_transmission(ur1, ut1, uru, t_u, m_t, include_lost)
 
             return m_r, m_t
         finally:
             if original is not None:
                 s.a, s.b, s.g = original
 
-    def measurement_distance_from_raw(self, ur1, ut1, uru, utu, include_lost=True, a=None, b=None, g=None):
+    def measurement_distance(self, m_r, m_t):
+        """Return scalar L1 distance between calculated and measured `M_R/M_T`.
+
+        CWEB's two-parameter searches always compare transmission and, unless
+        albedo is fixed at zero, reflectance.  Missing file columns therefore
+        behave like zero-valued measurements once the search needs that axis.
+        """
+        if self.search in _TWO_PARAMETER_SEARCHES:
+            measured_t = 0.0 if self.m_t is None else _as_scalar_float(self.m_t, "measured M_T")
+            delta = abs(_as_scalar_float(m_t, "calculated M_T") - measured_t)
+            if self.default_a is None or not np.isclose(self.default_a, 0.0):
+                measured_r = 0.0 if self.m_r is None else _as_scalar_float(self.m_r, "measured M_R")
+                delta += abs(_as_scalar_float(m_r, "calculated M_R") - measured_r)
+            return delta
+
+        delta = 0.0
+        if self.m_r is not None:
+            delta += abs(_as_scalar_float(m_r, "calculated M_R") - _as_scalar_float(self.m_r, "measured M_R"))
+        if self.m_t is not None:
+            delta += abs(_as_scalar_float(m_t, "calculated M_T") - _as_scalar_float(self.m_t, "measured M_T"))
+        return delta
+
+    def _debug_no_sphere_rt_from_raw(self, ur1, ut1, include_lost):
+        """Return direct `M_R/M_T` with optional lost-light terms."""
+        s = self.sample
+        nu_inside = iad.cos_snell(1, s.nu_0, s.n)
+        r_u, t_u = iad.specular_rt(s.n_above, s.n, s.n_below, s.b, nu_inside)
+        ur1_lost = self.ur1_lost if include_lost else 0.0
+        ut1_lost = self.ut1_lost if include_lost else 0.0
+        m_r = ur1 - (1.0 - self.fraction_of_rc_in_mr) * r_u - ur1_lost
+        m_t = ut1 - (1.0 - self.fraction_of_tc_in_mt) * t_u - ut1_lost
+        return max(m_r, 0.0), max(m_t, 0.0)
+
+    def _debug_sphere_rt_from_raw(self, ur1, ut1, uru, utu, include_lost):
+        """Return sphere-corrected `M_R/M_T` without printing nested debug rows."""
+        debug_level = self.debug_level
+        self.debug_level &= ~(DEBUG_EVERY_CALC | DEBUG_SPHERE_GAIN)
+        try:
+            return self.measured_rt_from_raw(ur1, ut1, uru, utu, include_lost=include_lost)
+        finally:
+            self.debug_level = debug_level
+
+    def debug_a_little_summary(self, stream=None):
+        """Emit the compact CWEB `DEBUG_A_LITTLE` final summary."""
+        if stream is None:
+            stream = sys.stderr
+
+        ur1, ut1, uru, utu = self.sample.rt()
+        mr_no_corr, mt_no_corr = self._debug_no_sphere_rt_from_raw(ur1, ut1, include_lost=False)
+        mr_mc, mt_mc = self._debug_no_sphere_rt_from_raw(ur1, ut1, include_lost=True)
+        mr_sphere, mt_sphere = self._debug_sphere_rt_from_raw(ur1, ut1, uru, utu, include_lost=False)
+        mr_sphere_mc, mt_sphere_mc = self._debug_sphere_rt_from_raw(ur1, ut1, uru, utu, include_lost=True)
+
+        measured_r = 0.0 if self.m_r is None else float(self.m_r)
+        measured_t = 0.0 if self.m_t is None else float(self.m_t)
+        mu_a = 0.0 if self.sample.mu_a() is None else float(self.sample.mu_a())
+        mu_s = 0.0 if self.sample.mu_s() is None else float(self.sample.mu_s())
+        mu_sp = 0.0 if self.sample.mu_sp() is None else float(self.sample.mu_sp())
+
+        print(
+            f"AD iterations= {int(self.iterations):3d}   MC iterations={int(self._mc_iterations):3d}"
+            f"            a={float(self.sample.a):6.4f}, b={float(self.sample.b):.4f},"
+            f" g={float(self.sample.g):.4f}, mu_a={mu_a:6.4f}, mu_s={mu_s:6.4f}, mus'={mu_sp:6.4f}",
+            file=stream,
+        )
+        print(
+            f"    M_R loss           {float(self.ur1_lost):8.5f}  M_T loss           {float(self.ut1_lost):8.5f}",
+            end="",
+            file=stream,
+        )
+        if self._mc_iterations == 0:
+            print(" (none yet)", file=stream)
+        else:
+            print(file=stream)
+        print(
+            f"    M_R no corrections {float(mr_no_corr):8.5f}  M_T no corrections {float(mt_no_corr):8.5f}",
+            file=stream,
+        )
+        print(
+            f"    M_R + sphere       {float(mr_sphere):8.5f}  M_T + sphere       {float(mt_sphere):8.5f}",
+            file=stream,
+        )
+        print(f"    M_R + mc           {float(mr_mc):8.5f}  M_T + mc           {float(mt_mc):8.5f}", file=stream)
+        print(
+            f"    M_R + sphere + mc  {float(mr_sphere_mc):8.5f}  M_T + sphere + mc  {float(mt_sphere_mc):8.5f}",
+            file=stream,
+        )
+        print(f"    M_R measured       {measured_r:8.5f}  M_T measured       {measured_t:8.5f}", file=stream)
+        print(f"Final distance {float(self.final_distance):8.5f}\n", file=stream)
+
+    def measurement_distance_from_raw(
+        self, ur1, ut1, uru, utu, include_lost=True, a=None, b=None, g=None, debug_sphere=True
+    ):
         """Return corrected `M_R/M_T` and scalar L1 distance to the measurements."""
         m_r, m_t = self.measured_rt_from_raw(
             ur1,
@@ -695,13 +1373,10 @@ class Experiment:
             a=a,
             b=b,
             g=g,
+            debug_sphere=debug_sphere,
         )
 
-        delta = 0.0
-        if self.m_r is not None:
-            delta += abs(_as_scalar_float(m_r, "calculated M_R") - _as_scalar_float(self.m_r, "measured M_R"))
-        if self.m_t is not None:
-            delta += abs(_as_scalar_float(m_t, "calculated M_T") - _as_scalar_float(self.m_t, "measured M_T"))
+        delta = self.measurement_distance(m_r, m_t)
         return m_r, m_t, delta
 
     def invert_scalar_rt(self, hot_start=None, initial_simplex=None):
@@ -748,6 +1423,8 @@ class Experiment:
             guess_bs = max(self._positive_guess(self.sample.b) - self.default_ba, 0.0)
             self._set_sample_from_ba_bs(self.default_ba, guess_bs)
 
+        self._debug_search_using()
+
         #        print('search is', self.search)
         #        print('     a = ', self.sample.a)
         #        print('     b = ', self.sample.b)
@@ -772,15 +1449,19 @@ class Experiment:
             )
 
         if self.search in ["find_ab", "find_ag", "find_bg"]:
+            debug_best_guess = bool(self.debug_level & DEBUG_BEST_GUESS)
+            debug_grid_calc = bool(self.debug_level & DEBUG_GRID_CALC)
 
-            if hot_start is not None:
+            if hot_start is not None and not (debug_best_guess or debug_grid_calc):
                 # Bypass the grid: use the caller-supplied starting point
                 # directly.  The grid is not rebuilt; the raw-RT cache is
                 # still valid because lost-light values do not affect it.
                 a, b, g = hot_start
                 self._grid_evals = 0
-                self._debug(DEBUG_BEST_GUESS, f"hot start a={a:.5f} b={b:.5f} g={g:.5f}")
             else:
+                if hot_start is not None:
+                    self.sample.a, self.sample.b, self.sample.g = hot_start
+
                 # Determine grid type for this search mode.
                 # use_adaptive_grid=True : always AGrid with user-tunable tol/depth.
                 # use_adaptive_grid=False: always Grid(N=grid_n).
@@ -788,7 +1469,10 @@ class Experiment:
                 agrid_tol = self.adaptive_grid_tol
                 agrid_max_depth = self.adaptive_grid_max_depth
                 agrid_min_depth = getattr(self, "adaptive_grid_min_depth", 2)
-                if self.use_adaptive_grid is None:
+                grid_n = _LEGACY_DEBUG_GRID_SIZE if debug_best_guess or debug_grid_calc else self.grid_n
+                if debug_best_guess or debug_grid_calc:
+                    want_agrid = False
+                elif self.use_adaptive_grid is None:
                     want_agrid = True
                 elif self.use_adaptive_grid:
                     want_agrid = True
@@ -803,11 +1487,14 @@ class Experiment:
                     self.grid = None
                 if not want_agrid and isinstance(self.grid, iad.AGrid):
                     self.grid = None
+                if not want_agrid and isinstance(self.grid, iad.Grid) and getattr(self.grid, "N", None) != grid_n:
+                    self.grid = None
+                grid_was_none = self.grid is None
                 if self.grid is None:
                     if want_agrid:
                         self.grid = iad.AGrid(tol=agrid_tol, max_depth=agrid_max_depth, min_depth=agrid_min_depth)
                     else:
-                        self.grid = iad.Grid(N=self.grid_n)
+                        self.grid = iad.Grid(N=grid_n)
 
                 # the grids are two-dimensional, one value is held constant
                 grid_constant = None
@@ -818,24 +1505,48 @@ class Experiment:
                 if self.search == "find_ab":
                     grid_constant = self.sample.g
 
+                initial_abg = (self.sample.a, self.sample.b, self.sample.g)
+                stale_reason = None
+                if self.debug_level & DEBUG_GRID:
+                    if grid_was_none:
+                        stale_reason = "GRID: Fill because NULL"
+                    else:
+                        stale_reason = _grid_stale_debug_reason(self.grid, self, self.search, grid_constant)
+
                 if isinstance(self.grid, iad.AGrid):
                     if self.grid.is_stale(self, grid_constant, search=self.search):
-                        self._debug(DEBUG_GRID_CALC, f"recomputing adaptive grid for {self.search}")
+                        if stale_reason is not None:
+                            print(stale_reason, file=sys.stderr)
+                        if self.debug_level & DEBUG_GRID:
+                            _print_grid_fill_debug(self.search, grid_constant)
                         self.grid.calc(self, default=grid_constant, search=self.search)
+                    else:
+                        self.grid.exp = self
                 else:
                     if self.grid.is_stale(self, grid_constant, search=self.search):
-                        self._debug(DEBUG_GRID_CALC, f"recomputing grid for {self.search}")
+                        if stale_reason is not None:
+                            print(stale_reason, file=sys.stderr)
+                        if self.debug_level & DEBUG_GRID:
+                            _print_grid_fill_debug(self.search, grid_constant)
+                        if debug_grid_calc:
+                            _print_grid_calc_fill_header()
                         self.grid.calc(self, grid_constant)
 
-                a, b, g = self.grid.min_abg(self.m_r, self.m_t, exp=self)
-                self._grid_evals = self.sample.rt_evals
+                if self.debug_level & DEBUG_GRID:
+                    print("GRID: Finding best grid points", file=sys.stderr)
+                best_guesses = None
                 if self.debug_level & DEBUG_BEST_GUESS:
-                    print("grid constant %8.5f" % grid_constant)
-                    print("grid start a=%8.5f" % a)
-                    print("grid start b=%8.5f" % b)
-                    print("grid start g=%8.5f" % g)
-                elif self.debug_level & DEBUG_GRID:
-                    print(f"grid constant {grid_constant:8.5f}", file=sys.stderr)
+                    best_guesses = _ranked_grid_guesses(self.grid, self, initial_abg)
+                    _print_best_guess_debug(self.search, best_guesses)
+                if debug_grid_calc and isinstance(self.grid, iad.Grid):
+                    a, b, g = _debug_grid_calc_min_abg(self.grid, self)
+                else:
+                    a, b, g = self.grid.min_abg(self.m_r, self.m_t, exp=self)
+                self._grid_evals = self.sample.rt_evals
+                if best_guesses is not None:
+                    a = best_guesses[0]["a"]
+                    b = best_guesses[0]["b"]
+                    g = best_guesses[0]["g"]
 
             a, b, g = _nudge_bounded_start(self.search, a, b, g)
 
@@ -912,6 +1623,8 @@ class Experiment:
             self.sample.a = 0.0
             result = scipy.optimize.minimize_scalar(bfun, args=(self), method="brent")
 
+        self._optimizer_evals = self.sample.rt_evals - self._grid_evals
+
         if result is not None:
             self.iterations = getattr(result, "nit", getattr(result, "nfev", 0))
             self.final_distance = float(getattr(result, "fun", np.nan))
@@ -920,8 +1633,8 @@ class Experiment:
             if self.debug_level & DEBUG_ITERATIONS:
                 print(f"Final amoeba/brent result after {self.iterations} iterations", file=sys.stderr)
                 self._debug_iteration_row()
-
-        self._optimizer_evals = self.sample.rt_evals - self._grid_evals
+            if self.debug_level & DEBUG_A_LITTLE:
+                self.debug_a_little_summary()
 
         return self.sample.a, self.sample.b, self.sample.g
 
@@ -1067,6 +1780,7 @@ class Experiment:
             else:
                 simplex = None
             self._debug(DEBUG_GRID_CALC, "warm-starting from previous (a,b,g) after lost-light update")
+            self._mc_iterations += 1
             a_new, b_new, g_new = self.invert_scalar_rt(hot_start=(a, b, g), initial_simplex=simplex)
             # Record the per-axis movement for the next iteration's simplex sizing.
             if self.search == "find_ab":
@@ -1076,7 +1790,6 @@ class Experiment:
             elif self.search == "find_bg":
                 previous_delta = np.array([abs(b_new - b), abs(g_new - g)], dtype=float)
             a, b, g = a_new, b_new, g_new
-            self._mc_iterations += 1
             mu_a, mu_sp = self._current_optical_coefficients()
             self._debug_lost_light_row()
 
@@ -1227,11 +1940,7 @@ def afun(x, *args):
     exp.sample.a = x
     m_r, m_t = exp.measured_rt()
 
-    result = 0
-    if exp.m_r is not None:
-        result += np.abs(m_r - exp.m_r)
-    if exp.m_t is not None:
-        result += np.abs(m_t - exp.m_t)
+    result = exp.measurement_distance(m_r, m_t)
     exp._debug_iteration_row(m_r, m_t, result)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(f"calc find_a: a={x:.7f} mr={m_r:.7f} mt={m_t:.7f} delta={result:.7g}", file=sys.stderr)
@@ -1244,11 +1953,7 @@ def bfun(x, *args):
     exp.sample.b = x
     m_r, m_t = exp.measured_rt()
 
-    result = 0
-    if exp.m_r is not None:
-        result += np.abs(m_r - exp.m_r)
-    if exp.m_t is not None:
-        result += np.abs(m_t - exp.m_t)
+    result = exp.measurement_distance(m_r, m_t)
     exp._debug_iteration_row(m_r, m_t, result)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(f"calc find_b: b={x:.7f} mr={m_r:.7f} mt={m_t:.7f} delta={result:.7g}", file=sys.stderr)
@@ -1261,11 +1966,7 @@ def gfun(x, *args):
     exp.sample.g = x
     m_r, m_t = exp.measured_rt()
 
-    result = 0
-    if exp.m_r is not None:
-        result += np.abs(m_r - exp.m_r)
-    if exp.m_t is not None:
-        result += np.abs(m_t - exp.m_t)
+    result = exp.measurement_distance(m_r, m_t)
     exp._debug_iteration_row(m_r, m_t, result)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(f"calc find_g: g={x:.7f} mr={m_r:.7f} mt={m_t:.7f} delta={result:.7g}", file=sys.stderr)
@@ -1278,7 +1979,7 @@ def abfun(x, *args):
     exp.sample.a = x[0]
     exp.sample.b = x[1]
     m_r, m_t = exp.measured_rt()
-    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    delta = exp.measurement_distance(m_r, m_t)
     exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
@@ -1294,7 +1995,7 @@ def bgfun(x, *args):
     exp.sample.b = x[0]
     exp.sample.g = x[1]
     m_r, m_t = exp.measured_rt()
-    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    delta = exp.measurement_distance(m_r, m_t)
     exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
@@ -1310,7 +2011,7 @@ def agfun(x, *args):
     exp.sample.a = x[0]
     exp.sample.g = x[1]
     m_r, m_t = exp.measured_rt()
-    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    delta = exp.measurement_distance(m_r, m_t)
     exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
@@ -1326,7 +2027,7 @@ def bafun(x, *args):
     ba = float(np.atleast_1d(x)[0])
     exp._set_sample_from_ba_bs(ba, exp.default_bs)  # pylint: disable=protected-access
     m_r, m_t = exp.measured_rt()
-    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    delta = exp.measurement_distance(m_r, m_t)
     exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
@@ -1343,7 +2044,7 @@ def bsfun(x, *args):
     bs = float(np.atleast_1d(x)[0])
     exp._set_sample_from_ba_bs(exp.default_ba, bs)  # pylint: disable=protected-access
     m_r, m_t = exp.measured_rt()
-    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    delta = exp.measurement_distance(m_r, m_t)
     exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
@@ -1362,7 +2063,7 @@ def bagfun(x, *args):
     exp._set_sample_from_ba_bs(ba, exp.default_bs)  # pylint: disable=protected-access
     exp.sample.g = g
     m_r, m_t = exp.measured_rt()
-    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    delta = exp.measurement_distance(m_r, m_t)
     exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(
@@ -1381,7 +2082,7 @@ def bsgfun(x, *args):
     exp._set_sample_from_ba_bs(exp.default_ba, bs)  # pylint: disable=protected-access
     exp.sample.g = g
     m_r, m_t = exp.measured_rt()
-    delta = np.abs(m_r - exp.m_r) + np.abs(m_t - exp.m_t)
+    delta = exp.measurement_distance(m_r, m_t)
     exp._debug_iteration_row(m_r, m_t, delta)  # pylint: disable=protected-access
     if exp.debug_level & DEBUG_EVERY_CALC:
         print(

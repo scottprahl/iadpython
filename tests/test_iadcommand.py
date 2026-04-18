@@ -49,6 +49,21 @@ SINGLE_ROW_VARIABLE_RXT = """IAD1  # Must be first four characters
 
 BIOPIX_851_RXT = SINGLE_ROW_VARIABLE_RXT.replace("0.9\n", "-0.5\n")
 
+TWO_ROW_VARIABLE_RXT = SINGLE_ROW_VARIABLE_RXT.replace(
+    "851.930000 0.315087 0.606721   0.9\n",
+    "851.930000 0.315087 0.606721   0.9\n852.930000 0.314000 0.607000   0.9\n",
+)
+
+SINGLE_ROW_TU_RXT = SINGLE_ROW_VARIABLE_RXT.replace(
+    "    L         r       t        g\n851.930000 0.315087 0.606721   0.9\n",
+    "    L         t        u\n851.930000 0.606721 0.011859\n",
+)
+
+SINGLE_ROW_RU_RXT = SINGLE_ROW_VARIABLE_RXT.replace(
+    "    L         r       t        g\n851.930000 0.315087 0.606721   0.9\n",
+    "    L         r        u\n851.930000 0.315087 0.011859\n",
+)
+
 
 class TestCommandLineArgs(unittest.TestCase):
     """Tests for validator functions."""
@@ -95,6 +110,23 @@ class TestCommandLineArgs(unittest.TestCase):
 class TestIadFile(unittest.TestCase):
     """Tests for rxt files."""
 
+    def _run_single_row_rxt(self, rxt_text):
+        """Run a generated single-row .rxt file and return its output."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(rxt_text)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "0", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with self.assertRaises(SystemExit) as cm:
+                    iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            with open(out_file, encoding="utf-8") as fh:
+                return fh.read()
+
     def test_valid_arguments(self):
         """Simple test."""
         test_args = ["iadcommand.py", "data/basic-A.rxt"]
@@ -134,6 +166,20 @@ class TestIadFile(unittest.TestCase):
             with open(out_file, encoding="utf-8") as fh:
                 output = fh.read()
             self.assertIn(" 851.9", output)
+
+    def test_variable_file_with_transmission_and_unscattered_runs(self):
+        """Variable `L t u` files should treat omitted reflectance as zero."""
+        output = self._run_single_row_rxt(SINGLE_ROW_TU_RXT)
+
+        self.assertIn(" 851.9", output)
+        self.assertIn("   0.0000", output)
+
+    def test_variable_file_with_reflectance_and_unscattered_runs(self):
+        """Variable `L r u` files should treat omitted transmittance as zero."""
+        output = self._run_single_row_rxt(SINGLE_ROW_RU_RXT)
+
+        self.assertIn(" 851.9", output)
+        self.assertIn("   0.0000", output)
 
     def test_rxt_reflectance_standard_does_not_override_transmission_standard(self):
         """The .rxt header standard is reflection-only; CWEB leaves T standard at 1."""
@@ -189,6 +235,263 @@ class TestIadFile(unittest.TestCase):
             self.assertIn("---------------- Beginning New Search -----------------", debug_output)
             self.assertIn("Final amoeba/brent result after", debug_output)
             self.assertIn("Failed Search, too many iterations", debug_output)
+            with open(out_file, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), "")
+
+    def test_debug_grid_uses_cweb_decision_text(self):
+        """`-x 2` should emit CWEB-style grid decisions and reuse the grid."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "two-row.rxt")
+            out_file = os.path.join(tmpdir, "two-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(TWO_ROW_VARIABLE_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "0", "-x", "2", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                    with self.assertRaises(SystemExit) as cm:
+                        iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            debug_output = fake_stderr.getvalue()
+            self.assertIn("GRID: Fill because NULL", debug_output)
+            self.assertIn("GRID: Filling AB grid (g=0.90000)", debug_output)
+            self.assertEqual(debug_output.count("GRID: Fill because"), 1)
+            self.assertEqual(debug_output.count("GRID: Filling AB grid"), 1)
+            self.assertEqual(debug_output.count("GRID: Finding best grid points"), 2)
+            self.assertNotIn("grid constant", debug_output)
+            with open(out_file, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), "")
+
+    def test_debug_best_guess_uses_cweb_table(self):
+        """`-x 16` should emit the legacy best-grid simplex table."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(BIOPIX_851_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "0", "-x", "16", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                    with self.assertRaises(SystemExit) as cm:
+                        iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            debug_output = fake_stderr.getvalue()
+            self.assertIn("BEST: GRID GUESSES", debug_output)
+            self.assertIn("BEST:  k      albedo          b          g   distance", debug_output)
+            self.assertIn("BEST:  0     0.98963    0.72615   -0.50000    0.02724", debug_output)
+            self.assertIn("BEST: <1>    0.98963    0.72615   -0.50000    0.02724", debug_output)
+            self.assertIn("BEST: <2>    0.98599    0.72615   -0.50000    0.02744", debug_output)
+            self.assertIn("BEST: <3>    0.98599    0.85214   -0.50000    0.03701", debug_output)
+            self.assertIn("Successful Search", debug_output)
+            self.assertNotIn("grid constant", debug_output)
+            self.assertNotIn("GRID: Fill", debug_output)
+            with open(out_file, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), "")
+
+    def test_debug_best_guess_repeats_for_mc_iterations(self):
+        """`-x 16` should emit simplex points for every MC re-inversion."""
+
+        def _fake_update_lost_light(exp, _a, _b, _g):
+            exp.ur1_lost += 0.002
+            exp.ut1_lost += 0.002
+            exp.uru_lost += 0.001
+            exp.utu_lost += 0.001
+            return 0.002, 0.002, 0.002, 0.001, 0.001
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(BIOPIX_851_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "2", "-x", "16", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("iadcommand._discover_mc_lost_binary", return_value="/fake/mc_lost"):
+                    with patch.object(iadcommand.iadpython.Experiment, "_update_lost_light", _fake_update_lost_light):
+                        with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                            with self.assertRaises(SystemExit) as cm:
+                                iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            debug_output = fake_stderr.getvalue()
+            self.assertEqual(debug_output.count("BEST: GRID GUESSES"), 3)
+            self.assertEqual(debug_output.count("BEST: <1>"), 3)
+            self.assertEqual(debug_output.count("BEST: <2>"), 3)
+            self.assertEqual(debug_output.count("BEST: <3>"), 3)
+            self.assertNotIn("hot start", debug_output)
+            with open(out_file, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), "")
+
+    def test_debug_search_uses_cweb_decision_trace(self):
+        """`-x 32` should emit the CWEB search-selection trace."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(BIOPIX_851_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "0", "-x", "32", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                    with self.assertRaises(SystemExit) as cm:
+                        iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            debug_output = fake_stderr.getvalue()
+            self.assertIn("SEARCH: starting with 2 measurement(s)", debug_output)
+            self.assertIn("SEARCH:      and with 1 constraint(s)", debug_output)
+            self.assertIn("            anisotropy constrained", debug_output)
+            self.assertIn("SEARCH: m_r =  0.31509 m_t =  0.60672 m_u =  0.00000", debug_output)
+            self.assertIn("SEARCH:  rt =  0.31509  rd =  0.29233  ru =  0.02276", debug_output)
+            self.assertIn("SEARCH:  tt =  0.60672  td =  0.60672  tu =  0.00000", debug_output)
+            self.assertIn("SEARCH: ending with 2 measurement(s)", debug_output)
+            self.assertIn("SEARCH:    and with 1 constraint(s)", debug_output)
+            self.assertIn("SEARCH: final choice for search = FIND_AB", debug_output)
+            self.assertIn("SEARCH: Using U_Find_AB() mu=1.00, g=   -0.500 (constrained g)", debug_output)
+            self.assertNotIn("automatic search ->", debug_output)
+            self.assertNotIn("search override ->", debug_output)
+            with open(out_file, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), "")
+
+    def test_debug_search_repeats_routine_for_mc_iterations(self):
+        """`-x 32 -M 2` should print one decision trace and three routine lines."""
+
+        def _fake_update_lost_light(exp, _a, _b, _g):
+            exp.ur1_lost += 0.002
+            exp.ut1_lost += 0.002
+            exp.uru_lost += 0.001
+            exp.utu_lost += 0.001
+            return 0.002, 0.002, 0.002, 0.001, 0.001
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(BIOPIX_851_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "2", "-x", "32", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("iadcommand._discover_mc_lost_binary", return_value="/fake/mc_lost"):
+                    with patch.object(iadcommand.iadpython.Experiment, "_update_lost_light", _fake_update_lost_light):
+                        with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                            with self.assertRaises(SystemExit) as cm:
+                                iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            debug_output = fake_stderr.getvalue()
+            self.assertEqual(debug_output.count("SEARCH: starting with"), 1)
+            self.assertEqual(debug_output.count("SEARCH: final choice for search = FIND_AB"), 1)
+            self.assertEqual(debug_output.count("SEARCH: Using U_Find_AB()"), 3)
+            self.assertNotIn("automatic search ->", debug_output)
+            with open(out_file, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), "")
+
+    def test_debug_grid_calc_uses_cweb_grid_dump(self):
+        """`-x 64` should emit the legacy dense grid calculation table."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(BIOPIX_851_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "0", "-x", "64", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                    with self.assertRaises(SystemExit) as cm:
+                        iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            debug_output = fake_stderr.getvalue()
+            self.assertIn(
+                "+   i   j       a         b          g     |"
+                "     M_R        grid  |     M_T        grid",
+                debug_output,
+            )
+            self.assertIn(
+                "+   i   j       a         b          g     |"
+                "     M_R        grid   |     M_T        grid   |  distance",
+                debug_output,
+            )
+            self.assertIn(
+                "g   0   0    0.00000     0.0003   -0.50000 |"
+                "    0.31509    0.04450 |    0.60672    0.95663 |     0.621",
+                debug_output,
+            )
+            self.assertIn(
+                "g  48  94    0.98963     0.7261   -0.50000 |"
+                "    0.31509    0.31476 |    0.60672    0.63364 |     0.027",
+                debug_output,
+            )
+            grid_rows = [line for line in debug_output.splitlines() if line.startswith("g ")]
+            self.assertEqual(len(grid_rows), 10210)
+            self.assertNotIn("recomputing grid", debug_output)
+            self.assertNotIn("recomputing adaptive grid", debug_output)
+            with open(out_file, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), "")
+
+    def test_debug_a_little_uses_cweb_summary_shape(self):
+        """`-x 1` should emit the compact CWEB final summary."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(SINGLE_ROW_TU_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "0", "-x", "1", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                    with self.assertRaises(SystemExit) as cm:
+                        iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            debug_output = fake_stderr.getvalue()
+            self.assertIn("-------------------NEXT DATA POINT---------------------", debug_output)
+            self.assertIn("AD iterations=", debug_output)
+            self.assertIn("MC iterations=", debug_output)
+            self.assertIn("M_R no corrections", debug_output)
+            self.assertIn("M_R + sphere", debug_output)
+            self.assertIn("M_R + sphere + mc", debug_output)
+            self.assertIn("M_R measured", debug_output)
+            self.assertIn("Final distance", debug_output)
+            self.assertIn("Failed Search, M_R is too small", debug_output)
+            self.assertNotIn("measured_rt corrections", debug_output)
+            with open(out_file, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), "")
+
+    def test_debug_a_little_shows_mc_iteration_zero_before_mc_loop(self):
+        """`-x 1 -M 1` should show the initial CWEB-style MC iteration 0 summary."""
+
+        def _fake_update_lost_light(exp, _a, _b, _g):
+            exp.ur1_lost = 0.002
+            exp.ut1_lost = 0.002
+            exp.uru_lost = 0.001
+            exp.utu_lost = 0.001
+            return 0.002, 0.002, 0.002, 0.001, 0.001
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(SINGLE_ROW_VARIABLE_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "1", "-x", "1", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("iadcommand._discover_mc_lost_binary", return_value="/fake/mc_lost"):
+                    with patch.object(iadcommand.iadpython.Experiment, "_update_lost_light", _fake_update_lost_light):
+                        with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                            with self.assertRaises(SystemExit) as cm:
+                                iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            debug_output = fake_stderr.getvalue()
+            iteration_zero = debug_output.index("MC iterations=  0")
+            mc_header = debug_output.index("------------- Monte Carlo Iteration 1 -----------------")
+            iteration_one = debug_output.index("MC iterations=  1")
+            self.assertLess(iteration_zero, mc_header)
+            self.assertLess(mc_header, iteration_one)
             with open(out_file, encoding="utf-8") as fh:
                 self.assertEqual(fh.read(), "")
 

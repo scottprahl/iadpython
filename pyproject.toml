@@ -101,6 +101,9 @@ testpaths = ["tests"]
 addopts = [
     "--ignore=tests/test_all_notebooks.py",
 ]
+markers = [
+    "slow: tests that take a long time (deselect with '-m \"not slow\"')",
+]
 
 [tool.pylint]
 disable = [
