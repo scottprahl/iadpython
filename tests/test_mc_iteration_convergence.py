@@ -43,7 +43,7 @@ def test_mc_iteration_waits_for_mu_stability(monkeypatch):
         exp.sample.g = g
         return a, b, g
 
-    def fake_update_lost_light(_a, _b, _g):
+    def fake_update_lost_light(_a, _b, _g, **_kw):
         return next(updates)
 
     monkeypatch.setattr(exp, "invert_scalar_rt", fake_invert_scalar_rt)
@@ -81,7 +81,7 @@ def test_mc_iteration_honors_direct_loss_guard(monkeypatch):
         exp.sample.g = g
         return a, b, g
 
-    def fake_update_lost_light(_a, _b, _g):
+    def fake_update_lost_light(_a, _b, _g, **_kw):
         return next(updates)
 
     monkeypatch.setattr(exp, "invert_scalar_rt", fake_invert_scalar_rt)

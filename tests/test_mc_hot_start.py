@@ -129,7 +129,7 @@ class TestFirstPassAbg(unittest.TestCase):
         exp.max_mc_iterations = 1
         exp.num_spheres = 1
 
-        def _fake_update(_a, _b, _g):
+        def _fake_update(_a, _b, _g, **_kw):
             # Inject a tiny non-zero lost-light perturbation
             exp.ur1_lost = 0.002
             exp.ut1_lost = 0.002
@@ -170,7 +170,7 @@ class TestWarmStartIsPreviousSolution(unittest.TestCase):
             recorded_hot_starts.append(hot_start)
             return original_isr(hot_start=hot_start, initial_simplex=initial_simplex)
 
-        def _fake_update(_a, _b, _g):
+        def _fake_update(_a, _b, _g, **_kw):
             exp.ur1_lost = 0.001
             exp.ut1_lost = 0.001
             exp.uru_lost = 0.0005
@@ -211,7 +211,7 @@ class TestGridPreservedAcrossMCIterations(unittest.TestCase):
         grid_states_after_update = []
         call_count = 0
 
-        def _fake_update(_a, _b, _g):
+        def _fake_update(_a, _b, _g, **_kw):
             nonlocal call_count
             call_count += 1
             exp.ur1_lost = 0.001 * call_count

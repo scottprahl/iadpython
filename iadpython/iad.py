@@ -1666,7 +1666,7 @@ class Experiment:
         print(".", end="", file=sys.stderr)
         sys.stderr.flush()
 
-    def _update_lost_light(self, a, b, g):
+    def _update_lost_light(self, a, b, g, n_photons_override=None):
         """Call mc_lost binary once; apply damped update to lost fractions.
 
         Uses the current sphere geometry and sample parameters to assemble the
@@ -1677,6 +1677,7 @@ class Experiment:
             a: albedo from the most recent invert_scalar_rt() call
             b: optical thickness from the most recent invert_scalar_rt() call
             g: anisotropy from the most recent invert_scalar_rt() call
+            n_photons_override: if given, use this photon count instead of self.n_photons
 
         Returns:
             Tuple of:
@@ -1693,6 +1694,7 @@ class Experiment:
         d_port_r = float(self.r_sphere.sample.d) if self.r_sphere is not None else 1000.0
         d_port_t = float(self.t_sphere.sample.d) if self.t_sphere is not None else d_port_r
 
+        n_ph = int(n_photons_override) if n_photons_override is not None else int(self.n_photons)
         new_ur1, new_ut1, new_uru, new_utu = run_mc_lost(
             a=float(a),
             b=float(b),
@@ -1704,7 +1706,7 @@ class Experiment:
             d_beam=float(self.d_beam),
             t_sample=t_sample,
             t_slide=float(self.t_slide),
-            n_photons=int(self.n_photons),
+            n_photons=n_ph,
             method=self.method,
             binary_path=self.mc_lost_path,
         )
@@ -1716,7 +1718,7 @@ class Experiment:
                 f"n_sample={n_sample:.5f} n_slide={n_slide:.5f} "
                 f"d_port_r={d_port_r:.5f} d_port_t={d_port_t:.5f} "
                 f"d_beam={float(self.d_beam):.5f} t_sample={t_sample:.5f} "
-                f"t_slide={float(self.t_slide):.5f} n_photons={int(self.n_photons)} "
+                f"t_slide={float(self.t_slide):.5f} n_photons={n_ph} "
                 f"method={self.method}",
                 file=sys.stderr,
             )
@@ -1778,7 +1780,19 @@ class Experiment:
         if self.mc_lost_path is None or self.num_spheres == 0:
             return a, b, g
 
+        # Best-so-far tracking: the MC iteration can overshoot the physical boundary
+        # (a → 1) and produce a worse fit than an earlier iteration.  Track the minimum
+        # residual (preferring found=True) and restore it at the end if needed.
+        _best_a, _best_b, _best_g = a, b, g
+        _best_found = self.found
+        _best_dist = self.final_distance if self.final_distance is not None else np.inf
+        _best_ur1 = self.ur1_lost
+        _best_ut1 = self.ut1_lost
+        _best_uru = self.uru_lost
+        _best_utu = self.utu_lost
+
         previous_delta = None  # per-axis |Δparam| from the last MC stage; None on first pass
+        _prev_diff_ur1 = None  # diff_ur1 from the previous iteration, for photon escalation
 
         for _ in range(self.max_mc_iterations):
             last_mu_a, last_mu_sp = self._current_optical_coefficients()
@@ -1788,7 +1802,20 @@ class Experiment:
                     f"\n------------- Monte Carlo Iteration {self._mc_iterations + 1} -----------------",
                     file=sys.stderr,
                 )
-            max_diff, diff_ur1, diff_ut1, _diff_uru, _diff_utu = self._update_lost_light(a, b, g)
+            # Adaptive photon escalation: use fewer photons when corrections are large
+            # (early iterations) and more photons when corrections have nearly settled
+            # (final iterations), concentrating the photon budget where it matters.
+            if _prev_diff_ur1 is None or _prev_diff_ur1 > 0.01:
+                # Early: corrections still large, cheap run is fine
+                _n_ph_this = max(self.n_photons // 10, 10_000)
+            elif _prev_diff_ur1 > 0.001:
+                # Middle: corrections settling, use base photon count
+                _n_ph_this = self.n_photons
+            else:
+                # Final: corrections nearly converged, use more photons for cleaner AD landscape
+                _n_ph_this = min(self.n_photons * 5, 10_000_000)
+            max_diff, diff_ur1, diff_ut1, _diff_uru, _diff_utu = self._update_lost_light(a, b, g, n_photons_override=_n_ph_this)
+            _prev_diff_ur1 = diff_ur1
             # Build an adaptive initial simplex centred on the current solution.
             # Step sizes shrink proportionally to the previous iteration's parameter
             # movement, falling back to fixed defaults on the first MC stage.
@@ -1811,6 +1838,17 @@ class Experiment:
             mu_a, mu_sp = self._current_optical_coefficients()
             self._debug_lost_light_row()
 
+            # Update best-so-far: prefer found=True; among equal found status prefer smaller dist.
+            _cur_dist = self.final_distance if self.final_distance is not None else np.inf
+            if (self.found and not _best_found) or (self.found == _best_found and _cur_dist < _best_dist):
+                _best_a, _best_b, _best_g = a, b, g
+                _best_found = self.found
+                _best_dist = _cur_dist
+                _best_ur1 = self.ur1_lost
+                _best_ut1 = self.ut1_lost
+                _best_uru = self.uru_lost
+                _best_utu = self.utu_lost
+
             # Determine whether the direct lost-light terms are still moving.
             # Must be computed before the convergence gate so both branches can use it.
             too_much_lost = diff_ur1 > 0.001 or diff_ut1 > 0.001
@@ -1823,14 +1861,6 @@ class Experiment:
                     # Corrections are still moving — not yet at the fixed point.
                     self._debug(DEBUG_ITERATIONS, "Repeat MC because lost-light corrections are still moving")
                     continue
-                # Corrections are stable (too_much_lost=False). Check whether mu_a
-                # and mu_sp are also stable — if so the MC fixed point is reached and
-                # the AD optimizer's near-miss of its tight tolerance is just noise.
-                if (mu_a is not None and last_mu_a is not None and mu_sp is not None and last_mu_sp is not None):
-                    if abs(last_mu_a - mu_a) <= self.MC_tolerance and abs(last_mu_sp - mu_sp) <= self.MC_tolerance:
-                        self.found = True
-                        self._debug(DEBUG_ITERATIONS, "found! (MC fixed point: corrections and properties stable)")
-                        break
                 if last_final_distance - self.final_distance < self.MC_tolerance:
                     self._debug(DEBUG_ITERATIONS, "MC does not make things better")
                     break
@@ -1857,6 +1887,24 @@ class Experiment:
 
             self._debug(DEBUG_ITERATIONS, "found!")
             break
+
+        # Restore the best solution found across all MC iterations.
+        # This handles the case where the iteration overshoots the physical boundary
+        # (e.g. a → 1) and a better solution existed at an earlier iteration.
+        _cur_dist = self.final_distance if self.final_distance is not None else np.inf
+        _need_restore = (_best_found and not self.found) or (_best_found == self.found and _best_dist < _cur_dist)
+        if _need_restore:
+            self._debug(DEBUG_ITERATIONS, "Restoring best MC solution from earlier iteration")
+            a, b, g = _best_a, _best_b, _best_g
+            self.found = _best_found
+            self.final_distance = _best_dist
+            self.ur1_lost = _best_ur1
+            self.ut1_lost = _best_ut1
+            self.uru_lost = _best_uru
+            self.utu_lost = _best_utu
+            self.sample.a = float(a)
+            self.sample.b = float(b)
+            self.sample.g = float(g)
 
         return a, b, g
 

@@ -209,6 +209,23 @@ class TestIadFile(unittest.TestCase):
         self.assertEqual(len(data_lines[0].split()), 9)
         self.assertRegex(data_lines[0], r"\s\*\s*$")
 
+    def test_file_output_reports_progress_status_to_stderr(self):
+        """Each non-debug file row should emit iad-style progress to stderr."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "two-row.rxt")
+            out_file = os.path.join(tmpdir, "two-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(TWO_ROW_VARIABLE_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "0", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                    with self.assertRaises(SystemExit) as cm:
+                        iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            self.assertEqual(fake_stderr.getvalue(), "**")
+
     def test_rxt_reflectance_standard_does_not_override_transmission_standard(self):
         """The .rxt header standard is reflection-only; CWEB leaves T standard at 1."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -320,7 +337,7 @@ class TestIadFile(unittest.TestCase):
     def test_debug_best_guess_repeats_for_mc_iterations(self):
         """`-x 16` should emit simplex points for every MC re-inversion."""
 
-        def _fake_update_lost_light(exp, _a, _b, _g):
+        def _fake_update_lost_light(exp, _a, _b, _g, **_kw):
             exp.ur1_lost += 0.002
             exp.ut1_lost += 0.002
             exp.uru_lost += 0.001
@@ -383,7 +400,7 @@ class TestIadFile(unittest.TestCase):
     def test_debug_search_repeats_routine_for_mc_iterations(self):
         """`-x 32 -M 2` should print one decision trace and three routine lines."""
 
-        def _fake_update_lost_light(exp, _a, _b, _g):
+        def _fake_update_lost_light(exp, _a, _b, _g, **_kw):
             exp.ur1_lost += 0.002
             exp.ut1_lost += 0.002
             exp.uru_lost += 0.001
@@ -519,7 +536,7 @@ class TestIadFile(unittest.TestCase):
     def test_debug_a_little_shows_mc_iteration_zero_before_mc_loop(self):
         """`-x 1 -M 1` should show the initial CWEB-style MC iteration 0 summary."""
 
-        def _fake_update_lost_light(exp, _a, _b, _g):
+        def _fake_update_lost_light(exp, _a, _b, _g, **_kw):
             exp.ur1_lost = 0.002
             exp.ut1_lost = 0.002
             exp.uru_lost = 0.001

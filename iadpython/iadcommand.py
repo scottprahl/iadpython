@@ -101,20 +101,20 @@ def print_dot(start_time, err, points, final, verbosity):
     if verbosity == 0:
         return
 
-    if final == 99:
-        print(what_char(err), end="")
+    if final:
+        print(what_char(err), end="", file=sys.stderr)
     else:
         COUNTER -= 1
-        print(f"{final % 10}\b", end="")
+        print(f"{points % 10}\b", end="", file=sys.stderr)
 
-    if final == 99:
+    if final:
         if COUNTER % 50 == 0:
-            rate = (time.time() - start_time) / points
-            print(f"  {points} done ({rate:.2f} s/pt)")
+            rate = (time.time() - start_time) / COUNTER
+            print(f"  {COUNTER:3d} done ({rate:.2f} s/pt)", file=sys.stderr)
         elif COUNTER % 10 == 0:
-            print(" ", end="")
+            print(" ", end="", file=sys.stderr)
 
-    sys.stdout.flush()
+    sys.stderr.flush()
 
 
 def validator_01(value):
@@ -1274,6 +1274,11 @@ def invert_file(exp, args):
     n_rows = _row_count(exp)
     debug_lost_light = bool(exp.debug_level & iadpython.DEBUG_LOST_LIGHT)
     last_point = None
+    start_time = time.time()
+    global COUNTER  # pylint: disable=global-statement
+    global ANY_ERROR  # pylint: disable=global-statement
+    COUNTER = 0
+    ANY_ERROR = False
 
     with open(args.out_fname, "w", encoding="utf-8") as output_stream, redirect_stdout(output_stream):
         if exp.verbosity > 0:
@@ -1292,6 +1297,8 @@ def invert_file(exp, args):
             print_result_row(point, line=i + 1, debug_lost_light=debug_lost_light, err=err)
             if point.debug_level:
                 print_debug_search_status(point)
+            else:
+                print_dot(start_time, err, n_rows, True, point.verbosity)
             last_point = point
 
         if getattr(args, "J", False) and last_point is not None:

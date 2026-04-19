@@ -134,6 +134,40 @@ def fill_in_data_variable(exp, data_in_columns, column_letters_str):
             raise ValueError('unimplemented column type "%s"' % letter)
 
 
+def _parse_iad_options_from_comments(filename):
+    """Scan rxt comment lines for embedded iad command-line options.
+
+    Lines matching ``# ... Use iad options ... -FLAG VALUE ...`` are parsed for
+    recognised flags and returned as a dict.  This allows rxt files that were
+    designed for the C iad binary with specific flags to encode those flags as
+    documentation comments that the Python parser can also honour.
+
+    Currently recognised flags:
+        -c VALUE   fraction of coherent reflectance collected (fraction_of_rc_in_mr)
+        -H VALUE   sphere baffle configuration  (0=none, 1=R, 2=T, 3=both)
+    """
+    opts = {}
+    with open(filename, encoding="utf-8") as f:
+        for line in f:
+            m = re.search(r"#.*[Uu]se iad options(.*)", line)
+            if not m:
+                continue
+            flag_str = m.group(1)
+            mc = re.search(r"-c\s+(\S+)", flag_str)
+            if mc:
+                try:
+                    opts["fraction_of_rc_in_mr"] = float(mc.group(1))
+                except ValueError:
+                    pass
+            mh = re.search(r"-H\s+(\S+)", flag_str)
+            if mh:
+                try:
+                    opts["H"] = int(mh.group(1))
+                except ValueError:
+                    pass
+    return opts
+
+
 def read_rxt(filename):
     """Read an IAD input file in .rxt format.
 
@@ -143,6 +177,7 @@ def read_rxt(filename):
     Returns:
         Experiment object
     """
+    iad_opts = _parse_iad_options_from_comments(filename)
     s = read_and_remove_notation(filename)
     x = s.split(" ")
 
@@ -212,5 +247,18 @@ def read_rxt(filename):
         exp.input_column_count = columns
         data_in_columns = data.reshape(-1, columns)
         fill_in_data_variable(exp, data_in_columns, column_letters_str)
+
+    # Apply iad command-line options embedded in comment lines.
+    # These take precedence over per-row column values only when no column
+    # for the same attribute is present in the data.
+    if "fraction_of_rc_in_mr" in iad_opts:
+        if "c" not in column_letters_str:
+            exp.fraction_of_rc_in_mr = iad_opts["fraction_of_rc_in_mr"]
+    if "H" in iad_opts:
+        h_val = iad_opts["H"]
+        if exp.r_sphere is not None:
+            exp.r_sphere.baffle = h_val in (1, 3)
+        if exp.t_sphere is not None:
+            exp.t_sphere.baffle = h_val in (2, 3)
 
     return exp
