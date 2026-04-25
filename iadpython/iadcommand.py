@@ -5,6 +5,7 @@ import os
 import copy
 import shutil
 import sys
+import datetime
 from enum import Enum
 import argparse
 from contextlib import redirect_stdout
@@ -380,10 +381,10 @@ arg_specs = [
     {"flags": ["-z"], "action": "store_true", "help": "Do forward calculation"},
     {
         "flags": ["filename"],
-        "nargs": "?",
+        "nargs": "*",
         "type": str,
-        "default": None,
-        "help": "Input filename",
+        "default": [],
+        "help": "Input filename(s)",
     },
 ]
 
@@ -452,6 +453,31 @@ def build_parser():
         other_args = {k: v for k, v in spec.items() if k != "flags"}
         parser.add_argument(*flags, **other_args)
     return parser
+
+
+def _input_filenames(args):
+    """Return positional input filenames, preserving old string-style args."""
+    filenames = args.filename
+    if filenames is None:
+        return []
+    if isinstance(filenames, str):
+        return [filenames]
+    return list(filenames)
+
+
+def _resolve_input_filename(filename):
+    """Return an input file to process, or None when the argument should be ignored."""
+    _root, ext = os.path.splitext(filename)
+    if os.path.isfile(filename):
+        if ext.lower() in ("", ".rxt"):
+            return filename
+        return None
+
+    candidate = filename + ".rxt"
+    if os.path.isfile(candidate):
+        return candidate
+
+    return None
 
 
 def _resolve_scattering_constraint(constraint, wavelength):
@@ -964,7 +990,6 @@ def _version_string():
     """
     ver = iadpython.__version__
     if "dev" in ver:
-        import datetime
         stamp = datetime.datetime.now().strftime("%H:%M on %-d %b %Y")
         return f"{ver} ({stamp})"
     return ver
@@ -1099,7 +1124,7 @@ def _debug_input_error(exp):
 
     if m_u < 0:
         return InputError.MU_TOO_SMALL
-    if m_t > 0 and m_u > m_t:
+    if 0 < m_t < m_u:
         return InputError.MU_TOO_BIG
     if not getattr(exp, "found", False):
         return InputError.TOO_MANY_ITERATIONS
@@ -1137,7 +1162,7 @@ def print_debug_search_status(exp):
 
 def _result_input_error(exp):
     """Return and store the one-character result status for an inversion."""
-    if getattr(exp, "debug_level", 0) and not (exp.debug_level & iadpython.DEBUG_A_LITTLE):
+    if getattr(exp, "debug_level", 0) and not exp.debug_level & iadpython.DEBUG_A_LITTLE:
         err = InputError.NO_ERROR if getattr(exp, "found", False) else InputError.TOO_MANY_ITERATIONS
     else:
         err = _debug_input_error(exp)
@@ -1195,8 +1220,9 @@ def _point_experiment(exp, index=None):
 
 def _grid_filename(args):
     """Return the output filename for `-J` grid generation."""
-    if args.filename:
-        root, _ext = os.path.splitext(args.filename)
+    filenames = _input_filenames(args)
+    if filenames:
+        root, _ext = os.path.splitext(filenames[0])
         return root + ".grid"
     if args.out_fname:
         root, _ext = os.path.splitext(args.out_fname)
@@ -1303,11 +1329,12 @@ def invert_file(exp, args):
     """Process an entire .rxt file."""
     # determine output file name
     if args.out_fname is None:
-        root, ext = os.path.splitext(args.filename)
+        filename = _input_filenames(args)[0]
+        root, ext = os.path.splitext(filename)
         if ext == ".rxt":
             args.out_fname = root + ".txt"
         else:
-            args.out_fname = args.filename + ".txt"
+            args.out_fname = filename + ".txt"
 
     exp = _filter_experiment_by_wavelength(exp, getattr(args, "l", None))
     n_rows = _row_count(exp)
@@ -1342,7 +1369,6 @@ def invert_file(exp, args):
 
         if getattr(args, "J", False) and last_point is not None:
             _write_grid_file(last_point, args)
-    sys.exit(0)
 
 
 def main():
@@ -1351,16 +1377,74 @@ def main():
 
     try:
         args = parser.parse_args()
+        filenames = _input_filenames(args)
 
         if args.v:
             print_version(args.V)
             sys.exit(0)
 
         # If there is a file then read it, otherwise create a blank experiment
-        if args.filename:
-            exp = iadpython.read_rxt(args.filename)
-        else:
-            exp = iadpython.Experiment()
+        if filenames:
+            resolved_filenames = []
+            for filename in filenames:
+                resolved = _resolve_input_filename(filename)
+                if resolved is not None:
+                    resolved_filenames.append(resolved)
+                    continue
+
+                _root, ext = os.path.splitext(filename)
+                if os.path.exists(filename) and ext != ".rxt":
+                    continue
+
+                raise argparse.ArgumentTypeError(f"Commandline: could not find {filename} or {filename}.rxt")
+
+            if not resolved_filenames:
+                sys.exit(0)
+
+            if args.out_fname is not None and len(resolved_filenames) > 1:
+                raise argparse.ArgumentTypeError("Commandline: -o cannot be used with multiple input files")
+
+            for filename in resolved_filenames:
+                file_args = copy.copy(args)
+                file_args.filename = [filename]
+                exp = iadpython.read_rxt(filename)
+
+                # update the search to include the command line constraints
+                add_sample_constraints(exp, file_args)
+                add_experiment_constraints(exp, file_args)
+                add_analysis_constraints(exp, file_args)
+
+                # follow iad behavior: sphere measurements default to substitution mode
+                if (
+                    np.isscalar(exp.num_spheres)
+                    and exp.num_spheres > 0
+                    and getattr(exp, "method", "unknown") == "unknown"
+                ):
+                    exp.method = "substitution"
+
+                if np.isscalar(exp.num_spheres) and exp.num_spheres > 0 and exp.max_mc_iterations > 0:
+                    exp.mc_lost_path = _discover_mc_lost_binary()
+                    if exp.mc_lost_path is None:
+                        raise RuntimeError("mc_lost binary not found. Build it with: cd iad && make mc_lost")
+
+                if getattr(exp, "method", "unknown") in ("comparison", 1):
+                    if np.isscalar(exp.num_spheres) and exp.num_spheres == 2:
+                        raise argparse.ArgumentTypeError(
+                            "Commandline: Dual beam (-X) cannot be used with double integrating spheres."
+                        )
+                    if getattr(exp, "f_r", 0.0) != 0:
+                        raise argparse.ArgumentTypeError(
+                            "Commandline: Dual beam (-X) cannot be used when -f is non-zero."
+                        )
+
+                if file_args.z:
+                    forward_calculation(exp)
+
+                invert_file(exp, file_args)
+
+            sys.exit(0)
+
+        exp = iadpython.Experiment()
 
         # update the search to include the command line constraints
         add_sample_constraints(exp, args)
@@ -1386,9 +1470,6 @@ def main():
 
         if args.z:
             forward_calculation(exp)
-
-        if args.filename:
-            invert_file(exp, args)
 
         if (exp.m_r is None) and (exp.m_t is None) and (exp.m_u is None):
             raise argparse.ArgumentTypeError("Commandline: One measurement needed or use '-z' for forward calc.")

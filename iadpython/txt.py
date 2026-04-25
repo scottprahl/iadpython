@@ -20,6 +20,7 @@ Example::
 """
 
 import os
+import io
 import re
 import numpy as np
 import iadpython
@@ -78,8 +79,6 @@ def read_iad_output_table(filename):
     Handles both iadp (tab-delimited) and iad/iad (space-delimited with ``|``
     pipe separators) output formats.
     """
-    import io
-
     processed = []
     with open(filename, encoding="utf-8") as fh:
         for line in fh:

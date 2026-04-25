@@ -795,9 +795,13 @@ class Experiment:
         print(f"SEARCH: final choice for search = {search_name}", file=sys.stderr)
         self._debug_search_reported = True
 
+    def reset_debug_search_reported(self):
+        """Reset the CWEB DEBUG_SEARCH final search marker."""
+        self._debug_search_reported = False
+
     def _debug_search_using(self):
         """Emit the CWEB DEBUG_SEARCH line for the selected inverse routine."""
-        if not (self.debug_level & DEBUG_SEARCH):
+        if not self.debug_level & DEBUG_SEARCH:
             return
 
         mu = float(self.sample.nu_0)
@@ -929,7 +933,7 @@ class Experiment:
 
     def _debug_search_header(self):
         """Emit the CWEB-style inverse-search header for ``-x 4``."""
-        if not (self.debug_level & DEBUG_ITERATIONS):
+        if not self.debug_level & DEBUG_ITERATIONS:
             return
         distance_name = "relative distance" if self.metric == 0 else "absolute distance"
         print("---------------- Beginning New Search -----------------", file=sys.stderr)
@@ -942,7 +946,7 @@ class Experiment:
 
     def _debug_iteration_row(self, m_r_calc=None, m_t_calc=None, distance=None):
         """Emit one CWEB-style objective row for ``-x 4``."""
-        if not (self.debug_level & DEBUG_ITERATIONS):
+        if not self.debug_level & DEBUG_ITERATIONS:
             return
 
         if m_r_calc is None or m_t_calc is None or distance is None:
@@ -966,7 +970,7 @@ class Experiment:
 
     def _debug_lost_light_header(self):
         """Emit the CWEB-style lost-light table header for ``-x 8``."""
-        if not (self.debug_level & DEBUG_LOST_LIGHT):
+        if not self.debug_level & DEBUG_LOST_LIGHT:
             return
         print(
             "#      | Meas      M_R  | Meas      M_T  |  calc   calc   calc  |"
@@ -987,7 +991,7 @@ class Experiment:
 
     def _debug_lost_light_row(self, line=0):
         """Emit one CWEB-style lost-light result row for ``-x 8``."""
-        if not (self.debug_level & DEBUG_LOST_LIGHT):
+        if not self.debug_level & DEBUG_LOST_LIGHT:
             return
 
         m_r_fit, m_t_fit = self.measured_rt()
@@ -1088,7 +1092,7 @@ class Experiment:
         point.grid = None
         point.include_measurements = False
         point.first_pass_abg = None
-        point._debug_search_reported = False
+        point.reset_debug_search_reported()
         return point
 
     def _debug_single_sphere_reflection(self, ur1, uru, ru, m_r, include_lost, stream=None):
@@ -1442,7 +1446,7 @@ class Experiment:
         #        print('     b = ', self.sample.b)
         #        print('     g = ', self.sample.g)
 
-        if self.debug_level & DEBUG_SPHERE_GAIN and not (self.debug_level & DEBUG_ITERATIONS):
+        if self.debug_level & DEBUG_SPHERE_GAIN and not self.debug_level & DEBUG_ITERATIONS:
             self.measured_rt()
             self.measured_rt()
 
@@ -1790,7 +1794,6 @@ class Experiment:
 
         for _ in range(self.max_mc_iterations):
             last_mu_a, last_mu_sp = self._current_optical_coefficients()
-            last_final_distance = self.final_distance
             if self.debug_level & (DEBUG_ITERATIONS | DEBUG_A_LITTLE):
                 print(
                     f"\n------------- Monte Carlo Iteration {self._mc_iterations + 1} -----------------",
@@ -1808,7 +1811,9 @@ class Experiment:
             else:
                 # Final: corrections nearly converged, use more photons for cleaner AD landscape
                 _n_ph_this = min(self.n_photons * 5, 10_000_000)
-            max_diff, diff_ur1, diff_ut1, _diff_uru, _diff_utu = self._update_lost_light(a, b, g, n_photons_override=_n_ph_this)
+            max_diff, diff_ur1, diff_ut1, _diff_uru, _diff_utu = self._update_lost_light(
+                a, b, g, n_photons_override=_n_ph_this
+            )
             _prev_diff_ur1 = diff_ur1
             # Build an adaptive initial simplex centred on the current solution.
             # Step sizes shrink proportionally to the previous iteration's parameter

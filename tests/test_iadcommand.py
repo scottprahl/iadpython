@@ -162,6 +162,49 @@ class TestIadFile(unittest.TestCase):
             if os.path.exists(out_file):
                 os.remove(out_file)
 
+    def test_extensionless_filename_falls_back_to_rxt(self):
+        """`iadp name` should use `name.rxt` when `name` is absent."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_root = os.path.join(tmpdir, "single-row")
+            sample_file = sample_root + ".rxt"
+            out_file = sample_root + ".txt"
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(SINGLE_ROW_VARIABLE_RXT)
+
+            test_args = ["iadcommand.py", sample_root, "-M", "0"]
+            with patch("sys.argv", test_args):
+                with self.assertRaises(SystemExit) as cm:
+                    iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            self._assert_result_file_has_header_and_rows(out_file)
+
+    def test_multiple_inputs_processes_rxt_files_and_ignores_others(self):
+        """Expanded globs should process .rxt inputs sequentially and ignore non-.rxt files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            first_file = os.path.join(tmpdir, "first.rxt")
+            ignored_file = os.path.join(tmpdir, "ignored.txt")
+            second_file = os.path.join(tmpdir, "second.rxt")
+            ignored_dir = os.path.join(tmpdir, "subdir")
+            os.mkdir(ignored_dir)
+            with open(first_file, "w", encoding="utf-8") as fh:
+                fh.write(SINGLE_ROW_VARIABLE_RXT)
+            with open(ignored_file, "w", encoding="utf-8") as fh:
+                fh.write("not an rxt file")
+            with open(second_file, "w", encoding="utf-8") as fh:
+                fh.write(BIOPIX_851_RXT)
+
+            test_args = ["iadcommand.py", first_file, ignored_file, ignored_dir, second_file, "-M", "0"]
+            with patch("sys.argv", test_args):
+                with self.assertRaises(SystemExit) as cm:
+                    iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            self._assert_result_file_has_header_and_rows(os.path.join(tmpdir, "first.txt"))
+            self._assert_result_file_has_header_and_rows(os.path.join(tmpdir, "second.txt"))
+            with open(ignored_file, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), "not an rxt file")
+
     def test_single_row_variable_file_uses_scalar_values(self):
         """Single-row variable files should not pass length-1 arrays to scalar inversion."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -248,7 +291,7 @@ class TestIadFile(unittest.TestCase):
                 fh.write(BIOPIX_851_RXT)
 
             args = iadcommand.build_parser().parse_args(["-c", "0", "-M", "0", sample_file])
-            exp = iadcommand.iadpython.read_rxt(args.filename)
+            exp = iadcommand.iadpython.read_rxt(iadcommand._input_filenames(args)[0])  # pylint: disable=protected-access
             iadcommand.add_sample_constraints(exp, args)
             iadcommand.add_experiment_constraints(exp, args)
             iadcommand.add_analysis_constraints(exp, args)
