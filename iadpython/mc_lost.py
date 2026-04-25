@@ -35,6 +35,8 @@ Typical usage::
 import shlex
 import subprocess
 
+import numpy as np
+
 
 def run_mc_lost(
     a,
@@ -49,6 +51,7 @@ def run_mc_lost(
     t_sample=1.0,
     t_slide=0.0,
     n_photons=100_000,
+    seed=12345678,
     method="substitution",
     binary_path="mc_lost",
 ):
@@ -88,6 +91,9 @@ def run_mc_lost(
         i.e. no slide).  Only meaningful when n_slide != 1.0.
     n_photons : int
         Number of photons per MC run (default 100 000).
+    seed : int
+        Random seed passed to the mc_lost binary via ``-s``.  Use 0 to seed
+        from the current time (non-reproducible).  Default 12345678.
     method : str
         'substitution' or 'comparison'.  When not 'substitution', uru_lost
         and utu_lost are forced to 0.0, mirroring the C implementation.
@@ -132,6 +138,8 @@ def run_mc_lost(
             f"{float(t_slide):.8g}",
             "-p",
             str(int(n_photons)),
+            "-s",
+            str(int(seed)),
             "-m",
         ]
         if collimated_only:
@@ -182,3 +190,75 @@ def run_mc_lost(
         utu_lost = 0.0
 
     return ur1_lost, ut1_lost, uru_lost, utu_lost
+
+
+def run_mc_lost_with_stderr(
+    a,
+    b,
+    g,
+    *,
+    n_sample=1.0,
+    n_slide=1.0,
+    d_port_r,
+    d_port_t,
+    d_beam=5.0,
+    t_sample=1.0,
+    t_slide=0.0,
+    n_photons=100_000,
+    n_repeats=10,
+    initial_seed=12345678,
+    method="substitution",
+    binary_path="mc_lost",
+):
+    """Run mc_lost n_repeats times and return mean and standard error of the four lost-light fractions.
+
+    Divides n_photons by n_repeats so that total photon budget is preserved,
+    then estimates the statistical uncertainty via the standard error of the mean.
+    Each repeat uses a distinct seed: initial_seed, initial_seed+1, ..., initial_seed+n_repeats-1.
+    Use initial_seed=0 to seed each run from the current time instead.
+
+    Parameters
+    ----------
+    a, b, g, n_sample, n_slide, d_port_r, d_port_t, d_beam, t_sample, t_slide,
+    n_photons, method, binary_path :
+        Same as :func:`run_mc_lost`.
+    n_repeats : int
+        Number of independent mc_lost runs (default 10).  Each run uses
+        ``n_photons // n_repeats`` photons.
+    initial_seed : int
+        Seed for the first run.  Subsequent runs use initial_seed+1, +2, etc.
+        Use 0 to seed each run from the current time (non-reproducible).
+
+    Returns
+    -------
+    means : tuple[float, float, float, float]
+        ``(ur1_lost, ut1_lost, uru_lost, utu_lost)`` — mean over all runs.
+    stderrs : tuple[float, float, float, float]
+        Standard error of the mean for each quantity.
+    """
+    n_per_run = max(1, int(n_photons) // n_repeats)
+    results = []
+    for i in range(n_repeats):
+        run_seed = 0 if initial_seed == 0 else initial_seed + i
+        results.append(
+            run_mc_lost(
+                a,
+                b,
+                g,
+                n_sample=n_sample,
+                n_slide=n_slide,
+                d_port_r=d_port_r,
+                d_port_t=d_port_t,
+                d_beam=d_beam,
+                t_sample=t_sample,
+                t_slide=t_slide,
+                n_photons=n_per_run,
+                seed=run_seed,
+                method=method,
+                binary_path=binary_path,
+            )
+        )
+    arr = np.array(results, dtype=float)  # shape (n_repeats, 4)
+    means = tuple(arr.mean(axis=0).tolist())
+    stderrs = tuple((arr.std(axis=0, ddof=1) / np.sqrt(n_repeats)).tolist())
+    return means, stderrs

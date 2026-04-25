@@ -685,6 +685,18 @@ class TestExperimentConstraints(unittest.TestCase):
         self.assertEqual(exp.r_sphere.r_std, 0.91)
         self.assertEqual(exp.t_sphere.r_std, 0.91)
 
+    def test_beam_diameter_sets_d_beam(self):
+        """`-B` should set exp.d_beam."""
+        exp = iadcommand.iadpython.Experiment()
+        args = argparse.Namespace(
+            S=None, r_sphere=None, t_sphere=None,
+            diameter=3.0, r=None, t=None, u=None,
+        )
+
+        iadcommand.add_experiment_constraints(exp, args)
+
+        self.assertAlmostEqual(exp.d_beam, 3.0)
+
     def test_baffle_wall_and_lambda_overrides_are_applied(self):
         """`-H`, `-w`, `-W`, and `-L` should update the experiment like iad."""
         exp = iadcommand.iadpython.Experiment(
@@ -759,6 +771,15 @@ class TestAnalysisConstraints(unittest.TestCase):
         self.assertEqual(exp.search_override, "find_ba")
         self.assertEqual(exp.verbosity, 1)
 
+    def test_unscattered_transmission_fraction_sets_f_t(self):
+        """`-C` should set exp.fraction_of_tc_in_mt."""
+        exp = iadcommand.iadpython.Experiment()
+        args = self._base_analysis_args(f_t=0.7)
+
+        iadcommand.add_analysis_constraints(exp, args)
+
+        self.assertAlmostEqual(exp.fraction_of_tc_in_mt, 0.7)
+
     def test_mua_musp_constraints_fill_ba_and_bs(self):
         """`-A` and `-j` should populate optical-depth constraints."""
         exp = iadcommand.iadpython.Experiment()
@@ -817,6 +838,44 @@ class TestSampleConstraints(unittest.TestCase):
 
         with self.assertRaises(argparse.ArgumentTypeError):
             iadcommand.add_sample_constraints(exp, args)
+
+    def test_sample_thickness_sets_slab_d(self):
+        """`-d` should update exp.sample.d."""
+        exp = iadcommand.iadpython.Experiment()
+        args = self._base_sample_args(thickness=2.5)
+
+        iadcommand.add_sample_constraints(exp, args)
+
+        self.assertAlmostEqual(exp.sample.d, 2.5)
+
+    def test_slide_thickness_sets_both_sides(self):
+        """`-D` should set both d_above and d_below on the sample."""
+        exp = iadcommand.iadpython.Experiment()
+        args = self._base_sample_args(slide_thickness=1.0)
+
+        iadcommand.add_sample_constraints(exp, args)
+
+        self.assertAlmostEqual(exp.sample.d_above, 1.0)
+        self.assertAlmostEqual(exp.sample.d_below, 1.0)
+
+    def test_slide_optical_depth_sets_both_sides(self):
+        """`-E` should set b_above and b_below (optical depth = mua * thickness)."""
+        exp = iadcommand.iadpython.Experiment()
+        args = self._base_sample_args(E=0.05)
+
+        iadcommand.add_sample_constraints(exp, args)
+
+        self.assertAlmostEqual(exp.sample.b_above, 0.05)
+        self.assertAlmostEqual(exp.sample.b_below, 0.05)
+
+    def test_quadrature_points_sets_quad_pts(self):
+        """`-q` should set the quadrature point count on the sample."""
+        exp = iadcommand.iadpython.Experiment()
+        args = self._base_sample_args(q=16)
+
+        iadcommand.add_sample_constraints(exp, args)
+
+        self.assertEqual(exp.sample.quad_pts, 16)
 
 
 class TestIadCommandForward(unittest.TestCase):

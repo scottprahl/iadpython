@@ -65,15 +65,15 @@ def run_iadp(rxt_path, txt_path, options_str):
 def parse_iadp_txt(txt_path):
     """Read an ``iadp`` ``.txt`` output file and return arrays.
 
-    The ``iadp`` format has three ``#``-prefixed header lines followed by
+    The ``iadp`` format has a ``#``-prefixed metadata header followed by
     tab-separated data columns::
 
-        lam  mr  cr  mt  ct  mua  musp  g
+        lam  mr  cr  mt  ct  mua  musp  g  status
 
     Returns ``(lam, mr, cr, mt, ct, mua, musp, g, success)`` as numpy arrays.
-    ``success`` is True for rows where *mua* and *musp* are finite and ≥ 0.
+    ``success`` is True for rows with the legacy ``*`` status.
     """
-    arr = np.atleast_2d(np.loadtxt(txt_path, comments='#', delimiter='\t'))
+    arr, status = iadpython.read_iad_output_table(txt_path)
     cols = arr.T
     lam  = cols[0]
     mr   = cols[1]
@@ -83,7 +83,7 @@ def parse_iadp_txt(txt_path):
     mua  = cols[5]
     musp = cols[6]
     g    = cols[7]
-    success = np.isfinite(mua) & np.isfinite(musp) & (mua >= 0) & (musp >= 0)
+    success = status == '*'
     return lam, mr, cr, mt, ct, mua, musp, g, success
 
 

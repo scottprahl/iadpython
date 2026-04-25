@@ -3,6 +3,7 @@
 """Tests for NIST reflectance data."""
 
 import os
+import tempfile
 import unittest
 import iadpython
 
@@ -110,6 +111,21 @@ class TestTXT(unittest.TestCase):
         self.assertAlmostEqual(data.ct[0], 0.000000, delta=2e-4)
         self.assertAlmostEqual(data.mt[-1], 0.000000, delta=2e-4)
         self.assertAlmostEqual(data.ct[-1], 0.000000, delta=2e-4)
+
+    def test_iad_output_table_reads_row_status(self):
+        """The numeric reader should ignore the legacy status column."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            filename = os.path.join(tmpdir, "status.txt")
+            with open(filename, "w", encoding="utf-8") as handle:
+                handle.write("# result table\n")
+                handle.write(" 890.0\t0.3272\t0.3552\t0.5291\t0.5291\t0.0000\t1.3851\t0.5822\t + \n")
+                handle.write(" 898.3\t0.3233\t0.3233\t0.5281\t0.5280\t0.0104\t1.2499\t0.5773\t * \n")
+
+            numeric, status = iadpython.read_iad_output_table(filename)
+
+        self.assertEqual(numeric.shape, (2, 8))
+        self.assertAlmostEqual(numeric[0, 0], 890.0)
+        self.assertEqual(status.tolist(), ["+", "*"])
 
 
 if __name__ == "__main__":

@@ -1538,6 +1538,8 @@ class Experiment:
                         if self.debug_level & DEBUG_GRID:
                             _print_grid_fill_debug(self.search, grid_constant)
                         self.grid.calc(self, default=grid_constant, search=self.search)
+                        if self.debug_level & DEBUG_LOST_LIGHT:
+                            print(f"GRID: {self.sample.rt_evals} AD evaluations to fill the grid", file=sys.stderr)
                     else:
                         self.grid.exp = self
                 else:
@@ -1549,6 +1551,8 @@ class Experiment:
                         if debug_grid_calc:
                             _print_grid_calc_fill_header()
                         self.grid.calc(self, grid_constant)
+                        if self.debug_level & DEBUG_LOST_LIGHT:
+                            print(f"GRID: {self.sample.rt_evals} AD evaluations to fill the grid", file=sys.stderr)
 
                 if self.debug_level & DEBUG_GRID:
                     print("GRID: Finding best grid points", file=sys.stderr)
@@ -1670,8 +1674,7 @@ class Experiment:
         """Call mc_lost binary once; apply damped update to lost fractions.
 
         Uses the current sphere geometry and sample parameters to assemble the
-        mc_lost command.  Applies a damped update (factor 0.3, matching the C
-        implementation in iad_main.w) to avoid oscillation.
+        mc_lost command.  Applies a damped update (factor 0.3) to avoid oscillation.
 
         Args:
             a: albedo from the most recent invert_scalar_rt() call
@@ -1690,6 +1693,7 @@ class Experiment:
         n_sample = float(self.sample.n)
         n_slide = float(self.sample.n_above) if self.sample.n_above != 1.0 else 1.0
         t_sample = float(self.sample.d)
+        t_slide_val = float(self.sample.d_above) if self.sample.d_above is not None else float(self.t_slide)
 
         d_port_r = float(self.r_sphere.sample.d) if self.r_sphere is not None else 1000.0
         d_port_t = float(self.t_sphere.sample.d) if self.t_sphere is not None else d_port_r
@@ -1705,7 +1709,7 @@ class Experiment:
             d_port_t=d_port_t,
             d_beam=float(self.d_beam),
             t_sample=t_sample,
-            t_slide=float(self.t_slide),
+            t_slide=t_slide_val,
             n_photons=n_ph,
             method=self.method,
             binary_path=self.mc_lost_path,
@@ -1718,7 +1722,7 @@ class Experiment:
                 f"n_sample={n_sample:.5f} n_slide={n_slide:.5f} "
                 f"d_port_r={d_port_r:.5f} d_port_t={d_port_t:.5f} "
                 f"d_beam={float(self.d_beam):.5f} t_sample={t_sample:.5f} "
-                f"t_slide={float(self.t_slide):.5f} n_photons={n_ph} "
+                f"t_slide={t_slide_val:.5f} n_photons={n_ph} "
                 f"method={self.method}",
                 file=sys.stderr,
             )
@@ -1780,19 +1784,9 @@ class Experiment:
         if self.mc_lost_path is None or self.num_spheres == 0:
             return a, b, g
 
-        # Best-so-far tracking: the MC iteration can overshoot the physical boundary
-        # (a → 1) and produce a worse fit than an earlier iteration.  Track the minimum
-        # residual (preferring found=True) and restore it at the end if needed.
-        _best_a, _best_b, _best_g = a, b, g
-        _best_found = self.found
-        _best_dist = self.final_distance if self.final_distance is not None else np.inf
-        _best_ur1 = self.ur1_lost
-        _best_ut1 = self.ut1_lost
-        _best_uru = self.uru_lost
-        _best_utu = self.utu_lost
-
         previous_delta = None  # per-axis |Δparam| from the last MC stage; None on first pass
         _prev_diff_ur1 = None  # diff_ur1 from the previous iteration, for photon escalation
+        _mc_failed = False  # True if loop exited because AD failed to converge
 
         for _ in range(self.max_mc_iterations):
             last_mu_a, last_mu_sp = self._current_optical_coefficients()
@@ -1838,34 +1832,16 @@ class Experiment:
             mu_a, mu_sp = self._current_optical_coefficients()
             self._debug_lost_light_row()
 
-            # Update best-so-far: prefer found=True; among equal found status prefer smaller dist.
-            _cur_dist = self.final_distance if self.final_distance is not None else np.inf
-            if (self.found and not _best_found) or (self.found == _best_found and _cur_dist < _best_dist):
-                _best_a, _best_b, _best_g = a, b, g
-                _best_found = self.found
-                _best_dist = _cur_dist
-                _best_ur1 = self.ur1_lost
-                _best_ut1 = self.ut1_lost
-                _best_uru = self.uru_lost
-                _best_utu = self.utu_lost
-
             # Determine whether the direct lost-light terms are still moving.
             # Must be computed before the convergence gate so both branches can use it.
             too_much_lost = diff_ur1 > 0.001 or diff_ut1 > 0.001
 
-            # Match the CWEB iad_main.w convergence gate:
-            # 1. wait for optical properties to stabilize
-            # 2. keep iterating while direct lost-light terms are still moving
+            # If the AD inversion did not converge, stop immediately.
+            # More MC iterations will not fix a fundamentally non-convergent case.
             if self._last_invert_status_valid and not self.found:
-                if too_much_lost:
-                    # Corrections are still moving — not yet at the fixed point.
-                    self._debug(DEBUG_ITERATIONS, "Repeat MC because lost-light corrections are still moving")
-                    continue
-                if last_final_distance - self.final_distance < self.MC_tolerance:
-                    self._debug(DEBUG_ITERATIONS, "MC does not make things better")
-                    break
-                self._debug(DEBUG_ITERATIONS, "Repeat MC because distance is reduced")
-                continue
+                self._debug(DEBUG_ITERATIONS, "AD did not converge — stopping MC loop")
+                _mc_failed = True
+                break
 
             if mu_a is None or mu_sp is None or last_mu_a is None or last_mu_sp is None:
                 if max_diff < self.MC_tolerance:
@@ -1888,23 +1864,8 @@ class Experiment:
             self._debug(DEBUG_ITERATIONS, "found!")
             break
 
-        # Restore the best solution found across all MC iterations.
-        # This handles the case where the iteration overshoots the physical boundary
-        # (e.g. a → 1) and a better solution existed at an earlier iteration.
-        _cur_dist = self.final_distance if self.final_distance is not None else np.inf
-        _need_restore = (_best_found and not self.found) or (_best_found == self.found and _best_dist < _cur_dist)
-        if _need_restore:
-            self._debug(DEBUG_ITERATIONS, "Restoring best MC solution from earlier iteration")
-            a, b, g = _best_a, _best_b, _best_g
-            self.found = _best_found
-            self.final_distance = _best_dist
-            self.ur1_lost = _best_ur1
-            self.ut1_lost = _best_ut1
-            self.uru_lost = _best_uru
-            self.utu_lost = _best_utu
-            self.sample.a = float(a)
-            self.sample.b = float(b)
-            self.sample.g = float(g)
+        if _mc_failed:
+            self.found = False
 
         return a, b, g
 

@@ -1,7 +1,7 @@
-# Inverse Adding-Doubling 3-16-3 (18 Jul 2025) 
-# iad basic-A.rxt 
+# Inverse Adding-Doubling 0.7.0 
+# /Users/prahl/Documents/Code/git/iadpython/.venv/bin/iadp tests/data/basic-A.rxt 
 #                        Beam diameter =     0.1 mm
-#                     Sample thickness =   1.000 mm
+#                     Sample thickness = 100.000 mm
 #                  Top slide thickness =   1.000 mm
 #               Bottom slide thickness =   1.000 mm
 #           Sample index of refraction =  1.4000 mm
@@ -42,8 +42,8 @@
 #     	Measured 	   M_R   	Measured 	   M_T   	Estimated	Estimated	Estimated
 ##wave	   M_R   	   fit   	   M_T   	   fit   	  mu_a   	  mu_s'  	    g    
 # [nm]	  [---]  	  [---]  	  [---]  	  [---]  	  1/mm   	  1/mm   	  [---]  
-     1	   0.2993	   0.2993	   0.0000	   0.0000	   0.1008	   1.0000	   0.0000	 * 
-     2	   0.1722	   0.1722	   0.0000	   0.0000	   0.3022	   1.0000	   0.0000	 * 
-     3	   0.1308	   0.1308	   0.0000	   0.0000	   0.5036	   1.0000	   0.0000	 * 
-     4	   0.1096	   0.1096	   0.0000	   0.0000	   0.7049	   1.0000	   0.0000	 * 
-     5	   0.0966	   0.0966	   0.0000	   0.0000	   0.9062	   1.0000	   0.0000	 * 
+     1	   0.2993	   0.2993	   0.0000	   0.0000	   0.0916	   0.9084	   0.0000	 * 
+     2	   0.1722	   0.1722	   0.0000	   0.0000	   0.2321	   0.7679	   0.0000	 * 
+     3	   0.1308	   0.1308	   0.0000	   0.0000	   0.3349	   0.6651	   0.0000	 * 
+     4	   0.1096	   0.1096	   0.0000	   0.0000	   0.4135	   0.5865	   0.0000	 * 
+     5	   0.0966	   0.0966	   0.0000	   0.0000	   0.4754	   0.5246	   0.0000	 * 

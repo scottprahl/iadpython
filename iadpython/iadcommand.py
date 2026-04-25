@@ -404,16 +404,39 @@ def print_version(verbosity):
 
 def example_text():
     """Return a string with some command-line examples."""
-    s = ""
-    s += "Examples:\n"
-    s += "  iad file.rxt              Results will be put in file.txt\n"
-    s += "  iad file                  Same as above\n"
-    s += "  iad -c 0.9 file.rxt       Assume M_R includes 90%% of unscattered reflectance\n"
-    s += "  iad -C 0.8 file.rxt       Assume M_T includes 80%% of unscattered transmittance\n"
-    s += "  iad -e 0.0001 file.rxt    Better convergence to R & T values\n"
-    s += "  iad -f 1.0 file.rxt       All light hits reflectance sphere wall first\n"
-    s += "  iad -o out file.rxt       Calculated values in out\n"
-    s += "  iad -r 0.3                R_total=0.\n"
+    s = "Examples:\n"
+    s += "  iadp file.rxt              Results will be put in file.txt\n"
+    s += "  iadp file                  Same as above\n"
+    s += "  iadp -c 0.9 file.rxt       Assume M_R includes 90% of unscattered reflectance\n"
+    s += "  iadp -C 0.8 file.rxt       Assume M_T includes 80% of unscattered transmittance\n"
+    s += "  iadp -e 0.0001 file.rxt    Better convergence to R & T values\n"
+    s += "  iadp -f 1.0 file.rxt       All light hits reflectance sphere wall first\n"
+    s += "  iadp -l '500 600' file.rxt Only do wavelengths between 500 and 600\n"
+    s += "  iadp -o out file.rxt       Calculated values in out\n"
+    s += "  iadp -r 0.3                R_total=0.3, b=inf, find albedo\n"
+    s += "  iadp -r 0.3 -t 0.4         R_total=0.3, T_total=0.4, find a,b,g\n"
+    s += "  iadp -r 0.3 -t 0.4 -n 1.5  R_total=0.3, T_total=0.4, n=1.5, find a,b\n"
+    s += "  iadp -p 1000 file.rxt      Only 1000 photons\n"
+    s += "  iadp -p -100 file.rxt      Allow only 100ms per iteration\n"
+    s += "  iadp -q 4 file.rxt         Four quadrature points\n"
+    s += "  iadp -M 0 file.rxt         No MC    (iad)\n"
+    s += "  iadp -M 1 file.rxt         MC once  (iad -> MC -> iad)\n"
+    s += "  iadp -M 2 file.rxt         MC twice (iad -> MC -> iad -> MC -> iad)\n"
+    s += "  iadp -M 0 -q 4 file.rxt    Fast and crude conversion\n"
+    s += "  iadp -G t file.rxt         One top slide with properties from file.rxt\n"
+    s += "  iadp -G b -N 1.5 -D 1 file Use 1 bottom slide with n=1.5 and thickness=1\n"
+    s += "  iadp -x   1 file.rxt       Show sphere and MC effects\n"
+    s += "  iadp -x   2 file.rxt       Show grid decisions\n"
+    s += "  iadp -x   4 file.rxt       Show iterations\n"
+    s += "  iadp -x   8 file.rxt       Show lost light effects\n"
+    s += "  iadp -x  16 file.rxt       Show best grid points\n"
+    s += "  iadp -x  32 file.rxt       Show decisions for type of search\n"
+    s += "  iadp -x  64 file.rxt       Show all grid calculations\n"
+    s += "  iadp -x 128 file.rxt       Show sphere calculations\n"
+    s += "  iadp -x 511 file.rxt       Show all debugging output\n"
+    s += "  iadp -X -i 8 file.rxt      Dual beam spectrometer with 8 degree incidence\n"
+    s += "\n"
+    s += "  iadp -z -a 0.9 -b 1 -i 45  Forward calc assuming 45 degree incidence\n"
     return s
 
 
@@ -932,10 +955,25 @@ def _print_search_description(exp):
         print("# ")
 
 
+def _version_string():
+    """Return version string for the file header.
+
+    During development (version contains 'dev'), append the current date/time
+    so successive runs can be distinguished.  For release versions use the
+    plain version number, matching the iad/iad convention from version.pl.
+    """
+    ver = iadpython.__version__
+    if "dev" in ver:
+        import datetime
+        stamp = datetime.datetime.now().strftime("%H:%M on %-d %b %Y")
+        return f"{ver} ({stamp})"
+    return ver
+
+
 def print_file_header(exp, command_line=None):
     """Print the CWEB-style metadata header for result files."""
     command_line = command_line or " ".join(sys.argv)
-    print(f"# Inverse Adding-Doubling {iadpython.__version__} ")
+    print(f"# Inverse Adding-Doubling iadp {_version_string()} ")
     print(f"# {command_line} ")
     print(f"#                        Beam diameter = {_format_header_value(exp, 'B', '%7.1f mm', exp.d_beam)}")
     print(f"#                     Sample thickness = {_format_header_value(exp, 'd', '%7.3f mm', exp.sample.d)}")
@@ -1177,6 +1215,7 @@ def _populate_grid_lost_light(exp):
 
     n_sample = float(exp.sample.n)
     n_slide = float(exp.sample.n_above) if exp.sample.n_above != 1.0 else 1.0
+    t_slide_val = float(exp.sample.d_above) if exp.sample.d_above is not None else float(exp.t_slide)
     d_port_r = float(exp.r_sphere.sample.d) if exp.r_sphere is not None else 1000.0
     d_port_t = float(exp.t_sphere.sample.d) if exp.t_sphere is not None else d_port_r
 
@@ -1190,7 +1229,7 @@ def _populate_grid_lost_light(exp):
         d_port_t=d_port_t,
         d_beam=float(exp.d_beam),
         t_sample=float(exp.sample.d),
-        t_slide=float(exp.t_slide),
+        t_slide=t_slide_val,
         n_photons=int(exp.n_photons),
         method=exp.method,
         binary_path=exp.mc_lost_path,

@@ -182,7 +182,7 @@ class Sample:
         if self.a is None or self.b is None or self.d is None:
             return None
         if np.isinf(self.b):
-            return 1 - self.a
+            return (1 - self.a) / self.a if self.a > 0 else 1.0
         return (1 - self.a) * self.b / self.d
 
     def mu_s(self):
@@ -190,7 +190,7 @@ class Sample:
         if self.a is None or self.b is None or self.d is None:
             return None
         if np.isinf(self.b):
-            return self.a
+            return 1.0
         return self.a * self.b / self.d
 
     def mu_sp(self):
@@ -198,7 +198,7 @@ class Sample:
         if self.a is None or self.b is None or self.d is None or self.g is None:
             return None
         if np.isinf(self.b):
-            return self.a * (1 - self.g)
+            return 1.0 * (1 - self.g)
         return (1 - self.g) * self.a * self.b / self.d
 
     def nu_c(self):

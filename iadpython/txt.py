@@ -24,7 +24,7 @@ import re
 import numpy as np
 import iadpython
 
-__all__ = ("read_txt", "IADResult")
+__all__ = ("read_txt", "read_iad_output_table", "IADResult")
 
 
 class IADResult:
@@ -65,6 +65,38 @@ def get_number_from_line(fp):
 
     #    print("finish x=%10.5f" % float(s))
     return float(s)
+
+
+def read_iad_output_table(filename):
+    """Return numeric result columns and row status codes from an IAD .txt file.
+
+    IAD result rows contain eight numeric columns followed by a legacy status
+    character such as ``*`` for success or ``+`` for non-convergence.  Some
+    debug modes insert additional numeric columns before the status, so the
+    status is read from the final column.
+
+    Handles both iadp (tab-delimited) and iad/iad (space-delimited with ``|``
+    pipe separators) output formats.
+    """
+    import io
+
+    processed = []
+    with open(filename, encoding="utf-8") as fh:
+        for line in fh:
+            processed.append(line.replace("|", " "))
+    text = "".join(processed)
+
+    table = np.genfromtxt(io.StringIO(text), comments="#", dtype=str, autostrip=True)
+    table = np.atleast_2d(table)
+    if table.size == 0 or table.shape[1] < 8:
+        raise ValueError('"%s" contains no IAD result rows' % filename)
+
+    numeric = table[:, :8].astype(float)
+    if table.shape[1] > 8:
+        status = np.char.strip(table[:, -1].astype(str))
+    else:
+        status = np.full(numeric.shape[0], "", dtype=str)
+    return numeric, status
 
 
 def read_sphere(fp):
@@ -121,9 +153,8 @@ def read_txt(filename):
         read_misc(fp, exp)
 
         data = IADResult()
-        position = fp.tell()
 
-        result = np.loadtxt(fp, usecols=range(8), delimiter="\t")
+        result, status = read_iad_output_table(filename)
         lam, mr, cr, mt, ct, mua, musp, g = result.T
         data.lam = np.atleast_1d(lam)
         data.mr = np.atleast_1d(mr)
@@ -137,11 +168,6 @@ def read_txt(filename):
         exp.m_r = data.mr
         exp.m_t = data.mt
         exp.lambda0 = data.lam
-
-        fp.seek(position)
-        converters = {8: lambda s: s.lstrip("#").strip()}
-        status = np.loadtxt(fp, usecols=[8], dtype=str, converters=converters)
-        status = np.atleast_1d(status)
         data.success = status == "*"
 
     return exp, data

@@ -69,7 +69,7 @@ def read_txt_as_list(txt_path):
     directory, same base name) to compute optical thickness *b*.  If no
     ``.rxt`` is found, ``d = 1.0`` is used as a fallback.
     """
-    arr = np.atleast_2d(np.loadtxt(txt_path, comments='#', delimiter='\t'))
+    arr, status = iadpython.read_iad_output_table(txt_path)
     cols = arr.T
     lam  = cols[0]
     mr   = cols[1]
@@ -79,7 +79,7 @@ def read_txt_as_list(txt_path):
     mua  = cols[5]
     musp = cols[6]
     g    = cols[7]
-    success = np.isfinite(mua) & np.isfinite(musp) & (mua >= 0) & (musp >= 0)
+    success = status == '*'
 
     # Try to get d from the paired .rxt file in the same directory.
     base = os.path.splitext(txt_path)[0]
