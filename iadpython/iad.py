@@ -935,7 +935,7 @@ class Experiment:
         """Emit the CWEB-style inverse-search header for ``-x 4``."""
         if not self.debug_level & DEBUG_ITERATIONS:
             return
-        distance_name = "relative distance" if self.metric == 0 else "absolute distance"
+        distance_name = "scaled L2 distance"
         print("---------------- Beginning New Search -----------------", file=sys.stderr)
         print(
             "                a         b          g   |"
@@ -1286,8 +1286,16 @@ class Experiment:
             if original is not None:
                 s.a, s.b, s.g = original
 
+    @staticmethod
+    def _scaled_l2_component(calculated, measured):
+        """Return one scaled squared residual for measured-space values."""
+        measured = _as_scalar_float(measured, "measured value")
+        scale = max(abs(measured), 0.01)
+        residual = _as_scalar_float(calculated, "calculated value") - measured
+        return (residual / scale) ** 2
+
     def measurement_distance(self, m_r, m_t):
-        """Return scalar L1 distance between calculated and measured `M_R/M_T`.
+        """Return scaled L2 distance between calculated and measured `M_R/M_T`.
 
         CWEB's two-parameter searches always compare transmission and, unless
         albedo is fixed at zero, reflectance.  Missing file columns therefore
@@ -1295,17 +1303,17 @@ class Experiment:
         """
         if self.search in _TWO_PARAMETER_SEARCHES:
             measured_t = 0.0 if self.m_t is None else _as_scalar_float(self.m_t, "measured M_T")
-            delta = abs(_as_scalar_float(m_t, "calculated M_T") - measured_t)
+            delta = self._scaled_l2_component(m_t, measured_t)
             if self.default_a is None or not np.isclose(self.default_a, 0.0):
                 measured_r = 0.0 if self.m_r is None else _as_scalar_float(self.m_r, "measured M_R")
-                delta += abs(_as_scalar_float(m_r, "calculated M_R") - measured_r)
+                delta += self._scaled_l2_component(m_r, measured_r)
             return delta
 
         delta = 0.0
         if self.m_r is not None:
-            delta += abs(_as_scalar_float(m_r, "calculated M_R") - _as_scalar_float(self.m_r, "measured M_R"))
+            delta += self._scaled_l2_component(m_r, self.m_r)
         if self.m_t is not None:
-            delta += abs(_as_scalar_float(m_t, "calculated M_T") - _as_scalar_float(self.m_t, "measured M_T"))
+            delta += self._scaled_l2_component(m_t, self.m_t)
         return delta
 
     def _debug_no_sphere_rt_from_raw(self, ur1, ut1, include_lost):
@@ -1379,7 +1387,7 @@ class Experiment:
     def measurement_distance_from_raw(
         self, ur1, ut1, uru, utu, include_lost=True, a=None, b=None, g=None, debug_sphere=True
     ):
-        """Return corrected `M_R/M_T` and scalar L1 distance to the measurements."""
+        """Return corrected `M_R/M_T` and scaled L2 distance to the measurements."""
         m_r, m_t = self.measured_rt_from_raw(
             ur1,
             ut1,
@@ -1652,7 +1660,7 @@ class Experiment:
         self._optimizer_evals = self.sample.rt_evals - self._grid_evals
 
         if result is not None:
-            self.iterations = getattr(result, "nit", getattr(result, "nfev", 0))
+            self.iterations = getattr(result, "nfev", 0)
             self.final_distance = float(getattr(result, "fun", np.nan))
             self.found = bool(np.isfinite(self.final_distance) and self.final_distance < self.tolerance)
             self._last_invert_status_valid = True

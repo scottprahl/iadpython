@@ -54,6 +54,11 @@ TWO_ROW_VARIABLE_RXT = SINGLE_ROW_VARIABLE_RXT.replace(
     "851.930000 0.315087 0.606721   0.9\n852.930000 0.314000 0.607000   0.9\n",
 )
 
+SINGLE_ROW_VARIABLE_S_RXT = SINGLE_ROW_VARIABLE_RXT.replace(
+    "    L         r       t        g\n851.930000 0.315087 0.606721   0.9\n",
+    "    L         S       r       t        g\n851.930000 1 0.315087 0.606721   0.9\n",
+)
+
 SINGLE_ROW_TU_RXT = SINGLE_ROW_VARIABLE_RXT.replace(
     "    L         r       t        g\n851.930000 0.315087 0.606721   0.9\n",
     "    L         t        u\n851.930000 0.606721 0.011859\n",
@@ -194,14 +199,23 @@ class TestIadFile(unittest.TestCase):
             with open(second_file, "w", encoding="utf-8") as fh:
                 fh.write(BIOPIX_851_RXT)
 
-            test_args = ["iadcommand.py", first_file, ignored_file, ignored_dir, second_file, "-M", "0"]
+            test_args = ["iadp", first_file, ignored_file, ignored_dir, second_file, "-M", "0"]
             with patch("sys.argv", test_args):
-                with self.assertRaises(SystemExit) as cm:
-                    iadcommand.main()
+                with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                    with self.assertRaises(SystemExit) as cm:
+                        iadcommand.main()
 
             self.assertEqual(cm.exception.code, 0)
-            self._assert_result_file_has_header_and_rows(os.path.join(tmpdir, "first.txt"))
-            self._assert_result_file_has_header_and_rows(os.path.join(tmpdir, "second.txt"))
+            self.assertEqual(
+                fake_stderr.getvalue(),
+                f"iadp -M 0 {first_file}\n*\niadp -M 0 {second_file}\n*",
+            )
+            first_output = self._assert_result_file_has_header_and_rows(os.path.join(tmpdir, "first.txt"))
+            second_output = self._assert_result_file_has_header_and_rows(os.path.join(tmpdir, "second.txt"))
+            self.assertIn(f"# iadp -M 0 {first_file} ", first_output)
+            self.assertIn(f"# iadp -M 0 {second_file} ", second_output)
+            self.assertNotIn(second_file, first_output)
+            self.assertNotIn(first_file, second_output)
             with open(ignored_file, encoding="utf-8") as fh:
                 self.assertEqual(fh.read(), "not an rxt file")
 
@@ -322,8 +336,9 @@ class TestIadFile(unittest.TestCase):
             debug_output = fake_stderr.getvalue()
             self.assertIn("-------------------NEXT DATA POINT---------------------", debug_output)
             self.assertIn("---------------- Beginning New Search -----------------", debug_output)
+            self.assertIn("scaled L2 distance", debug_output)
             self.assertIn("Final amoeba/brent result after", debug_output)
-            self.assertIn("Failed Search, too many iterations", debug_output)
+            self.assertIn("Successful Search", debug_output)
             self._assert_result_file_has_header_and_rows(out_file)
 
     def test_debug_grid_uses_cweb_decision_text(self):
@@ -368,10 +383,10 @@ class TestIadFile(unittest.TestCase):
             debug_output = fake_stderr.getvalue()
             self.assertIn("BEST: GRID GUESSES", debug_output)
             self.assertIn("BEST:  k      albedo          b          g   distance", debug_output)
-            self.assertIn("BEST:  0     0.98963    0.72615   -0.50000    0.02724", debug_output)
-            self.assertIn("BEST: <1>    0.98963    0.72615   -0.50000    0.02724", debug_output)
-            self.assertIn("BEST: <2>    0.98599    0.72615   -0.50000    0.02744", debug_output)
-            self.assertIn("BEST: <3>    0.98599    0.85214   -0.50000    0.03701", debug_output)
+            self.assertIn("BEST:  0     0.98599    0.72615   -0.50000    0.00165", debug_output)
+            self.assertIn("BEST: <1>    0.98599    0.72615   -0.50000    0.00165", debug_output)
+            self.assertIn("BEST: <2>    0.98182    0.72615   -0.50000    0.00172", debug_output)
+            self.assertIn("BEST: <3>    0.98182    0.85214   -0.50000    0.00435", debug_output)
             self.assertIn("Successful Search", debug_output)
             self.assertNotIn("grid constant", debug_output)
             self.assertNotIn("GRID: Fill", debug_output)
@@ -408,6 +423,40 @@ class TestIadFile(unittest.TestCase):
             self.assertEqual(debug_output.count("BEST: <2>"), 3)
             self.assertEqual(debug_output.count("BEST: <3>"), 3)
             self.assertNotIn("hot start", debug_output)
+            self._assert_result_file_has_header_and_rows(out_file)
+
+    def test_row_varying_sphere_count_enables_mc_lost_light(self):
+        """A variable `S` column should still enable MC lost-light iterations."""
+
+        def _fake_update_lost_light(exp, _a, _b, _g, **_kw):
+            exp.ur1_lost = 0.002
+            exp.ut1_lost = 0.002
+            exp.uru_lost = 0.001
+            exp.utu_lost = 0.001
+            return 0.002, 0.002, 0.002, 0.001, 0.001
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sample_file = os.path.join(tmpdir, "single-row.rxt")
+            out_file = os.path.join(tmpdir, "single-row.txt")
+            with open(sample_file, "w", encoding="utf-8") as fh:
+                fh.write(SINGLE_ROW_VARIABLE_S_RXT)
+
+            test_args = ["iadcommand.py", sample_file, "-M", "1", "-x", "8", "-o", out_file]
+            with patch("sys.argv", test_args):
+                with patch("iadcommand._discover_mc_lost_binary", return_value="/fake/mc_lost") as discover:
+                    with patch.object(iadcommand.iadpython.Experiment, "_update_lost_light", _fake_update_lost_light):
+                        with patch("sys.stderr", new_callable=io.StringIO) as fake_stderr:
+                            with self.assertRaises(SystemExit) as cm:
+                                iadcommand.main()
+
+            self.assertEqual(cm.exception.code, 0)
+            discover.assert_called_once()
+            debug_output = fake_stderr.getvalue()
+            data_rows = [
+                line for line in debug_output.splitlines() if line.startswith(" 851.9") or line.startswith("851.9")
+            ]
+            self.assertEqual(len(data_rows), 2)
+            self.assertIn("0.0020 0.0010 0.0020 0.0010 |  1", data_rows[-1])
             self._assert_result_file_has_header_and_rows(out_file)
 
     def test_debug_search_uses_cweb_decision_trace(self):
@@ -500,12 +549,12 @@ class TestIadFile(unittest.TestCase):
             )
             self.assertIn(
                 "g   0   0    0.00000     0.0003   -0.50000 |"
-                "    0.31509    0.04450 |    0.60672    0.95663 |     0.621",
+                "    0.31509    0.04450 |    0.60672    0.95663 |     1.070",
                 debug_output,
             )
             self.assertIn(
                 "g  48  94    0.98963     0.7261   -0.50000 |"
-                "    0.31509    0.31476 |    0.60672    0.63364 |     0.027",
+                "    0.31509    0.31476 |    0.60672    0.63364 |     0.002",
                 debug_output,
             )
             grid_rows = [line for line in debug_output.splitlines() if line.startswith("g ")]
@@ -541,8 +590,8 @@ class TestIadFile(unittest.TestCase):
             self.assertIn("SPHERE:       T_u collected = 100.0%", debug_output)
             self.assertIn("SPHERE:       UT1 =   0.000   UT1_calc =   0.000", debug_output)
             self.assertIn("SPHERE:       Psu =   0.000        Pss =   0.000", debug_output)
-            self.assertEqual(debug_output.count("SPHERE: REFLECTION"), 46)
-            self.assertEqual(debug_output.count("SPHERE: TRANSMISSION"), 46)
+            self.assertEqual(debug_output.count("SPHERE: REFLECTION"), 49)
+            self.assertEqual(debug_output.count("SPHERE: TRANSMISSION"), 49)
             self.assertNotIn("reflectance sphere MR=", debug_output)
             self.assertNotIn("transmission sphere MT=", debug_output)
             self.assertNotIn("double sphere:", debug_output)

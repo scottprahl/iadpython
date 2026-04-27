@@ -4,6 +4,7 @@
 import os
 import copy
 import shutil
+import shlex
 import sys
 import datetime
 from enum import Enum
@@ -480,6 +481,15 @@ def _resolve_input_filename(filename):
     return None
 
 
+def _command_line_for_file(args, filename):
+    """Return the original command line rewritten for a single input file."""
+    raw_filenames = set(_input_filenames(args))
+    command = os.path.basename(sys.argv[0]) or "iadp"
+    tokens = [token for token in sys.argv[1:] if token not in raw_filenames]
+    tokens.append(filename)
+    return shlex.join([command, *tokens])
+
+
 def _resolve_scattering_constraint(constraint, wavelength):
     """Resolve a constant or power-law scattering constraint."""
     if constraint is None:
@@ -564,6 +574,24 @@ def _discover_mc_lost_binary():
     if os.path.exists(src_binary):
         return src_binary
     return shutil.which("mc_lost")
+
+
+def _uses_sphere(exp):
+    """Return True when an experiment has any sphere-corrected rows."""
+    num_spheres = getattr(exp, "num_spheres", 0)
+    if np.isscalar(num_spheres):
+        return num_spheres > 0
+    return bool(np.any(np.asarray(num_spheres) > 0))
+
+
+def _configure_mc_lost(exp):
+    """Attach the MC lost-light binary when the experiment can use it."""
+    if exp.max_mc_iterations <= 0 or not _uses_sphere(exp):
+        return
+
+    exp.mc_lost_path = _discover_mc_lost_binary()
+    if exp.mc_lost_path is None:
+        raise RuntimeError("mc_lost binary not found. Build it with: cd iad && make mc_lost")
 
 
 def _point_value(value, index=None):
@@ -1348,7 +1376,7 @@ def invert_file(exp, args):
 
     with open(args.out_fname, "w", encoding="utf-8") as output_stream, redirect_stdout(output_stream):
         if exp.verbosity > 0:
-            print_file_header(exp)
+            print_file_header(exp, command_line=getattr(args, "command_line", None))
             print_results_header(debug_lost_light=debug_lost_light)
 
         for i in range(n_rows):
@@ -1404,9 +1432,18 @@ def main():
             if args.out_fname is not None and len(resolved_filenames) > 1:
                 raise argparse.ArgumentTypeError("Commandline: -o cannot be used with multiple input files")
 
-            for filename in resolved_filenames:
+            multiple_input_files = len(resolved_filenames) > 1
+            for i, filename in enumerate(resolved_filenames):
+                command_line = _command_line_for_file(args, filename)
+                if multiple_input_files:
+                    if i > 0:
+                        print(file=sys.stderr)
+                    print(command_line, file=sys.stderr)
+
                 file_args = copy.copy(args)
                 file_args.filename = [filename]
+                if multiple_input_files:
+                    file_args.command_line = command_line
                 exp = iadpython.read_rxt(filename)
 
                 # update the search to include the command line constraints
@@ -1422,10 +1459,7 @@ def main():
                 ):
                     exp.method = "substitution"
 
-                if np.isscalar(exp.num_spheres) and exp.num_spheres > 0 and exp.max_mc_iterations > 0:
-                    exp.mc_lost_path = _discover_mc_lost_binary()
-                    if exp.mc_lost_path is None:
-                        raise RuntimeError("mc_lost binary not found. Build it with: cd iad && make mc_lost")
+                _configure_mc_lost(exp)
 
                 if getattr(exp, "method", "unknown") in ("comparison", 1):
                     if np.isscalar(exp.num_spheres) and exp.num_spheres == 2:
@@ -1455,10 +1489,7 @@ def main():
         if np.isscalar(exp.num_spheres) and exp.num_spheres > 0 and getattr(exp, "method", "unknown") == "unknown":
             exp.method = "substitution"
 
-        if np.isscalar(exp.num_spheres) and exp.num_spheres > 0 and exp.max_mc_iterations > 0:
-            exp.mc_lost_path = _discover_mc_lost_binary()
-            if exp.mc_lost_path is None:
-                raise RuntimeError("mc_lost binary not found. Build it with: cd iad && make mc_lost")
+        _configure_mc_lost(exp)
 
         if getattr(exp, "method", "unknown") in ("comparison", 1):
             if np.isscalar(exp.num_spheres) and exp.num_spheres == 2:

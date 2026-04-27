@@ -54,9 +54,9 @@ def run_iadp(rxt_path, txt_path, options_str):
     if options_str:
         cmd += shlex.split(options_str)
     cmd += ['-J', '-o', txt_path, rxt_path]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True, check=False)
     if result.returncode != 0:
-        msg = (result.stderr or result.stdout).strip()
+        msg = result.stdout.strip()
         print('iadp failed: %s' % msg)
         return False
     return True
@@ -534,7 +534,7 @@ def main():
             and os.path.exists(grid_path) and os.path.getsize(grid_path) > 0
         )
         if args.force or not cache_valid:
-            print('inverting: %s' % rxt_path)
+            print('inverting: %s' % rxt_path, flush=True)
             if not run_iadp(rxt_path, txt_path, args.options):
                 print('Sorry, inversion failed for %s' % rxt_path)
                 continue

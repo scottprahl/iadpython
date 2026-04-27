@@ -24,22 +24,31 @@ from iadpython.mc_lost import run_mc_lost
 
 def _run(mc_lost_path, **kwargs):
     """Convenience wrapper with sensible defaults."""
-    defaults = dict(
-        a=0.5,
-        b=1.0,
-        g=0.0,
-        n_sample=1.4,
-        n_slide=1.0,
-        d_port_r=10.0,
-        d_port_t=10.0,
-        d_beam=5.0,
-        t_sample=1.0,
-        n_photons=50_000,
-        method="substitution",
-        binary_path=mc_lost_path,
-    )
+    defaults = {
+        "a": 0.5,
+        "b": 1.0,
+        "g": 0.0,
+        "n_sample": 1.4,
+        "n_slide": 1.0,
+        "d_port_r": 10.0,
+        "d_port_t": 10.0,
+        "d_beam": 5.0,
+        "t_sample": 1.0,
+        "n_photons": 50_000,
+        "method": "substitution",
+        "binary_path": mc_lost_path,
+    }
     defaults.update(kwargs)
     return run_mc_lost(**defaults)
+
+
+def _run_machine(mc_lost_path, *args):
+    """Run mc_lost with machine output and return the 12 floats."""
+    cmd = [mc_lost_path, *args, "-m"]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    parts = result.stdout.strip().split()
+    assert len(parts) == 12
+    return [float(p) for p in parts]
 
 
 # ---------------------------------------------------------------------------
@@ -145,6 +154,73 @@ class TestMCConsistency:
         ur1_lost, ut1_lost, uru_lost, utu_lost = _run(mc_lost_path, d_port_r=8.0, d_port_t=12.0)
         for name, v in [("ur1_lost", ur1_lost), ("ut1_lost", ut1_lost), ("uru_lost", uru_lost), ("utu_lost", utu_lost)]:
             assert 0.0 <= v <= 1.0, f"{name}={v} outside [0, 1]"
+
+
+class TestSlideSmoke:
+    """Smoke tests for nonzero slide lost-light calculations."""
+
+    def test_nonzero_slide_outputs_finite_lost_fractions(self, mc_lost_path):
+        """A nonzero slide should produce bounded finite lost fractions."""
+        values = _run_machine(
+            mc_lost_path,
+            "-a",
+            "0",
+            "-b",
+            "1",
+            "-g",
+            "0",
+            "-n",
+            "1.4",
+            "-N",
+            "1.5",
+            "-T",
+            "1",
+            "-t",
+            "1",
+            "-B",
+            "0",
+            "-P",
+            "2",
+            "-i",
+            "30",
+            "-p",
+            "2000",
+        )
+
+        for name, v in zip(("ur1_lost", "ut1_lost", "uru_lost", "utu_lost"), values[8:12], strict=True):
+            assert math.isfinite(v), f"{name}={v} is not finite"
+            assert 0.0 <= v <= 1.0, f"{name}={v} outside [0, 1]"
+
+    def test_nonzero_slide_collimated_loss_does_not_increase_with_larger_port(self, mc_lost_path):
+        """For the same collimated beam, increasing port size should not increase lost light."""
+        base_args = [
+            "-C",
+            "-a",
+            "0",
+            "-b",
+            "1",
+            "-g",
+            "0",
+            "-n",
+            "1.4",
+            "-N",
+            "1.5",
+            "-T",
+            "1",
+            "-t",
+            "1",
+            "-B",
+            "0",
+            "-i",
+            "30",
+            "-p",
+            "2000",
+        ]
+        small_port = _run_machine(mc_lost_path, *base_args, "-P", "2")
+        large_port = _run_machine(mc_lost_path, *base_args, "-P", "20")
+
+        assert large_port[8] <= small_port[8]
+        assert large_port[9] <= small_port[9]
 
 
 class TestErrorHandling:

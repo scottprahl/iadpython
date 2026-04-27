@@ -229,7 +229,7 @@ def run_mc_lost_with_stderr(
         Seed for the first run.  Subsequent runs use initial_seed+1, +2, etc.
         Use 0 to seed each run from the current time (non-reproducible).
 
-    Returns
+    Returns:
     -------
     means : tuple[float, float, float, float]
         ``(ur1_lost, ut1_lost, uru_lost, utu_lost)`` — mean over all runs.

@@ -2,8 +2,10 @@
 
 import os
 import runpy
+import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,6 +29,20 @@ class TestIADPlus(unittest.TestCase):
 
         self.assertAlmostEqual(lam[0], 890.0)
         self.assertEqual(success.tolist(), [False, True])
+
+    def test_run_iadp_preserves_live_stderr_progress(self):
+        """Iadplus should let iadp stderr progress reach the terminal."""
+        completed = subprocess.CompletedProcess(["iadp"], 0, stdout="")
+
+        with patch.object(iadplus["subprocess"], "run", return_value=completed) as mock_run:
+            ok = iadplus["run_iadp"]("sample.rxt", "sample.txt", "-c 0")
+
+        self.assertTrue(ok)
+        _cmd, kwargs = mock_run.call_args
+        self.assertEqual(kwargs["stdout"], subprocess.PIPE)
+        self.assertTrue(kwargs["text"])
+        self.assertNotIn("stderr", kwargs)
+        self.assertNotIn("capture_output", kwargs)
 
 
 if __name__ == "__main__":
