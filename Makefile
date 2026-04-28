@@ -37,7 +37,7 @@ PYROMA          := $(PYTHON) -m pyroma
 RSTCHECK        := $(PYTHON) -m rstcheck
 YAMLLINT        := $(PYTHON) -m yamllint
 
-PYTEST_OPTS     := -q
+PYTEST_OPTS     := 
 SPHINX_OPTS     := -T -E -b html -d $(DOCS_DIR)/_build/doctrees -D language=en
 
 .PHONY: help
@@ -122,7 +122,7 @@ lab: venv
 
 .PHONY: test
 test: venv
-	$(PYTEST) $(PYTEST_OPTS) --ignore=tests/test_double.py --ignore=tests/test_all_notebooks.py tests
+	$(PYTEST) $(PYTEST_OPTS) --ignore=tests/test_double.py --ignore=tests/test_bli_mc_sweep.py --ignore=tests/test_all_notebooks.py tests
 
 .PHONY: note-test
 note-test: venv

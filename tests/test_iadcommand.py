@@ -725,7 +725,7 @@ class TestExperimentConstraints(unittest.TestCase):
 
     def test_transmission_sphere_inverse_cli_runs(self):
         """Ensure `-2` transmission sphere path does not crash in inverse mode."""
-        test_args = ["iadcommand.py", "-S", "1", "-2", "250", "20", "10", "10", "0.99", "-t", "0.3"]
+        test_args = ["iadcommand.py", "-S", "1", "-2", "250 20 10 10 0.99", "-t", "0.3"]
         with patch("sys.argv", test_args):
             with self.assertRaises(SystemExit) as cm:
                 iadcommand.main()

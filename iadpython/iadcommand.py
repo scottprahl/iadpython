@@ -193,6 +193,19 @@ def validator_wave_limits(value):
     return (wave_min, wave_max)
 
 
+def validator_sphere_params(value):
+    """Parse a quoted sphere-parameter string like '200 25 13 13 0.95'."""
+    parts = str(value).replace(",", " ").split()
+    if len(parts) != 5:
+        raise argparse.ArgumentTypeError(
+            "Commandline: sphere parameters need 5 numbers: SPHERE_D SAMPLE_D ENTRANCE_D DETECTOR_D WALL_R"
+        )
+    try:
+        return [float(part) for part in parts]
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("Commandline: sphere parameters must be numeric") from exc
+
+
 def validator_scattering_constraint(value):
     """Accept a constant mus or a CWEB-style power-law scattering constraint."""
     text = str(value).strip()
@@ -218,18 +231,16 @@ arg_specs = [
     {
         "flags": ["-1"],
         "dest": "r_sphere",
-        "metavar": ("SPHERE_D", "SAMPLE_D", "ENTRANCE_D", "DETECTOR_D", "WALL_R"),
-        "nargs": 5,
-        "type": float,
-        "help": "Reflection sphere parameters",
+        "metavar": "'SPHERE_D SAMPLE_D ENTRANCE_D DETECTOR_D WALL_R'",
+        "type": validator_sphere_params,
+        "help": "Reflection sphere parameters (quoted, 5 numbers)",
     },
     {
         "flags": ["-2"],
         "dest": "t_sphere",
-        "metavar": ("SPHERE_D", "SAMPLE_D", "ENTRANCE_D", "DETECTOR_D", "WALL_R"),
-        "nargs": 5,
-        "type": float,
-        "help": "Transmission sphere parameters",
+        "metavar": "'SPHERE_D SAMPLE_D ENTRANCE_D DETECTOR_D WALL_R'",
+        "type": validator_sphere_params,
+        "help": "Transmission sphere parameters (quoted, 5 numbers)",
     },
     {
         "flags": ["-a", "--albedo"],
@@ -837,7 +848,16 @@ def forward_calculation(exp):
 
     print(exp.sample)
 
-    ur1, ut1, _uru, _utu = exp.sample.rt()
+    num_spheres = int(exp.num_spheres) if np.isscalar(exp.num_spheres) else 0
+    if num_spheres > 0:
+        print()
+        print("Sphere properties (%d sphere%s)" % (num_spheres, "" if num_spheres == 1 else "s"))
+        if exp.r_sphere is not None:
+            _print_forward_sphere_block(exp.r_sphere, "Reflection sphere", reflection=True)
+        if exp.t_sphere is not None:
+            _print_forward_sphere_block(exp.t_sphere, "Transmission sphere", reflection=False)
+
+    ur1, ut1, uru, utu = exp.sample.rt()
     ru, tu = exp.sample.unscattered_rt()
     print("Calculated quantities")
     print("   R total         = %.3f" % ur1)
@@ -846,7 +866,27 @@ def forward_calculation(exp):
     print("   T total         = %.3f" % ut1)
     print("   T scattered     = %.3f" % (ut1 - tu))
     print("   T unscattered   = %.3f" % tu)
+
+    if num_spheres > 0:
+        _populate_grid_lost_light(exp)
+        m_r, m_t = exp.measured_rt_from_raw(ur1, ut1, uru, utu, include_lost=True, debug_sphere=False)
+        print("   M_R (sphere)    = %.3f" % m_r)
+        print("   M_T (sphere)    = %.3f" % m_t)
     sys.exit(0)
+
+
+def _print_forward_sphere_block(sphere, title, reflection):
+    """Print sphere properties for the -z forward calculation output."""
+    baffle_text = "has a baffle" if bool(getattr(sphere, "baffle", False)) else "has no baffle"
+    third_label = "entrance port diameter" if reflection else "  third port diameter"
+    print("   %s %s between sample and detector" % (title, baffle_text))
+    print("                      sphere diameter = %7.1f mm" % float(sphere.d))
+    print("                 sample port diameter = %7.1f mm" % float(sphere.sample.d))
+    print("               %s = %7.1f mm" % (third_label, float(sphere.third.d)))
+    print("               detector port diameter = %7.1f mm" % float(sphere.detector.d))
+    print("                 detector reflectance = %7.1f %%" % (float(sphere.detector.uru) * 100))
+    print("                     wall reflectance = %7.1f %%" % (float(sphere.r_wall) * 100))
+    print("                 calibration standard = %7.1f %%" % (float(sphere.r_std) * 100))
 
 
 def _header_scalar(value, default=0.0):
