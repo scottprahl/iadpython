@@ -40,9 +40,28 @@ __all__ = (
 )
 
 
+def _dlegendre(m, x):
+    """Return the derivative P'_m(x) of the Legendre polynomial of degree m.
+
+    Uses the recurrence P'_m(x) = m*(x*P_m(x) - P_{m-1}(x)) / (x**2 - 1), which
+    inherits the accuracy of eval_legendre.  scipy.special.legendre(m).deriv(1)
+    returns a bare poly1d that is evaluated from explicit coefficients instead;
+    that form loses all significance for m above roughly 30 (73% error by m=79)
+    and silently corrupts any quadrature weight built from it.
+
+    Only defined for |x| < 1, which is all the callers below need: the abscissas
+    passed here are interior roots, never the endpoints.
+    """
+    return (
+        m
+        * (x * scipy.special.eval_legendre(m, x) - scipy.special.eval_legendre(m - 1, x))
+        / (x * x - 1)
+    )
+
+
 def _gauss_func(n, x):
     """Zeroes of this function are the Gaussian quadrature points."""
-    return scipy.special.legendre(n)(x)
+    return scipy.special.eval_legendre(n, x)
 
 
 def _radau_func(n, x):
@@ -52,7 +71,7 @@ def _radau_func(n, x):
 
 def _lobatto_func(n, x):
     """Zeros of this function are the Lobatto quadrature points."""
-    return scipy.special.legendre(n - 1).deriv(1)(x)
+    return _dlegendre(n - 1, x)
 
 
 def gauss(n, a=-1, b=1):
@@ -116,9 +135,9 @@ def radau(n, a=-1, b=1):
     for i in range(n - 1):
         x[i + 1] = scipy.optimize.brentq(f, brackets[i], brackets[i + 1])
 
-    pp = scipy.special.legendre(n - 1).deriv(1)
+    pp = _dlegendre(n - 1, x[1:])
     w[0] = 2 / n**2
-    w[1:] = 1 / pp(x[1:]) ** 2 / (1 - x[1:])
+    w[1:] = 1 / pp**2 / (1 - x[1:])
 
     # scale for desired interval
     x *= 0.5 * (a - b)
@@ -161,7 +180,7 @@ def lobatto(n, a=-1, b=1):
     for i in range(n - 2):
         x[i + 1] = scipy.optimize.brentq(f, brackets[i], brackets[i + 1])
 
-    pp = scipy.special.legendre(n - 1)(x)
+    pp = scipy.special.eval_legendre(n - 1, x)
     w[1:-1] = w[1:-1] / pp[1:-1] ** 2
 
     # scale for desired interval
